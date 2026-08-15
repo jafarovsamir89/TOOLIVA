@@ -5,7 +5,9 @@ import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 
 data class LargeMediaFile(
     val uri: Uri,
@@ -18,12 +20,16 @@ data class LargeMediaFile(
 class MediaStoreLargeFileRepository(context: Context) {
     private val resolver = context.applicationContext.contentResolver
 
-    suspend fun scan(minBytes: Long = DEFAULT_MIN_BYTES): List<LargeMediaFile> = withContext(Dispatchers.IO) {
-        buildList {
-            addAll(queryCollection(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, minBytes))
-            addAll(queryCollection(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, minBytes))
-        }.sortedByDescending { it.sizeBytes }
-    }
+    fun scan(minBytes: Long = DEFAULT_MIN_BYTES): Flow<LargeMediaFile> = flow {
+        listOf(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+        ).forEach { collection ->
+            queryCollection(collection, minBytes).forEach { file ->
+                emit(file)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
 
     private fun queryCollection(collection: Uri, minBytes: Long): List<LargeMediaFile> {
         val projection = arrayOf(

@@ -1,10 +1,17 @@
 package az.simplesoft.tooliva.feature.clean.largefiles
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,16 +20,25 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import az.simplesoft.tooliva.core.media.MediaStoreDeleteCoordinator
 import az.simplesoft.tooliva.core.media.hasRequiredMediaPermissions
 import az.simplesoft.tooliva.core.media.requiredMediaPermissions
 
@@ -44,12 +61,26 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var hasAccess by remember { mutableStateOf(hasRequiredMediaPermissions(context)) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var pendingDeleteUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    val deleteCoordinator = remember(context) { MediaStoreDeleteCoordinator(context) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
     ) {
         hasAccess = hasRequiredMediaPermissions(context)
         if (hasAccess) viewModel.scan()
+    }
+    val deleteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result ->
+        val requestedUris = pendingDeleteUris
+        pendingDeleteUris = emptyList()
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.onPlatformDeletionFinished(requestedUris)
+        } else {
+            viewModel.showNotice("Trash request canceled. No files were changed.")
+        }
     }
 
     LaunchedEffect(hasAccess) {
@@ -58,9 +89,55 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
         }
     }
 
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Move selected files to Trash?") },
+            text = {
+                Text(
+                    "${state.selectedFiles.size} item(s), " +
+                        "${Formatter.formatFileSize(context, state.selectedBytes)} selected. " +
+                        "Android will ask for final confirmation. Nothing is changed if you cancel.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        val uris = state.selectedFiles.map { it.uri }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            runCatching { deleteCoordinator.createTrashIntentSender(uris) }
+                                .onSuccess { sender ->
+                                    if (sender == null) {
+                                        viewModel.showNotice("No files are selected.")
+                                    } else {
+                                        pendingDeleteUris = uris
+                                        deleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
+                                    }
+                                }
+                                .onFailure { error ->
+                                    viewModel.showNotice(error.message ?: "Unable to request Trash access.")
+                                }
+                        } else {
+                            viewModel.deleteImmediately(deleteCoordinator, uris)
+                        }
+                    },
+                    enabled = state.selectedFiles.isNotEmpty(),
+                ) {
+                    Text("Continue")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
@@ -120,6 +197,14 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                 }
             }
 
+            state.resultMessage?.let { message ->
+                item {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                        Text(message, modifier = Modifier.padding(16.dp))
+                    }
+                }
+            }
+
             state.errorMessage?.let { message ->
                 item {
                     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
@@ -134,6 +219,15 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                 }
             }
 
+            if (state.isLoading) {
+                item {
+                    OutlinedButton(onClick = viewModel::cancelScan, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Outlined.Cancel, contentDescription = null)
+                        Text("Cancel scan", modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+
             if (!state.isLoading && state.errorMessage == null && state.files.isEmpty()) {
                 item {
                     Text(
@@ -144,13 +238,40 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                 }
             }
 
+            if (state.selectedFiles.isNotEmpty()) {
+                item {
+                    Button(onClick = { showDeleteConfirmation = true }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Outlined.Delete, contentDescription = null)
+                        Text(
+                            "Move ${state.selectedFiles.size} to Trash · ${Formatter.formatFileSize(context, state.selectedBytes)}",
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+            }
+
             items(state.files, key = { it.uri.toString() }) { file ->
-                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                val isSelected = file.uri.toString() in state.selectedUris
+                Card(
+                    onClick = { viewModel.toggleSelection(file.uri.toString()) },
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) {
+                            MaterialTheme.colorScheme.secondaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer
+                        },
+                    ),
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        Checkbox(
+                            checked = isSelected,
+                            onCheckedChange = { viewModel.toggleSelection(file.uri.toString()) },
+                        )
                         Icon(Icons.Outlined.PhotoLibrary, contentDescription = null)
                         Column(modifier = Modifier.weight(1f)) {
                             Text(file.displayName, fontWeight = FontWeight.SemiBold, maxLines = 1)
@@ -160,13 +281,23 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        Text(
-                            Formatter.formatFileSize(context, file.sizeBytes),
-                            fontWeight = FontWeight.Bold,
-                        )
+                        Text(Formatter.formatFileSize(context, file.sizeBytes), fontWeight = FontWeight.Bold)
+                        IconButton(onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(file.uri, file.mimeType ?: "application/octet-stream")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (_: ActivityNotFoundException) {
+                                viewModel.showNotice("No app can open this media file.")
+                            }
+                        }) {
+                            Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Open ${file.displayName}")
+                        }
                     }
-                    HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
                 }
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
             }
         }
     }

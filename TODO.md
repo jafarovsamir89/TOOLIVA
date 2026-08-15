@@ -8,50 +8,50 @@ Legend: `[P0]` release blocker, `[P1]` important, `[P2]` later.
 - [ ] [P0] Reserve package name `az.simplesoft.tooliva`
 - [x] [P0] Create GitHub repository
 - [x] [P0] Add README / agent rules
-- [ ] [P0] Add full architecture / policy / privacy docs
-- [ ] [P0] Confirm minSdk 26
-- [ ] [P0] Set compileSdk/targetSdk 36
+- [x] [P0] Add full architecture / policy / privacy docs
+- [x] [P0] Confirm minSdk 26
+- [x] [P0] Set compileSdk/targetSdk 36
 - [ ] [P0] Choose ads SDK
-- [ ] [P0] Confirm no `MANAGE_EXTERNAL_STORAGE` in MVP
+- [x] [P0] Confirm no `MANAGE_EXTERNAL_STORAGE` in MVP
 - [ ] [P0] Confirm App Lock implementation strategy before release
 
 ## Phase 1 — Foundation
 
-- [ ] [P0] Create Kotlin + Jetpack Compose project
+- [x] [P0] Create Kotlin + Jetpack Compose project
 - [ ] [P0] Configure Gradle and version catalog
-- [ ] [P0] Set package namespace
-- [ ] [P0] Add Material 3
-- [ ] [P0] Add Navigation Compose
+- [x] [P0] Set package namespace
+- [x] [P0] Add Material 3
+- [x] [P0] Add Navigation Compose
 - [ ] [P0] Add Hilt
 - [ ] [P0] Add Room
 - [ ] [P0] Add DataStore
 - [ ] [P0] Add WorkManager
-- [ ] [P0] Create light/dark design system
+- [x] [P0] Create light/dark design system
 - [ ] [P0] Add common cards/buttons/dialogs
-- [ ] [P0] Add unit/UI test foundations
-- [ ] [P0] Add CI build
+- [x] [P0] Add unit/UI test foundations
+- [x] [P0] Add CI build
 
 ## Phase 2 — Home
 
-- [ ] [P0] Home screen
-- [ ] [P0] Storage summary card
-- [ ] [P0] Battery/device summary
-- [ ] [P0] Module cards
-- [ ] [P0] `CHECK MY PHONE` CTA
+- [x] [P0] Home screen
+- [x] [P0] Storage summary card
+- [x] [P0] Battery/device summary
+- [x] [P0] Module cards
+- [x] [P0] `CHECK MY PHONE` CTA
 - [ ] [P1] Favorites/recent tools
 - [ ] [P1] Insight card
 
 ## Phase 3 — Cleaner vertical slice
 
 ### Storage
-- [ ] [P0] MediaStore repository
-- [ ] [P0] Storage summary
-- [ ] [P0] Progressive scan
-- [ ] [P0] Cancellation
-- [ ] [P0] Large files query
-- [ ] [P0] Preview / multi-select
-- [ ] [P0] Central delete coordinator
-- [ ] [P0] Android trash/delete request flow
+- [x] [P0] MediaStore repository
+- [x] [P0] Storage summary
+- [x] [P0] Progressive scan
+- [x] [P0] Cancellation
+- [x] [P0] Large files query
+- [x] [P0] Preview / multi-select
+- [x] [P0] Central delete coordinator
+- [x] [P0] Android trash/delete request flow
 - [ ] [P0] Cleanup result screen
 
 ### Screenshots
