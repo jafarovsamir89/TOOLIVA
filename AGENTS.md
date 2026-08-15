@@ -40,8 +40,8 @@ Optimize for:
 
 Before implementing or modifying UI, inspect:
 
-- `docs/design/tooliva-ui-showcase.jpg`
-- `docs/design/tooliva-ui-system.jpg`
+- `docs/design/tooliva-ui-showcase.webp`
+- `docs/design/tooliva-ui-system.webp`
 - `docs/design/README.md`
 
 The agent must reproduce the approved visual language rather than inventing a new one:
@@ -67,7 +67,7 @@ Read:
 - `docs/PLAY_POLICY.md`
 - `docs/PRIVACY_SECURITY.md`
 - `docs/design/README.md`
-- both images under `docs/design/` for any UI task
+- both WebP images under `docs/design/` for any UI task
 
 Then:
 1. inspect existing implementation;
