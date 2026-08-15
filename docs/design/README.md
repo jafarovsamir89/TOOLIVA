@@ -4,8 +4,10 @@ These images are the visual source of truth for the first production UI.
 
 ## Files
 
-- `tooliva-ui-showcase.jpg` — product-level visual direction and key screens.
-- `tooliva-ui-system.jpg` — component/style system for implementation.
+- `tooliva-ui-showcase.webp` — product-level visual direction and key screens.
+- `tooliva-ui-system.webp` — component/style system for implementation.
+
+The WebP files are intentionally optimized previews so they remain lightweight inside the repository. They are sufficient for layout, hierarchy, color, component and spacing reference. The written rules in this file are authoritative where small text in the image is difficult to read.
 
 ## Implementation priority
 
@@ -17,22 +19,24 @@ These images are the visual source of truth for the first production UI.
 
 ## Core style
 
-- dark graphite background and surfaces
-- teal/cyan primary actions
-- blue secondary accents
-- large rounded cards (roughly 16–24dp)
+- background: near-black graphite (`#0B0F14` direction)
+- surfaces: dark slate (`#141A22` direction)
+- primary action: teal/cyan (`#00D4E8` direction)
+- secondary accent: blue (`#3B82F6` direction)
+- success: green, warning: amber; use red only for real destructive/error states
+- large rounded cards, normally 16–24dp radius
 - 4dp spacing grid
 - minimum 48dp touch targets
+- readable high-contrast typography
 - high information clarity, not decorative clutter
-- restrained use of red; red is for real destructive/error states only
 - no fake alarm or fake health UI
 
 ## Key screens to match first
 
 ### Home
 - Tooliva title and concise subtitle
-- storage ring/stat card
-- battery and thermal status cards
+- storage ring/stat card using real device values
+- battery and thermal status cards using real values or `Unavailable`
 - prominent `Check My Phone` CTA
 - module grid
 - bottom navigation
@@ -40,19 +44,32 @@ These images are the visual source of truth for the first production UI.
 ### Clean
 - storage overview
 - truthful explanatory text
-- list of cleanup tools with measured totals
+- list of cleanup tools with measured totals when available
+- never claim normal user files are automatically safe to delete
 
 ### Large Files
-- filter chips
+- category/filter chips
 - file list with selection state
 - thumbnail/type/size
-- selected-size total
+- selected item count and selected-size total
 - bottom delete/trash CTA
+- user-mediated Android deletion/trash confirmation
 
 ### Notification History
 - grouped notifications
 - clear app source and timestamps
 - optional locally-derived noise insights
+- never upload notification content
+
+## Component rules
+
+- Primary CTA: teal/cyan filled, strong contrast, 48dp+ height.
+- Secondary CTA: surface/outlined treatment.
+- Tool cards: one clear icon, title, short description, optional measured value, chevron when navigable.
+- Stat cards: large number/value first; label second.
+- Lists: avoid oversized rows; maintain scannability.
+- Destructive CTA: clearly identified as delete/trash; do not disguise it as a normal primary action.
+- Permission card: explain the exact benefit before opening the Android permission/special-access UI.
 
 ## Important
 
