@@ -27,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import az.simplesoft.tooliva.feature.clean.CleanRoute
 import az.simplesoft.tooliva.feature.home.HomeRoute
 
 private data class TopDestination(
@@ -90,7 +91,24 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
                     },
                 )
             }
-            composable("clean") { ModulePlaceholder("Clean", "Storage analysis starts here.") }
+            composable("clean") {
+                CleanRoute(onOpenTool = { navController.navigate("clean/$it") })
+            }
+            composable("clean/large-files") {
+                ModulePlaceholder("Large files", "Media access and the large-file scanner are the next vertical slice.")
+            }
+            composable("clean/screenshots") {
+                ModulePlaceholder("Screenshots", "Age filters and safe screenshot review will live here.")
+            }
+            composable("clean/duplicates") {
+                ModulePlaceholder("Exact duplicates", "Exact hash-based duplicate detection will live here.")
+            }
+            composable("clean/old-videos") {
+                ModulePlaceholder("Old videos", "Review large and old videos without fake junk claims.")
+            }
+            composable("clean/cleanup-swipe") {
+                ModulePlaceholder("Cleanup Swipe", "Fast keep/delete review with a final confirmation step.")
+            }
             composable("protect") { ModulePlaceholder("Protect", "App Lock, Vault and privacy tools.") }
             composable("tools") { ModulePlaceholder("Tools", "QR, network, compass and quick tools.") }
             composable("more") { ModulePlaceholder("More", "Settings, Pro and additional utilities.") }
