@@ -32,6 +32,24 @@ Official:
 
 If future functionality cannot work without broad access, stop and perform a fresh Play eligibility review before adding the permission.
 
+## Photo and video permissions
+
+`READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO` are also policy-sensitive for apps targeting Android 13+.
+
+Google Play expects apps to use the Android Photo Picker or another minimum-scope alternative when occasional/selected access is enough. An app that keeps broad photo/video access must submit a Play Console declaration and demonstrate that broad access is required for core functionality.
+
+Tooliva rule:
+- do not add broad media permissions just because a cleaner screen is easier to implement that way;
+- first document exactly which cleaner features require whole-library access;
+- support Android 14+ selected-photo access correctly when partial access is granted;
+- if V1 requires whole-library duplicate/screenshot analysis, prepare the Play declaration around Tooliva's core storage-management functionality before release;
+- always handle permission denial/partial access without pretending the scan represents the whole device.
+
+Official references:
+- https://support.google.com/googleplay/android-developer/answer/14115180
+- https://support.google.com/googleplay/android-developer/answer/16558241
+- https://developer.android.com/about/versions/14/changes/partial-photo-video-access
+
 ## Accessibility API
 
 Do not assume AccessibilityService is a free shortcut for App Lock.
