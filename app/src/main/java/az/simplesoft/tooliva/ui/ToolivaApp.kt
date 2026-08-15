@@ -28,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import az.simplesoft.tooliva.feature.clean.CleanRoute
+import az.simplesoft.tooliva.feature.clean.largefiles.LargeFilesRoute
 import az.simplesoft.tooliva.feature.home.HomeRoute
 
 private data class TopDestination(
@@ -94,9 +95,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("clean") {
                 CleanRoute(onOpenTool = { navController.navigate("clean/$it") })
             }
-            composable("clean/large-files") {
-                ModulePlaceholder("Large files", "Media access and the large-file scanner are the next vertical slice.")
-            }
+            composable("clean/large-files") { LargeFilesRoute() }
             composable("clean/screenshots") {
                 ModulePlaceholder("Screenshots", "Age filters and safe screenshot review will live here.")
             }
