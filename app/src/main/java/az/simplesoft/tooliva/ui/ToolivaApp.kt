@@ -29,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import az.simplesoft.tooliva.feature.clean.CleanRoute
 import az.simplesoft.tooliva.feature.clean.largefiles.LargeFilesRoute
+import az.simplesoft.tooliva.feature.clean.screenshots.ScreenshotCleanerRoute
 import az.simplesoft.tooliva.feature.home.HomeRoute
 
 private data class TopDestination(
@@ -96,9 +97,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
                 CleanRoute(onOpenTool = { navController.navigate("clean/$it") })
             }
             composable("clean/large-files") { LargeFilesRoute() }
-            composable("clean/screenshots") {
-                ModulePlaceholder("Screenshots", "Age filters and safe screenshot review will live here.")
-            }
+            composable("clean/screenshots") { ScreenshotCleanerRoute() }
             composable("clean/duplicates") {
                 ModulePlaceholder("Exact duplicates", "Exact hash-based duplicate detection will live here.")
             }

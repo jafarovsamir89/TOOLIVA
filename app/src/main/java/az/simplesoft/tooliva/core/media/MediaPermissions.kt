@@ -14,6 +14,16 @@ fun requiredMediaPermissions(): Array<String> = if (Build.VERSION.SDK_INT >= Bui
     arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
 }
 
+fun requiredScreenshotPermission(): Array<String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+} else {
+    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+}
+
 fun hasRequiredMediaPermissions(context: Context): Boolean = requiredMediaPermissions().all { permission ->
+    context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+}
+
+fun hasScreenshotPermission(context: Context): Boolean = requiredScreenshotPermission().all { permission ->
     context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 }

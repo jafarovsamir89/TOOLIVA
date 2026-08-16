@@ -3,10 +3,9 @@ package az.simplesoft.tooliva.feature.clean.largefiles
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +23,6 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FolderOpen
-import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -51,10 +49,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import az.simplesoft.tooliva.core.media.MediaStoreDeleteCoordinator
 import az.simplesoft.tooliva.core.media.hasRequiredMediaPermissions
 import az.simplesoft.tooliva.core.media.requiredMediaPermissions
+import az.simplesoft.tooliva.feature.clean.result.CleanupResultScreen
 
 @Composable
 fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
@@ -62,7 +63,6 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var hasAccess by remember { mutableStateOf(hasRequiredMediaPermissions(context)) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
-    var pendingDeleteUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     val deleteCoordinator = remember(context) { MediaStoreDeleteCoordinator(context) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -74,19 +74,42 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
     val deleteLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult(),
     ) { result ->
-        val requestedUris = pendingDeleteUris
-        pendingDeleteUris = emptyList()
-        if (result.resultCode == Activity.RESULT_OK) {
-            viewModel.onPlatformDeletionFinished(requestedUris)
-        } else {
-            viewModel.showNotice("Trash request canceled. No files were changed.")
+        val requestId = state.pendingDelete?.requestId
+        if (requestId != null) {
+            viewModel.onSystemDeleteResult(
+                requestId = requestId,
+                approved = result.resultCode == Activity.RESULT_OK,
+                coordinator = deleteCoordinator,
+            )
         }
+    }
+
+    LaunchedEffect(state.pendingDelete?.requestId) {
+        state.pendingDelete?.let { pending ->
+            deleteLauncher.launch(IntentSenderRequest.Builder(pending.intentSender).build())
+        }
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        val access = hasRequiredMediaPermissions(context)
+        hasAccess = access
+        if (!access) viewModel.onMediaPermissionRevoked()
     }
 
     LaunchedEffect(hasAccess) {
         if (hasAccess && state.files.isEmpty() && !state.isLoading && state.errorMessage == null) {
             viewModel.scan()
         }
+    }
+
+    val cleanupResult = state.cleanupResult
+    if (cleanupResult != null) {
+        BackHandler { viewModel.dismissCleanupResult() }
+        CleanupResultScreen(
+            result = cleanupResult,
+            onDone = viewModel::dismissCleanupResult,
+        )
+        return
     }
 
     if (showDeleteConfirmation) {
@@ -104,23 +127,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                 TextButton(
                     onClick = {
                         showDeleteConfirmation = false
-                        val uris = state.selectedFiles.map { it.uri }
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            runCatching { deleteCoordinator.createTrashIntentSender(uris) }
-                                .onSuccess { sender ->
-                                    if (sender == null) {
-                                        viewModel.showNotice("No files are selected.")
-                                    } else {
-                                        pendingDeleteUris = uris
-                                        deleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
-                                    }
-                                }
-                                .onFailure { error ->
-                                    viewModel.showNotice(error.message ?: "Unable to request Trash access.")
-                                }
-                        } else {
-                            viewModel.deleteImmediately(deleteCoordinator, uris)
-                        }
+                        viewModel.requestDelete(deleteCoordinator)
                     },
                     enabled = state.selectedFiles.isNotEmpty(),
                 ) {
@@ -197,14 +204,6 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                 }
             }
 
-            state.resultMessage?.let { message ->
-                item {
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                        Text(message, modifier = Modifier.padding(16.dp))
-                    }
-                }
-            }
-
             state.errorMessage?.let { message ->
                 item {
                     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
@@ -228,6 +227,23 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                 }
             }
 
+            if (state.isPreparingDelete) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            CircularProgressIndicator()
+                            Text("Checking the selected files and verifying the result…")
+                        }
+                    }
+                }
+            }
+
             if (!state.isLoading && state.errorMessage == null && state.files.isEmpty()) {
                 item {
                     Text(
@@ -240,7 +256,11 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
 
             if (state.selectedFiles.isNotEmpty()) {
                 item {
-                    Button(onClick = { showDeleteConfirmation = true }, modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { showDeleteConfirmation = true },
+                        enabled = !state.isPreparingDelete,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         Icon(Icons.Outlined.Delete, contentDescription = null)
                         Text(
                             "Move ${state.selectedFiles.size} to Trash · ${Formatter.formatFileSize(context, state.selectedBytes)}",
@@ -290,7 +310,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                             try {
                                 context.startActivity(intent)
                             } catch (_: ActivityNotFoundException) {
-                                viewModel.showNotice("No app can open this media file.")
+                                viewModel.showError("No app can open this media file.")
                             }
                         }) {
                             Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Open ${file.displayName}")
