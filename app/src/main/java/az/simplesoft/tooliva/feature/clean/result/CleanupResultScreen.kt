@@ -98,9 +98,17 @@ fun CleanupResultScreen(
                     )
                     ResultRow(
                         icon = Icons.Outlined.CheckCircle,
-                        label = "Space freed",
+                        label = if (result.trashedCount > 0) "Physically freed" else "Space freed",
                         value = "${result.freedCount} · ${Formatter.formatFileSize(context, result.freedBytes)}",
                     )
+                    if (result.trashedCount > 0) {
+                        Text(
+                            "Items moved to Trash still use storage until Trash is emptied.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 44.dp, top = 2.dp),
+                        )
+                    }
                     if (result.missingBeforeCount > 0) {
                         ResultRow(
                             icon = Icons.Outlined.Info,

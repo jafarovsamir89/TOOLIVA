@@ -4,11 +4,13 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.text.format.Formatter
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.BackHandler
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -37,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -142,16 +145,22 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
         )
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = 16.dp,
+                end = 16.dp,
+                bottom = if (state.selectedFiles.isNotEmpty()) 104.dp else 16.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
         item {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text("Large files", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
                 Text(
-                    "Find photos and videos larger than 100 MB. Nothing leaves your phone.",
+                    "Find files larger than 100 MB that Android exposes through its shared media index. Nothing leaves your phone.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -246,27 +255,11 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
 
             if (!state.isLoading && state.errorMessage == null && state.files.isEmpty()) {
                 item {
-                    Text(
-                        "No photos or videos larger than 100 MB were found.",
+                        Text(
+                            "No accessible files larger than 100 MB were found.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 20.dp),
                     )
-                }
-            }
-
-            if (state.selectedFiles.isNotEmpty()) {
-                item {
-                    Button(
-                        onClick = { showDeleteConfirmation = true },
-                        enabled = !state.isPreparingDelete,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(Icons.Outlined.Delete, contentDescription = null)
-                        Text(
-                            "Move ${state.selectedFiles.size} to Trash · ${Formatter.formatFileSize(context, state.selectedBytes)}",
-                            modifier = Modifier.padding(start = 8.dp),
-                        )
-                    }
                 }
             }
 
@@ -318,6 +311,35 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                     }
                 }
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
+            }
+        }
+        }
+
+        if (state.selectedFiles.isNotEmpty()) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+            ) {
+                Button(
+                    onClick = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            viewModel.requestDelete(deleteCoordinator)
+                        } else {
+                            showDeleteConfirmation = true
+                        }
+                    },
+                    enabled = !state.isPreparingDelete,
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                ) {
+                    Icon(Icons.Outlined.Delete, contentDescription = null)
+                    Text(
+                        "Move ${state.selectedFiles.size} to Trash · ${Formatter.formatFileSize(context, state.selectedBytes)}",
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
             }
         }
     }

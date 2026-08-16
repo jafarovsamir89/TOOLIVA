@@ -3,6 +3,7 @@ package az.simplesoft.tooliva.core.media
 import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -19,19 +20,19 @@ data class LargeMediaFile(
 
 class MediaStoreLargeFileRepository(context: Context) {
     private val resolver = context.applicationContext.contentResolver
+    private val collection: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
+    } else {
+        MediaStore.Files.getContentUri("external")
+    }
 
     fun scan(minBytes: Long = DEFAULT_MIN_BYTES): Flow<LargeMediaFile> = flow {
-        listOf(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-        ).forEach { collection ->
-            queryCollection(collection, minBytes).forEach { file ->
-                emit(file)
-            }
+        queryCollection(minBytes).forEach { file ->
+            emit(file)
         }
     }.flowOn(Dispatchers.IO)
 
-    private fun queryCollection(collection: Uri, minBytes: Long): List<LargeMediaFile> {
+    private fun queryCollection(minBytes: Long): List<LargeMediaFile> {
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
             MediaStore.MediaColumns.DISPLAY_NAME,

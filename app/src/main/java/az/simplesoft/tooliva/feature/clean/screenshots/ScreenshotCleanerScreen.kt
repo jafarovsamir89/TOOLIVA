@@ -45,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -156,11 +157,17 @@ fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) 
         )
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = 16.dp,
+                end = 16.dp,
+                bottom = if (state.selectedFiles.isNotEmpty()) 104.dp else 16.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
         item {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text("Screenshots", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
@@ -282,22 +289,6 @@ fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) 
                 }
             }
 
-            if (state.selectedFiles.isNotEmpty()) {
-                item {
-                    Button(
-                        onClick = { showDeleteConfirmation = true },
-                        enabled = !state.isPreparingDelete,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(Icons.Outlined.Delete, contentDescription = null)
-                        Text(
-                            "Move ${state.selectedFiles.size} to Trash · ${Formatter.formatFileSize(context, state.selectedBytes)}",
-                            modifier = Modifier.padding(start = 8.dp),
-                        )
-                    }
-                }
-            }
-
             items(state.files.chunked(2)) { row ->
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     row.forEach { file ->
@@ -309,6 +300,35 @@ fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) 
                         )
                     }
                     if (row.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+        }
+
+        if (state.selectedFiles.isNotEmpty()) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+            ) {
+                Button(
+                    onClick = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            viewModel.requestDelete(deleteCoordinator)
+                        } else {
+                            showDeleteConfirmation = true
+                        }
+                    },
+                    enabled = !state.isPreparingDelete,
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                ) {
+                    Icon(Icons.Outlined.Delete, contentDescription = null)
+                    Text(
+                        "Move ${state.selectedFiles.size} to Trash · ${Formatter.formatFileSize(context, state.selectedBytes)}",
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
         }

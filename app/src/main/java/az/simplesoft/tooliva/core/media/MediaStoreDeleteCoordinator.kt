@@ -84,12 +84,6 @@ class MediaStoreDeleteCoordinator(context: Context) {
 
         prepared.eligible.forEach { item ->
             val active = query(item.uri, includeTrashed = false)
-            if (active.exists) {
-                failedCount++
-                failedBytes += item.sizeBytes
-                return@forEach
-            }
-
             val trashed = if (operation == CleanupOperation.TRASH && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 query(item.uri, includeTrashed = true)
             } else {
@@ -99,6 +93,12 @@ class MediaStoreDeleteCoordinator(context: Context) {
             if (trashed.exists && trashed.isTrashed) {
                 trashedCount++
                 trashedBytes += trashed.sizeBytes.takeIf { it > 0L } ?: item.sizeBytes
+            } else if (active.isTrashed && operation == CleanupOperation.TRASH) {
+                trashedCount++
+                trashedBytes += active.sizeBytes.takeIf { it > 0L } ?: item.sizeBytes
+            } else if (active.exists) {
+                failedCount++
+                failedBytes += item.sizeBytes
             } else {
                 freedCount++
                 freedBytes += item.sizeBytes
