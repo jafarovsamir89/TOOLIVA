@@ -35,7 +35,7 @@ Do not prioritize unrelated micro-tools until Cleaner + File Manager are strong.
 - [ ] [P0] Reserve/final-check package id `az.simplesoft.tooliva`
 - [x] [P0] Product decision: Cleaner + File Manager are core purposes
 - [x] [P0] Product decision: `MANAGE_EXTERNAL_STORAGE` approved for implementation/prototype
-- [ ] [P0] Write final All Files Access in-app disclosure copy
+- [~] [P0] Write final All Files Access in-app disclosure copy — prototype disclosure is implemented; final product copy still needs review
 - [ ] [P0] Draft Google Play `MANAGE_EXTERNAL_STORAGE` declaration text
 - [ ] [P0] Decide `QUERY_ALL_PACKAGES` only after App Manager implementation proves broad visibility is necessary
 - [ ] [P0] Choose ads SDK later; do not block current storage work
@@ -90,23 +90,23 @@ This is now the highest-priority engineering phase.
 
 ## All Files Access
 
-- [ ] [P0] Add `MANAGE_EXTERNAL_STORAGE` to prototype manifest/config
-- [ ] [P0] Add `Environment.isExternalStorageManager()` access-state detection
-- [ ] [P0] Add truthful pre-permission disclosure screen
-- [ ] [P0] Open correct Special App Access settings flow
-- [ ] [P0] Handle grant / deny / revoke cleanly
-- [ ] [P0] Clearly display `Full Storage Mode` vs `Limited Mode`
-- [ ] [P0] Ensure app remains functional in Limited Mode
-- [ ] [P0] Add tests for access-state transitions where possible
+- [~] [P0] Add `MANAGE_EXTERNAL_STORAGE` to prototype manifest/config — implemented; production Play review remains
+- [~] [P0] Add `Environment.isExternalStorageManager()` access-state detection — implemented
+- [~] [P0] Add truthful pre-permission disclosure screen — implemented in Clean/Large Files access card
+- [~] [P0] Open correct Special App Access settings flow — implemented; OEM/manual validation pending
+- [~] [P0] Handle grant / deny / revoke cleanly — implemented in state refresh/fallback; physical validation pending
+- [~] [P0] Clearly display `Full Storage Mode` vs `Limited Mode` — implemented
+- [~] [P0] Ensure app remains functional in Limited Mode — existing MediaStore fallback preserved; physical validation pending
+- [x] [P0] Add tests for access-state transitions where possible
 
 ## Storage abstraction
 
-- [ ] [P0] Introduce `StorageProvider`/domain abstraction
-- [ ] [P0] Keep MediaStore provider as Limited Mode implementation
-- [ ] [P0] Implement Full Storage provider for accessible shared storage
-- [ ] [P0] Normalize file model: path/ref/name/extension/MIME/size/date/category/volume
-- [ ] [P0] Exclusion rules for Tooliva temp/internal files
-- [ ] [P0] Protected-path handling; never attempt Android restriction bypasses
+- [~] [P0] Introduce `StorageProvider`/domain abstraction — implemented for the first Large Files slice
+- [x] [P0] Keep MediaStore provider as Limited Mode implementation
+- [~] [P0] Implement Full Storage provider for accessible shared storage — implemented; physical scan pending
+- [~] [P0] Normalize file model: path/ref/name/extension/MIME/size/date/category/volume — implemented for Large Files
+- [~] [P0] Exclusion rules for Tooliva temp/internal files — protected shared-storage paths are excluded; index exclusions remain
+- [~] [P0] Protected-path handling; never attempt Android restriction bypasses — implemented and build-verified; device behavior pending
 
 ## Index
 
@@ -133,13 +133,13 @@ This is now the highest-priority engineering phase.
 
 ## Large Files — full scope
 
-- [ ] [P0] Scan all accessible shared-storage file types in Full Mode
-- [ ] [P0] Filters: All / Video / Image / Audio / APK / Archive / Document / Download / Other
-- [ ] [P0] Thresholds 100 MB / 500 MB / 1 GB
-- [ ] [P0] Sort by size/date/name
-- [ ] [P0] Open/share/details
-- [ ] [P0] Multi-select / Select all
-- [ ] [P0] Safe delete/trash + Cleanup Receipt
+- [~] [P0] Scan all accessible shared-storage file types in Full Mode — scanner implemented; manual APK/ZIP/PDF verification pending
+- [~] [P0] Filters: All / Video / Image / Audio / APK / Archive / Document / Download / Other
+- [~] [P0] Thresholds 100 MB / 500 MB / 1 GB — implemented; manual UI verification pending
+- [~] [P0] Sort by size/date/name — implemented; manual UI verification pending
+- [~] [P0] Open/share/details — open implemented; share/details remain
+- [~] [P0] Multi-select / Select all — implemented; manual UI verification pending
+- [~] [P0] Safe delete/trash + Cleanup Receipt — direct Full Mode deletion and existing Limited Trash flow implemented; physical verification pending
 - [ ] [P0] Xiaomi physical test with APK + ZIP + PDF + media
 - [ ] [P0] Samsung physical test
 - [ ] [P0] Pixel physical test

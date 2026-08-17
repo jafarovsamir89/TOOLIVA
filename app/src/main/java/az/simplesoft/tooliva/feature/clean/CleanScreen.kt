@@ -24,6 +24,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import android.content.ActivityNotFoundException
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -33,6 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import az.simplesoft.tooliva.feature.home.HomeViewModel
+import az.simplesoft.tooliva.core.storage.StorageAccessCoordinator
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 
 private data class CleanTool(
     val id: String,
@@ -56,6 +63,12 @@ fun CleanRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val accessCoordinator = remember(context) { StorageAccessCoordinator(context) }
+    var accessState by remember(context) { mutableStateOf(accessCoordinator.currentState()) }
+    var accessActionError by remember { mutableStateOf<String?>(null) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        accessState = accessCoordinator.currentState()
+    }
     val used = Formatter.formatFileSize(context, state.storageUsedBytes)
     val total = Formatter.formatFileSize(context, state.storageTotalBytes)
     val free = Formatter.formatFileSize(context, state.storageAvailableBytes)
@@ -104,6 +117,22 @@ fun CleanRoute(
                     }
                 }
             }
+        }
+
+        item {
+            StorageAccessCard(
+                fullMode = accessState.mode == az.simplesoft.tooliva.core.storage.StorageAccessMode.FULL,
+                supported = accessState.fullStorageSupported,
+                errorMessage = accessActionError,
+                onEnableFull = {
+                    try {
+                        accessCoordinator.allFilesSettingsIntent()?.let(context::startActivity)
+                            ?: run { accessActionError = "Full Storage Access is not available on this Android version." }
+                    } catch (_: ActivityNotFoundException) {
+                        accessActionError = "Android did not provide the Full Storage Access settings screen."
+                    }
+                },
+            )
         }
 
         item {

@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import java.io.File
 
 /** Centralizes preflight, user-mediated Trash/delete requests and post-action verification. */
 class MediaStoreDeleteCoordinator(context: Context) {
@@ -31,6 +32,7 @@ class MediaStoreDeleteCoordinator(context: Context) {
 
     fun createTrashIntentSender(prepared: PreparedCleanupDeletion): IntentSender? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || prepared.eligible.isEmpty()) return null
+        if (prepared.eligible.any { it.uri.scheme == "file" }) return null
         return MediaStore.createTrashRequest(
             resolver,
             prepared.eligible.map(CleanupFile::uri),
@@ -40,7 +42,11 @@ class MediaStoreDeleteCoordinator(context: Context) {
 
     fun deleteImmediatelyAndVerify(prepared: PreparedCleanupDeletion): CleanupResult {
         prepared.eligible.forEach { item ->
-            resolver.delete(item.uri, null, null)
+            if (item.uri.scheme == "file") {
+                File(item.uri.path.orEmpty()).delete()
+            } else {
+                resolver.delete(item.uri, null, null)
+            }
         }
         return verify(prepared, operation = CleanupOperation.DELETE)
     }
@@ -134,6 +140,14 @@ class MediaStoreDeleteCoordinator(context: Context) {
     }
 
     private fun query(uri: Uri, includeTrashed: Boolean): MediaEntryState {
+        if (uri.scheme == "file") {
+            val file = File(uri.path.orEmpty())
+            return if (file.exists() && file.isFile) {
+                MediaEntryState(exists = true, sizeBytes = file.length(), isTrashed = false)
+            } else {
+                MediaEntryState.absent()
+            }
+        }
         val projection = buildList {
             add(MediaStore.MediaColumns.SIZE)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

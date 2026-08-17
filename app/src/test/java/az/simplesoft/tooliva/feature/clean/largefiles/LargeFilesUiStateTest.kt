@@ -13,4 +13,5 @@ class LargeFilesUiStateTest {
         assertTrue(state.selectedFiles.isEmpty())
         assertEquals(0L, state.selectedBytes)
     }
+
 }

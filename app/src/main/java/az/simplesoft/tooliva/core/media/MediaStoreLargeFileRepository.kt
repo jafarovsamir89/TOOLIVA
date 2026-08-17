@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import az.simplesoft.tooliva.core.storage.StorageCategory
 
 data class LargeMediaFile(
     val uri: Uri,
@@ -16,6 +17,8 @@ data class LargeMediaFile(
     val sizeBytes: Long,
     val mimeType: String?,
     val modifiedEpochSeconds: Long,
+    val category: StorageCategory = StorageCategory.OTHER,
+    val path: String? = null,
 )
 
 class MediaStoreLargeFileRepository(context: Context) {
@@ -62,6 +65,10 @@ class MediaStoreLargeFileRepository(context: Context) {
                             sizeBytes = size,
                             mimeType = cursor.getString(mimeIndex),
                             modifiedEpochSeconds = cursor.getLong(modifiedIndex),
+                            category = classify(
+                                cursor.getString(nameIndex).orEmpty(),
+                                cursor.getString(mimeIndex),
+                            ),
                         ),
                     )
                 }
@@ -71,5 +78,18 @@ class MediaStoreLargeFileRepository(context: Context) {
 
     companion object {
         const val DEFAULT_MIN_BYTES: Long = 100L * 1024L * 1024L
+
+        private fun classify(name: String, mimeType: String?): StorageCategory {
+            val extension = name.substringAfterLast('.', "").lowercase()
+            return when {
+                mimeType?.startsWith("video/") == true -> StorageCategory.VIDEO
+                mimeType?.startsWith("image/") == true -> StorageCategory.IMAGE
+                mimeType?.startsWith("audio/") == true -> StorageCategory.AUDIO
+                extension == "apk" -> StorageCategory.APK
+                extension in setOf("zip", "rar", "7z", "tar", "gz", "bz2", "xz", "iso") -> StorageCategory.ARCHIVE
+                extension in setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "csv", "epub") -> StorageCategory.DOCUMENT
+                else -> StorageCategory.OTHER
+            }
+        }
     }
 }
