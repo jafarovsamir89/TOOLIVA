@@ -1,219 +1,328 @@
 # Tooliva — Business Plan
 
+Market-driven revision: 2026-08-16
+
 ## Executive summary
 
-Tooliva is an Android all-in-one utility combining storage cleaning, privacy/protection, diagnostics, file tools and everyday utilities.
+Tooliva is an Android **Cleaner + File Manager + Device Tools** product.
+
+The acquisition engine is storage pressure: users install Tooliva because they need to understand and free space. The retention engine is broader device utility: file management, app/device diagnostics, Notification History and practical local tools.
 
 Business model:
-1. acquire free users through Google Play search/discovery;
-2. monetize free users with restrained advertising;
-3. sell a one-time Pro upgrade;
-4. keep infrastructure cost close to zero through local processing.
+1. acquire users through high-intent Google Play searches such as cleaner, large files, file manager, storage analyzer and duplicate files;
+2. give free users a genuinely useful cleaner/file manager;
+3. monetize with restrained advertising that never interrupts destructive/storage-result flows;
+4. offer a one-time Pro upgrade rather than relying on a weekly-subscription trap;
+5. keep infrastructure cost near zero through local processing.
 
-The initial goal is a **durable utility asset** that can keep generating revenue after development costs stabilize.
+## Market thesis
 
-## Customer
+Current Google Play leaders prove demand for:
+- deep storage cleaners;
+- file managers/search;
+- large-file analysis;
+- APK/archive/document discovery;
+- duplicate/screenshot cleanup;
+- app management;
+- storage visualization;
+- cache-maintenance workflows;
+- device diagnostics.
 
-Primary:
-- Android users with storage pressure
-- users searching for cleaner / duplicate cleaner
-- users searching for notification history
-- users searching for app lock / vault
-- users searching for phone tests / device info
-- users searching for QR / PDF / image utilities
+The category also has persistent trust problems: excessive ads, scare creatives, confusing subscriptions and fears of wrong-file deletion.
 
-Secondary:
-- phone technicians
-- used-phone buyers
-- students
-- power users
-- users of low/mid-range Android devices
+Tooliva's opportunity is **depth + trust**.
 
-## Value proposition
+Competitive research is documented in `docs/MARKET_RESEARCH_2026.md`.
 
-### Main promise
+## Primary customer
 
-**One useful Android app instead of ten.**
+Android users who:
+- are running out of storage;
+- cannot understand what occupies tens of gigabytes;
+- have old Downloads/APKs/archives/documents/media;
+- need to find large files/folders quickly;
+- want a better file browser/search experience;
+- want duplicates/screenshots cleaned safely;
+- want one trusted utility instead of many ad-heavy apps.
 
-### Trust promise
+Secondary users:
+- power users;
+- technicians;
+- used-phone buyers;
+- users with low/mid-range storage devices;
+- users who later value Notification History, diagnostics and image/PDF/QR tools.
 
-**No fake boost. No fake cooling. No fake danger warnings.**
+## Main promise
 
-### Privacy promise
+**Find what takes your storage. Clean it safely. Manage your Android from one trusted toolbox.**
 
-Core scans and user content stay on device.
+Trust promises:
+- no fake boost;
+- no fake cooling;
+- no fake virus panic;
+- no unexplained junk number;
+- no silent deletion;
+- no pretending Trash bytes are physically freed;
+- no upload of file inventory/content for cloud analysis.
 
-## Competitive strategy
+## Competitive wedge
 
-Do not try to beat every specialist application at every feature.
+Tooliva should combine:
+- deep storage understanding comparable to serious cleaners/analyzers;
+- file-management/search capability that justifies broad-storage access;
+- a Files-by-Google-like review-before-delete trust model;
+- a polished mainstream UI instead of power-user complexity;
+- verified Cleanup Receipts;
+- strong recurring utility modules.
 
-Win through:
-- polished unified UX
-- truthful measurable results
-- excellent cleaner/review UX
-- privacy-first local processing
-- a few standout features
-- broad ASO surface area
+Required differentiators:
+1. Verified Cleanup Receipt
+2. Trash vs Physically Freed accounting
+3. Storage Map
+4. Explainable Junk
+5. Full Storage Mode + Limited fallback
+6. One Scan → Action Plan
+7. local-first privacy
+8. respectful monetization
 
-Standout candidates:
-- Phone Checkup
-- Cleanup Swipe
-- EXIF Privacy Clean
-- notification-noise insights
-- unified hardware tests
+## Product hierarchy
+
+### Acquisition / hero features
+- Deep Storage Scan
+- Large Files
+- Downloads/APKs/Archives/Documents
+- File Manager / Search
+- Storage Map
+- Exact Duplicates
+- Screenshot Cleaner
+
+### Retention features
+- App Manager
+- Phone Doctor / Check My Phone
+- Notification History
+- image/EXIF/PDF tools
+- QR/network/sensor tools
+
+### Later high-risk retention
+- Vault
+- App Lock
 
 ## Monetization
 
 ### Free
+Must remain useful enough to earn ratings and retention:
+- full core scan/review capability;
+- file browser/search;
+- basic cleanup categories;
+- basic utilities.
 
-- core tools
-- restrained ads
-
-Rules:
-- banner/native where unobtrusive
-- interstitial only after meaningful completion
-- frequency cap
-- no ads in Vault/App Lock authentication
-- no fake Fix buttons
+Advertising rules:
+- no startup interstitial before useful content;
+- no ad before scan result;
+- no ad between file selection and Cleanup Receipt;
+- no ads on permissions/destructive confirmation;
+- no fake system/virus ad placements;
+- frequency caps;
+- paid/no-ads state actually removes ads.
 
 ### Pro Lifetime
+Initial strategy: one-time purchase with regional pricing tests.
 
-Launch hypothesis: **US$4.99 lifetime** with regional pricing where appropriate.
+Possible Pro value:
+- remove ads;
+- advanced filters/sorting;
+- advanced Storage Map/history;
+- similar-photo tools;
+- bulk/advanced file operations where appropriate;
+- extra customization/premium local tools.
 
-Benefits:
-- no ads
-- advanced duplicate filters
-- similar-photo feature when ready
-- advanced cleanup filters
-- premium local tools/themes
+Do not cripple basic cleaning so badly that the free app becomes an advertisement for Pro.
 
-Do not force a subscription unless future premium services actually create ongoing cost/value.
+A subscription should be introduced only if a future feature has genuine ongoing service/cost/value.
 
 ## Cost structure
 
-V1 core backend cost: **$0 required**.
+Core V1 backend cost: approximately zero by design.
 
-Possible recurring costs:
-- Play developer/account fees
-- privacy-policy/domain hosting
-- crash/analytics tooling depending tier
-- ad/consent tooling
-- creatives/test devices
+Potential costs:
+- Play developer/account fees;
+- domain/privacy hosting;
+- analytics/crash tooling depending tier;
+- ad consent/mediation tooling;
+- test devices;
+- creative production/localization.
 
-No per-scan AI/API expense.
+No per-scan AI/cloud inference cost is required for core cleaning.
 
-## Growth
+## Acquisition / ASO clusters
 
-### Google Play ASO clusters
-
-Cleaner:
+Primary:
+- phone cleaner
 - storage cleaner
+- file manager
+- file explorer
+- storage analyzer
+- disk usage
 - large files
+- find large files
+- duplicate files
 - duplicate photos
 - screenshot cleaner
+- cache cleaner
+- APK cleaner
+- downloads cleaner
 
-Privacy:
-- app lock
-- private vault
-- notification history
-
-Diagnostics:
-- phone test
+Secondary:
 - device info
-- sensor test
+- phone test
 - battery temperature
-
-Files:
+- notification history
+- app manager
 - image compressor
 - remove EXIF/GPS
 - image to PDF
-
-Utilities:
 - QR scanner/generator
-- Wi-Fi QR
-- ping/network tools
-- compass/level
 
-### Short-form creative ideas
+Store text must remain natural and match the shipped build.
 
-- “I found 8 GB hiding in screenshots”
-- “This photo contains your GPS location”
-- “Which app sent you 900 notifications?”
-- “Check a used Android phone in 60 seconds”
-- “One app replaced these 8 utilities”
+## Creative / marketing concepts
 
-### Localization
+- `What is using 38 GB on your phone?`
+- `Find every file larger than 1 GB`
+- `You still have 14 old APK installers`
+- `See your storage as a map`
+- `2.4 GB moved to Trash — 620 MB physically freed`
+- `824 MB of screenshots older than 90 days`
+- `One app replaced my cleaner + file manager + phone checker`
 
-Start from install data. Likely early candidates:
-- English
-- Russian
-- Azerbaijani
-- Turkish
-- Spanish
-- Portuguese
-- Indonesian
-- Hindi
-
-Do not translate every market before there is evidence.
+Do not market features that are still placeholders.
 
 ## Retention thesis
 
-Cleaner alone is episodic. Tooliva should remain installed because other modules recur:
-- Notification History
-- App Lock/Vault if shipped
-- Phone Checkup
-- app usage
-- image/PDF tools
-- QR/network tools
+A cleaner alone is episodic. Tooliva stays installed because:
+- File Manager/Search is recurrent;
+- Phone Checkup gives ongoing maintenance value;
+- App Manager helps monitor large/unused apps;
+- Notification History is continuously useful;
+- image/PDF/QR/network tools create repeated utility.
 
 Avoid spam notifications as a retention hack.
 
-## Metrics
+Useful optional reminders may later include:
+- storage above a user-selected threshold;
+- user-enabled periodic storage review;
+- notification retention reminder.
+
+## Product metrics
 
 Acquisition:
-- store conversion
-- installs/country/source
+- store listing conversion;
+- installs by country/source;
+- keyword/source performance.
 
 Activation:
-- first tool opened
-- first scan completed
-- first useful result
+- Full Storage Mode grant rate;
+- first scan completion;
+- first useful recommendation opened;
+- first File Manager search;
+- first cleanup completed.
 
-Engagement:
-- DAU/MAU
-- tools used/user
-- checkups and cleanups/user
+Cleaner quality:
+- scan duration;
+- indexed file count;
+- cancellation rate;
+- cleanup verification success;
+- partial/failure rate;
+- bytes moved to Trash;
+- bytes physically freed;
+- duplicate detection duration.
 
-Quality:
-- crash-free users
-- ANR
-- scan duration
-- deletion failure rate
-- rating/review themes
+Retention:
+- DAU/MAU;
+- File Manager opens/user;
+- searches/user;
+- checkups/user;
+- Notification History usage when enabled.
 
 Monetization:
-- ad impressions per active user
-- ad revenue by country
-- Pro conversion
-- refund rate
+- ads/user without rating decline;
+- Pro conversion;
+- refund rate;
+- revenue by market.
 
-## Risks
+Trust/quality:
+- crash-free users;
+- ANR;
+- rating;
+- review sentiment around deletion, permissions and ads.
 
-### Crowded category
-Mitigation: trust, quality, standout workflows and ASO breadth.
+## Major risks
 
-### Permission rejection
-Mitigation: avoid All Files Access in MVP, just-in-time permissions and isolate risky modules.
+### Google Play restricted-permission approval
+Mitigation:
+- File Manager + on-device search are genuine core functionality;
+- Full Storage Mode has a transparent user flow;
+- Limited Mode exists;
+- prepare the All Files Access declaration before production;
+- store listing prominently reflects the file-management purpose.
 
-### Bad reviews after deletion
-Mitigation: preview, system-mediated delete/trash, confirmation and destructive-operation QA.
+### Wrong-file deletion
+Mitigation:
+- preview/review;
+- conservative default selections;
+- explainable categories;
+- central delete/trash coordinator;
+- post-action verification;
+- Cleanup Receipt;
+- destructive regression suite.
+
+### Category is crowded
+Mitigation:
+- build deeper than shallow one-tap cleaners;
+- simplify more than power-user cleaners;
+- differentiate through Storage Map, receipts and trust.
 
 ### Ads damage ratings
-Mitigation: strict frequency cap and lifetime Pro.
+Mitigation:
+- strict placement/frequency rules;
+- lifetime Pro;
+- no ads in critical workflows.
 
 ### Feature bloat
-Mitigation: modular architecture, analytics and delete weak features.
+Mitigation:
+- Cleaner/File Manager Beta before dozens of micro-tools;
+- product pillars, not a wall of random icons;
+- measure actual usage after launch.
+
+## Launch sequence
+
+### Stage 1 — Cleaner/File Manager Beta
+Prove:
+- Full Storage Mode;
+- all-type Large Files;
+- Downloads/APK/archive/document categories;
+- File Manager/Search;
+- Storage Map;
+- duplicates/screenshots;
+- cache system flow;
+- permission/deletion reliability.
+
+### Stage 2 — Tooliva 1.0
+Add recurring value:
+- App Manager;
+- Phone Doctor / Check My Phone;
+- Notification History;
+- essential image/PDF/QR/network tools;
+- ads + Pro;
+- Play declarations/privacy.
+
+### Stage 3
+Only after data/reliability:
+- Vault;
+- App Lock;
+- similar-photo intelligence;
+- additional power-user tools.
 
 ## Product thesis
 
-> A user discovers Tooliva for one high-intent problem, then keeps it because it becomes the trusted toolbox for several recurring Android tasks.
+> A user discovers Tooliva because storage is full, trusts it because every cleanup is explainable and verified, and keeps it because it becomes the phone's file and maintenance toolbox.
