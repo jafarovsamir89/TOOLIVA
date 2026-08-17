@@ -1,188 +1,217 @@
 # Tooliva
 
-**Tooliva — Cleaner, App Lock & Tools**
+**Tooliva — Cleaner, File Manager & Device Tools**
 
-> One Android app for cleaning storage, protecting private data, diagnosing the phone, working with files and handling everyday utilities.
+> A serious Android storage cleaner and file manager first, with diagnostics, privacy and everyday utilities around it.
 
-## Product idea
+## Product direction
 
-Tooliva is an **offline-first, all-in-one Android utility**. It replaces a group of separate apps with one polished toolbox:
+Tooliva is no longer defined as a shallow `all-in-one app with many icons`.
 
-- Smart Cleaner
-- Large Files
+Its core jobs are:
+
+1. **Understand storage** — what is actually taking space?
+2. **Clean safely** — what can the user review and remove?
+3. **Manage files** — browse, search, sort, move, copy, rename and delete shared-storage files.
+4. **Maintain the phone** — app/storage/device diagnostics.
+5. **Stay useful after cleanup** — Notification History, image/PDF/QR/network tools, and later Vault/App Lock.
+
+The market basis for this direction is documented in:
+
+- `docs/MARKET_RESEARCH_2026.md`
+
+## Product promise
+
+**Find what is taking your storage. Clean it safely. Manage your phone with one trusted toolbox.**
+
+Tooliva must never use:
+- fake RAM boost;
+- fake CPU cooling;
+- fake antivirus warnings;
+- invented battery-health scores;
+- unexplained fake `junk` totals;
+- silent deletion.
+
+## Core V1 product
+
+### CLEAN
+- Deep Storage Scan
+- Explainable junk candidates
+- Large Files across accessible shared storage
+- Downloads
+- APK installers
+- Archives
+- Documents
+- Images / Videos / Audio
+- Old Files
 - Screenshot Cleaner
-- Duplicate Photos
-- App Lock
-- Private Vault
-- Notification History
-- Phone Doctor
-- App Usage
-- Image Tools
-- PDF Tools
-- Network Tools
-- QR Tools
-- Device Tests
-- Small everyday tools
-
-The app must **never use fake “RAM boost”, “CPU cooling”, fake antivirus alerts or invented health scores**. Tooliva only shows information Android can actually provide and only deletes data after explicit user confirmation.
-
-## Product principles
-
-1. **Useful before clever.**
-2. **Local-first.** Core features work without an account or backend.
-3. **Privacy-first.** Files, photos, notification history and vault content stay on device.
-4. **No fake optimization.**
-5. **One-tap entry points.** Every major feature should be reachable in 1–2 taps.
-6. **Fast on mid-range phones.**
-7. **No ad spam.**
-8. **Modular architecture.** New tools can be added without turning the app into a monolith.
-
-## V1 feature set
-
-### Clean
-- Storage overview
-- Large files
-- Screenshot cleaner
-- Old videos
-- Exact duplicate photos
+- Exact duplicate files
 - Cleanup Swipe
-- Downloads analyzer
+- Empty folders
+- system-mediated Cache Cleanup
+- verified Cleanup Receipt
 
-### Protect
-- App Lock
-- Private Vault
-- Notification History
+### FILES
+- Internal/shared storage browser
+- SD/USB where available
+- Downloads/Documents/APKs/Archives/Images/Videos/Audio shortcuts
+- global search
+- sort/filter by name/size/date/type
+- open/share/details
+- rename
+- copy/move
+- delete/trash
+- create folder
+- Storage Map
+- ZIP/unZIP later in the same file subsystem
 
-### Diagnose
+### DIAGNOSE / APPS
+- App Manager
+- large/unused app review
 - Phone Doctor
-- Battery / thermal status
-- Sensor diagnostics
-- App usage statistics
-- Screen / touch / speaker / microphone / vibration tests
+- battery/thermal/device facts
+- sensor inventory
+- hardware tests
 
-### Files
-- Image compress
-- Image resize
-- Image convert
-- EXIF / GPS metadata remover
-- Images to PDF
-- ZIP / unzip
-- File hash
+### PROTECT
+- Notification History — high priority after cleaner core
+- Private Vault — later
+- App Lock — only after reliability/policy validation
 
-### Tools
-- QR / barcode scanner
-- QR generator
-- Wi-Fi QR
-- Network info
-- Ping / DNS lookup
-- Compass
-- Bubble level
-- Flashlight
-- Magnifier
+### TOOLS
+- Image Compress / Resize / Convert
+- EXIF Privacy Clean
+- Images → PDF
+- QR / barcode
+- Network tools
+- Compass / Level / Flashlight
+- Magnifier and small tools later
 
-Not all small tools need to ship on day one. The MVP release gate is defined in `TODO.md`.
+## Storage access model
 
-## Killer feature: Phone Checkup
+Tooliva supports two modes.
 
-A guided one-tap scan:
+### Full Storage Mode
 
-1. Storage status
-2. Large files
-3. Screenshot accumulation
-4. Duplicate media
-5. Battery / thermal state
-6. Sensors
-7. Notification volume
-8. App usage
+Uses Android All Files Access (`MANAGE_EXTERNAL_STORAGE`) for the product's core file-management, on-device-search and storage-maintenance experience.
 
-Example result:
+Production use is subject to Google Play restricted-permission declaration and approval.
 
-> Storage: 93% full  
-> 5.4 GB ready for review  
-> 1,283 old screenshots  
-> 24 exact duplicate photos  
-> Battery temperature: normal  
-> Instagram generated 41% of notifications this week
+### Limited Mode
 
-Actions:
-- Review storage
-- Review notifications
-- Review app usage
-- Run hardware tests
+Uses MediaStore and Storage Access Framework when Full Storage Mode is not granted.
 
-The checkup **must not invent a “phone health score” unless every component of the score is transparent and measurable**.
+Limited Mode remains useful, but the UI must never pretend it scanned every shared-storage file.
+
+The existing MediaStore work remains valuable fallback infrastructure.
+
+## Why Tooliva can win
+
+Research of current Google Play leaders shows a split:
+
+- serious cleaners/storage analyzers can be powerful but complex or ad-heavy;
+- Files by Google is trusted and simple but not trying to be a deep system toolbox;
+- device-info apps are technically strong but do not solve cleanup;
+- AppLock/notification-history apps solve one recurring problem each;
+- giant all-in-one toolboxes often become walls of shallow features.
+
+Tooliva's target is:
+
+**deep cleaner + real file manager + trustworthy UX + strong recurring utilities.**
+
+Key differentiators:
+- Verified Cleanup Receipt
+- Trash vs Physically Freed accounting
+- Storage Map
+- explainable cleanup candidates
+- Full/Limited access modes
+- one scan → action plan
+- local-first privacy
+- respectful monetization
+
+## Design
+
+Visual source of truth:
+- `docs/design/tooliva-ui-showcase.webp`
+- `docs/design/tooliva-ui-system.webp`
+- `docs/design/README.md`
+
+The new cleaner/file-manager screens extend the same dark graphite + teal Material 3 language.
 
 ## Technology
 
 - Kotlin
 - Jetpack Compose
 - Material 3
-- Coroutines + Flow
+- Coroutines / Flow
 - Room
 - DataStore
-- Hilt
-- WorkManager
-- AndroidX Biometric
+- WorkManager only where justified
 - MediaStore
 - Storage Access Framework
+- full shared-storage provider for Full Storage Mode
 - UsageStatsManager
 - NotificationListenerService
 - SensorManager
 - ConnectivityManager
 - Android Keystore
-- CameraX / barcode scanning where needed
+- AndroidX Biometric
+- CameraX where needed
 
 ### Android targets
 
 - `compileSdk`: 36
 - `targetSdk`: 36
-- `minSdk`: 26 initially
-- AAB for Google Play
-- 64-bit support
+- `minSdk`: 26
 
 ## Backend
 
-**No backend for V1.**
+No backend is required for core Tooliva functionality.
 
-The app must remain useful if every server disappears.
+Storage scans, fingerprints, Notification History and Vault data remain local.
 
 ## Monetization
 
 ### Free
-- Core tools
-- Small banner/native ads in non-sensitive screens
-- Limited interstitials only at natural completion points
+- real useful cleaner/file manager
+- restrained ads only on non-sensitive screens
 
 ### Pro Lifetime
-Initial target: **US$4.99** equivalent where appropriate.
+Initial hypothesis remains a one-time purchase instead of a costly weekly subscription.
 
-Pro:
-- no ads
-- advanced duplicate/similar-photo features
+Possible Pro value:
+- remove ads
 - advanced filters
-- extended notification history controls
-- extra themes / customization
-- future premium local tools
+- similar-photo tools
+- advanced Storage Map/history
+- additional premium local utilities
 
-No subscription is required for the first release.
+Never block a requested cleanup result behind an ad.
 
-## Repository documents
+## Repository docs
 
-- `TECH_SPEC.md` — technical/product specification
-- `TODO.md` — implementation checklist
-- `BUSINESS_PLAN.md` — monetization and growth
-- `ARCHITECTURE.md` — code architecture
-- `AGENTS.md` — rules for AI coding agents
-- `docs/FEATURE_MATRIX.md` — feature priorities and permissions
-- `docs/PLAY_POLICY.md` — Google Play risk notes
+- `TECH_SPEC.md` — product/engineering specification
+- `TODO.md` — current implementation roadmap
+- `AGENTS.md` — mandatory AI-agent rules
+- `docs/MARKET_RESEARCH_2026.md` — competitive analysis and product conclusions
+- `docs/PLAY_POLICY.md` — restricted-permission / Play strategy
+- `docs/FEATURE_MATRIX.md` — feature/access priorities
 - `docs/PRIVACY_SECURITY.md` — privacy/security model
-- `docs/BRAND_ASO.md` — branding and store strategy
-- `docs/QA_PLAN.md` — testing plan
+- `docs/QA_PLAN.md` — QA strategy
+- `docs/design/` — visual references
 
-## Status
+## Current status
 
-**Phase: specification / pre-development**
+Already implemented in `agent/android-bootstrap`:
+- Android/Compose foundation
+- Home baseline
+- MediaStore scanner foundation
+- Large Files media fallback flow
+- Screenshot Cleaner flow
+- centralized Trash/delete architecture
+- verified Cleanup Result model
+- Xiaomi physical-device baseline
 
-Next milestone: scaffold the Android project and ship the first vertical slice:
+Current highest-priority milestone:
 
-`Dashboard → Storage Scan → Large Files → Review → Delete → Result`
+**Full Storage Mode → StorageProvider/index → Deep Cleaner categories → real File Manager → Storage Map.**
