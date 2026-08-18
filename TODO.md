@@ -219,11 +219,11 @@ Candidate rules to research/implement one by one:
 
 ## Cache cleanup v1
 
-- [ ] [P0] implement official `StorageManager.ACTION_CLEAR_APP_CACHE` flow where supported
-- [ ] [P0] explain system-mediated behavior
-- [ ] [P0] handle supported/unsupported/cancel/error honestly
-- [ ] [P0] no fake per-app private-cache visibility
-- [ ] [P0] Xiaomi manual test
+- [x] [P0] implement official `StorageManager.ACTION_CLEAR_APP_CACHE` flow where supported
+- [x] [P0] explain system-mediated behavior
+- [x] [P0] handle supported/unsupported/cancel/error honestly
+- [x] [P0] no fake per-app private-cache visibility or cache amount
+- [~] [P0] Xiaomi manual test — APK installed and crash-smoke passed; functional system dialog test pending
 - [ ] [P2] Accessibility-based automation only after separate explicit approval/policy review
 
 ## App Manager
