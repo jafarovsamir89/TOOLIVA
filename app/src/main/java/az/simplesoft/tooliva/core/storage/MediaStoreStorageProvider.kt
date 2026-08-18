@@ -12,7 +12,7 @@ class MediaStoreStorageProvider(context: Context) : StorageProvider {
 
     override val accessMode: StorageAccessMode = StorageAccessMode.LIMITED
 
-    override fun scan(minBytes: Long): Flow<StorageScanEvent> = flow {
+    override fun scan(minBytes: Long, scope: StorageScanScope): Flow<StorageScanEvent> = flow {
         emit(StorageScanEvent.Started)
         var matched = 0L
         var bytes = 0L

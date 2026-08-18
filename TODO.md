@@ -74,7 +74,7 @@ Goal: one understandable primary Full Mode flow on Android 11+.
 - [~] [P0] `Environment.isExternalStorageManager()` state detection exists
 - [x] [P0] Full Mode: Large Files works without requesting separate Photos/Videos permission
 - [x] [P0] Full Mode: Screenshot Cleaner works without redundant `READ_MEDIA_IMAGES` request when broad storage access is sufficient
-- [ ] [P0] Full Mode: future Downloads/APK/Archives/Documents use the same storage access
+- [~] [P0] Full Mode: Downloads/APK/Archives/Documents use the same storage access — implemented; Xiaomi validation pending
 - [x] [P0] Limited Mode: MediaStore/granular media permission used only when Full Mode is absent and the feature needs it
 - [x] [P0] Limited Mode coverage explained honestly
 - [x] [P0] Grant/deny/revoke tested manually on Xiaomi
@@ -145,39 +145,39 @@ Do not add these solely to satisfy architecture style.
 
 ## Downloads
 
-- [ ] [P0] automatic Full Mode Downloads scan
-- [ ] [P0] APK/installers group
-- [ ] [P0] archives group
-- [ ] [P0] documents group
-- [ ] [P0] media group
-- [ ] [P0] large downloads filter
-- [ ] [P0] old downloads 30/90/180/365
+- [~] [P0] automatic Full Mode Downloads scan — explicit user action, scoped to Download/Downloads roots; Xiaomi validation pending
+- [~] [P0] APK/installers group — classification and real-file summary implemented; device validation pending
+- [~] [P0] archives group — ZIP/RAR/7Z/TAR/GZ classification implemented; device validation pending
+- [~] [P0] documents group — PDF/Office/text classification implemented; device validation pending
+- [~] [P0] media group — image/video/audio classification implemented; device validation pending
+- [~] [P0] large downloads filter — 100/500/1024 MB thresholds implemented; device validation pending
+- [~] [P0] old downloads 30/90/180/365 — user-controlled filters implemented; device validation pending
 - [ ] [P1] Limited Mode SAF fallback where useful
 
 ## APK installers
 
-- [ ] [P0] detect APK files
-- [ ] [P0] safe app/package/version metadata parsing where possible
-- [ ] [P0] size/date/path/open/share/details/delete
-- [ ] [P0] never preselect solely because old
+- [~] [P0] detect APK files — device validation pending
+- [~] [P0] safe app/package/version metadata parsing where possible — details flow implemented; device validation pending
+- [~] [P0] size/date/path/open/share/details/delete — Downloads flow implemented; device validation pending
+- [x] [P0] never preselect solely because old
 - [ ] [P1] relation to installed package only when visibility permits
 - [ ] [P1] duplicate/old-version installer analysis
 
 ## Archives
 
-- [ ] [P0] ZIP/RAR/7Z classification where identifiable
-- [ ] [P0] size/date/path/open/share/details/delete
+- [~] [P0] ZIP/RAR/7Z classification where identifiable — device validation pending
+- [~] [P0] size/date/path/open/share/details/delete — Downloads flow implemented; device validation pending
 - [ ] [P0] Downloads integration
 
 ## Documents
 
-- [ ] [P0] PDF/Office/text classification
-- [ ] [P0] size/date/path/open/share/details/delete
-- [ ] [P0] normal documents never generic junk
+- [~] [P0] PDF/Office/text classification — device validation pending
+- [~] [P0] size/date/path/open/share/details/delete — Downloads flow implemented; device validation pending
+- [x] [P0] normal documents never generic junk
 
 ## Old Files
 
-- [ ] [P0] age filters 30/90/180/365
+- [~] [P0] age filters 30/90/180/365 — Downloads implementation covered by deterministic tests; device validation pending
 - [ ] [P0] prioritize Downloads/APKs/Archives/Screenshots/user-selected scope
 - [ ] [P0] do not label `unused` without actual usage evidence
 

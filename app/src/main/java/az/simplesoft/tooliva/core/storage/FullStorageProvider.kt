@@ -20,13 +20,13 @@ class FullStorageProvider(context: Context) : StorageProvider {
 
     override val accessMode: StorageAccessMode = StorageAccessMode.FULL
 
-    override fun scan(minBytes: Long): Flow<StorageScanEvent> = flow {
+    override fun scan(minBytes: Long, scope: StorageScanScope): Flow<StorageScanEvent> = flow {
         emit(StorageScanEvent.Started)
         var visited = 0L
         var matched = 0L
         var matchedBytes = 0L
 
-        roots().forEach { root ->
+        roots(scope).forEach { root ->
             if (!root.exists() || !root.isDirectory) return@forEach
             val seenDirectories = HashSet<String>()
             val stack = ArrayDeque<File>()
@@ -67,7 +67,11 @@ class FullStorageProvider(context: Context) : StorageProvider {
                     val attributes = runCatching {
                         Files.readAttributes(child.toPath(), BasicFileAttributes::class.java)
                     }.getOrNull()
-                    val category = classify(child)
+                    val category = StorageFileClassifier.classify(
+                        name = child.name,
+                        mimeType = mimeTypeFor(child),
+                        path = path,
+                    )
                     val entry = StorageEntry(
                         ref = Uri.fromFile(child),
                         name = child.name,
@@ -92,7 +96,20 @@ class FullStorageProvider(context: Context) : StorageProvider {
         emit(StorageScanEvent.Completed)
     }.flowOn(Dispatchers.IO)
 
-    private fun roots(): List<File> {
+    private fun roots(scope: StorageScanScope): List<File> {
+        val volumes = volumeRoots()
+        if (scope == StorageScanScope.ALL_STORAGE) return volumes
+
+        return volumes
+            .flatMap { volume ->
+                runCatching { volume.listFiles().orEmpty().toList() }
+                    .getOrDefault(emptyList())
+                    .filter { it.isDirectory && it.name.equals("Download", ignoreCase = true) }
+            }
+            .distinctBy { it.absolutePath }
+    }
+
+    private fun volumeRoots(): List<File> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             return listOf(Environment.getExternalStorageDirectory())
         }
@@ -111,24 +128,6 @@ class FullStorageProvider(context: Context) : StorageProvider {
             normalized.contains("/Android/obb/")
     }
 
-    private fun classify(file: File): StorageCategory {
-        val extension = extensionFor(file) ?: return if (file.parentFile?.name.equals("Download", ignoreCase = true)) {
-            StorageCategory.DOWNLOAD
-        } else {
-            StorageCategory.OTHER
-        }
-        return when {
-            extension in VIDEO_EXTENSIONS -> StorageCategory.VIDEO
-            extension in IMAGE_EXTENSIONS -> StorageCategory.IMAGE
-            extension in AUDIO_EXTENSIONS -> StorageCategory.AUDIO
-            extension == "apk" -> StorageCategory.APK
-            extension in ARCHIVE_EXTENSIONS -> StorageCategory.ARCHIVE
-            extension in DOCUMENT_EXTENSIONS -> StorageCategory.DOCUMENT
-            file.path.replace(File.separatorChar, '/').contains("/Download/", ignoreCase = true) -> StorageCategory.DOWNLOAD
-            else -> StorageCategory.OTHER
-        }
-    }
-
     private fun extensionFor(file: File): String? = file.extension.lowercase().takeIf { it.isNotBlank() }
 
     private fun mimeTypeFor(file: File): String? = android.webkit.MimeTypeMap.getSingleton()
@@ -136,12 +135,5 @@ class FullStorageProvider(context: Context) : StorageProvider {
 
     companion object {
         private const val PROGRESS_INTERVAL = 128L
-        private val VIDEO_EXTENSIONS = setOf("mp4", "mkv", "mov", "avi", "webm", "3gp", "m4v")
-        private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "heic", "gif", "bmp", "tiff")
-        private val AUDIO_EXTENSIONS = setOf("mp3", "m4a", "aac", "wav", "flac", "ogg", "opus", "amr")
-        private val ARCHIVE_EXTENSIONS = setOf("zip", "rar", "7z", "tar", "gz", "bz2", "xz", "iso")
-        private val DOCUMENT_EXTENSIONS = setOf(
-            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "csv", "epub",
-        )
     }
 }

@@ -9,8 +9,17 @@ sealed interface StorageScanEvent {
     data class Warning(val path: String) : StorageScanEvent
     data object Completed : StorageScanEvent
 }
+
+enum class StorageScanScope {
+    ALL_STORAGE,
+    DOWNLOADS,
+}
+
 interface StorageProvider {
     val accessMode: StorageAccessMode
 
-    fun scan(minBytes: Long): Flow<StorageScanEvent>
+    fun scan(
+        minBytes: Long,
+        scope: StorageScanScope = StorageScanScope.ALL_STORAGE,
+    ): Flow<StorageScanEvent>
 }
