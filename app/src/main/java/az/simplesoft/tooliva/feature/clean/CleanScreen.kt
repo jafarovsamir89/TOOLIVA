@@ -40,8 +40,6 @@ import az.simplesoft.tooliva.feature.home.HomeViewModel
 import az.simplesoft.tooliva.core.storage.StorageAccessCoordinator
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import az.simplesoft.tooliva.feature.clean.index.StorageIndexCard
-import az.simplesoft.tooliva.feature.clean.index.StorageIndexViewModel
 
 private data class CleanTool(
     val id: String,
@@ -62,17 +60,14 @@ private val cleanTools = listOf(
 fun CleanRoute(
     onOpenTool: (String) -> Unit,
     viewModel: HomeViewModel = viewModel(),
-    indexViewModel: StorageIndexViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val indexState by indexViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val accessCoordinator = remember(context) { StorageAccessCoordinator(context) }
     var accessState by remember(context) { mutableStateOf(accessCoordinator.currentState()) }
     var accessActionError by remember { mutableStateOf<String?>(null) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         accessState = accessCoordinator.currentState()
-        indexViewModel.refresh()
     }
     val used = Formatter.formatFileSize(context, state.storageUsedBytes)
     val total = Formatter.formatFileSize(context, state.storageTotalBytes)
@@ -137,14 +132,6 @@ fun CleanRoute(
                         accessActionError = "Android did not provide the Full Storage Access settings screen."
                     }
                 },
-            )
-        }
-
-        item {
-            StorageIndexCard(
-                state = indexState,
-                onScan = indexViewModel::scan,
-                onCancel = indexViewModel::cancelScan,
             )
         }
 

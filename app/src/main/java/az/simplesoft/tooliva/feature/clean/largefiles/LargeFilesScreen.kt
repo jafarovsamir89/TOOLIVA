@@ -125,12 +125,6 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
         hasMediaAccess = hasRequiredMediaPermissions(context)
     }
 
-    LaunchedEffect(fullMode, hasMediaAccess) {
-        if ((fullMode || hasMediaAccess) && !state.isLoading && state.errorMessage == null) {
-            viewModel.scan()
-        }
-    }
-
     val cleanupResult = state.cleanupResult
     if (cleanupResult != null) {
         BackHandler { viewModel.dismissCleanupResult() }
@@ -237,14 +231,9 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                                     Formatter.formatFileSize(context, state.visibleFiles.sumOf { it.sizeBytes }),
                                     color = MaterialTheme.colorScheme.primary,
                                 )
-                                if (state.isLoading) Text("Loading indexed results…", style = MaterialTheme.typography.bodySmall)
-                                if (state.isIndexing) Text(
-                                    "Results update while the deep scan runs.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                if (state.isLoading) Text("Visited ${state.visitedFiles} files", style = MaterialTheme.typography.bodySmall)
                             }
-                            if (state.isLoading || state.isIndexing) CircularProgressIndicator()
+                            if (state.isLoading) CircularProgressIndicator()
                             if (state.visibleFiles.isNotEmpty()) {
                                 TextButton(onClick = viewModel::toggleSelectAllVisible) {
                                     Text(if (state.allVisibleSelected) "Clear all" else "Select all")
@@ -321,7 +310,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                     }
                 }
 
-                if (state.isLoading || state.isIndexing) {
+                if (state.isLoading) {
                     item {
                         OutlinedButton(onClick = viewModel::cancelScan, modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Outlined.Cancel, contentDescription = null)
@@ -330,13 +319,21 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                     }
                 }
 
-                if (!state.isLoading && !state.isIndexing && state.errorMessage == null && state.visibleFiles.isEmpty()) {
+                if (!state.isLoading && state.errorMessage == null && state.visibleFiles.isEmpty()) {
                     item {
-                        Text(
-                            "No accessible files match the current filters.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = 20.dp),
-                        )
+                        Card(
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("Find large files", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "Scan accessible storage for files larger than ${Formatter.formatFileSize(context, state.thresholdBytes)}. Nothing is deleted automatically.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Button(onClick = viewModel::scan) { Text("Scan large files") }
+                            }
+                        }
                     }
                 }
 

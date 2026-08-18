@@ -69,6 +69,8 @@ import az.simplesoft.tooliva.core.media.MediaStoreDeleteCoordinator
 import az.simplesoft.tooliva.core.media.ScreenshotMediaFile
 import az.simplesoft.tooliva.core.media.hasScreenshotPermission
 import az.simplesoft.tooliva.core.media.requiredScreenshotPermission
+import az.simplesoft.tooliva.core.storage.StorageAccessCoordinator
+import az.simplesoft.tooliva.core.storage.StorageAccessMode
 import az.simplesoft.tooliva.feature.clean.result.CleanupResultScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -79,7 +81,9 @@ private val screenshotAgeOptions = listOf(30, 90, 365)
 fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var hasAccess by remember { mutableStateOf(hasScreenshotPermission(context)) }
+    val accessCoordinator = remember(context) { StorageAccessCoordinator(context) }
+    var fullMode by remember { mutableStateOf(accessCoordinator.currentState().mode == StorageAccessMode.FULL) }
+    var hasAccess by remember { mutableStateOf(fullMode || hasScreenshotPermission(context)) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val deleteCoordinator = remember(context) { MediaStoreDeleteCoordinator(context) }
 
@@ -108,9 +112,10 @@ fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) 
     }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        fullMode = accessCoordinator.currentState().mode == StorageAccessMode.FULL
         val access = hasScreenshotPermission(context)
-        hasAccess = access
-        if (!access) viewModel.onMediaPermissionRevoked()
+        hasAccess = fullMode || access
+        if (!hasAccess) viewModel.onMediaPermissionRevoked()
     }
 
     LaunchedEffect(hasAccess) {
@@ -132,12 +137,16 @@ fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) 
     if (showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Move selected screenshots to Trash?") },
+            title = { Text(if (fullMode) "Delete selected screenshots permanently?" else "Move selected screenshots to Trash?") },
             text = {
                 Text(
                     "${state.selectedFiles.size} screenshot(s), " +
                         "${Formatter.formatFileSize(context, state.selectedBytes)} selected. " +
-                        "Android will ask for final confirmation. Nothing is changed if you cancel.",
+                        if (fullMode) {
+                            "Full Storage Mode will delete these shared-storage files after confirmation. Nothing changes if you cancel."
+                        } else {
+                            "Android will ask for final confirmation. Nothing changes if you cancel."
+                        },
                 )
             },
             confirmButton = {
@@ -172,7 +181,7 @@ fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) 
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text("Screenshots", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
                 Text(
-                    "Review screenshots found in your local MediaStore. Nothing is deleted automatically.",
+                    "Review screenshots found in accessible storage. Nothing is deleted automatically.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -315,7 +324,7 @@ fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) 
             ) {
                 Button(
                     onClick = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        if (!fullMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                             viewModel.requestDelete(deleteCoordinator)
                         } else {
                             showDeleteConfirmation = true
@@ -330,7 +339,7 @@ fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) 
                     } else {
                         Icon(Icons.Outlined.Delete, contentDescription = null)
                         Text(
-                            "Move ${state.selectedFiles.size} to Trash · ${Formatter.formatFileSize(context, state.selectedBytes)}",
+                            "${if (fullMode) "Delete" else "Move"} ${state.selectedFiles.size} ${if (fullMode) "files" else "to Trash"} · ${Formatter.formatFileSize(context, state.selectedBytes)}",
                             modifier = Modifier.padding(start = 8.dp),
                         )
                     }
@@ -404,7 +413,20 @@ private fun MediaThumbnail(uri: android.net.Uri, description: String, modifier: 
 
 private fun loadThumbnail(context: Context, uri: android.net.Uri): Bitmap? = runCatching {
     val resolver = context.contentResolver
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    if (uri.scheme == "file") {
+        resolver.openInputStream(uri)?.use { input ->
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeStream(input, null, bounds)
+            val sample = calculateSample(bounds.outWidth, bounds.outHeight, 480)
+            resolver.openInputStream(uri)?.use { secondInput ->
+                BitmapFactory.decodeStream(
+                    secondInput,
+                    null,
+                    BitmapFactory.Options().apply { inSampleSize = sample },
+                )
+            }
+        }
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         resolver.loadThumbnail(uri, Size(480, 480), null)
     } else {
         resolver.openInputStream(uri)?.use { input ->

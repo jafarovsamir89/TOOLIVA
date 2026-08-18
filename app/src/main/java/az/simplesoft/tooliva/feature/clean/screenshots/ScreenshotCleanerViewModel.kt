@@ -11,6 +11,8 @@ import az.simplesoft.tooliva.core.media.PendingMediaDelete
 import az.simplesoft.tooliva.core.media.PreparedCleanupDeletion
 import az.simplesoft.tooliva.core.media.ScreenshotMediaFile
 import az.simplesoft.tooliva.core.media.ScreenshotMediaRepository
+import az.simplesoft.tooliva.core.storage.StorageAccessCoordinator
+import az.simplesoft.tooliva.core.storage.StorageAccessMode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,6 +46,7 @@ data class ScreenshotCleanerUiState(
 
 class ScreenshotCleanerViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = ScreenshotMediaRepository(application)
+    private val accessCoordinator = StorageAccessCoordinator(application)
     private val _uiState = MutableStateFlow(ScreenshotCleanerUiState())
     val uiState = _uiState.asStateFlow()
     private var scanJob: Job? = null
@@ -56,7 +59,7 @@ class ScreenshotCleanerViewModel(application: Application) : AndroidViewModel(ap
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val files = mutableListOf<ScreenshotMediaFile>()
             try {
-                repository.scan(ageDays).collect { file ->
+                repository.scan(ageDays, fullStorageAccess = isFullStorageMode()).collect { file ->
                     files += file
                     _uiState.update { it.copy(files = files.toList()) }
                 }
@@ -125,6 +128,9 @@ class ScreenshotCleanerViewModel(application: Application) : AndroidViewModel(ap
                 val prepared = withContext(Dispatchers.IO) { coordinator.prepare(selected) }
                 if (prepared.eligible.isEmpty()) {
                     finishWithResult(coordinator.noChange(prepared, "The selected screenshots were already gone before cleanup."))
+                } else if (isFullStorageMode() || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    val result = withContext(Dispatchers.IO) { coordinator.deleteImmediatelyAndVerify(prepared) }
+                    finishWithResult(result)
                 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val sender = withContext(Dispatchers.IO) { coordinator.createTrashIntentSender(prepared) }
                     if (sender == null) {
@@ -201,7 +207,10 @@ class ScreenshotCleanerViewModel(application: Application) : AndroidViewModel(ap
         viewModelScope.launch {
             try {
                 val refreshed = withContext(Dispatchers.IO) {
-                    repository.scan(_uiState.value.ageDays).toList().sortedByDescending(ScreenshotMediaFile::sizeBytes)
+                    repository.scan(
+                        _uiState.value.ageDays,
+                        fullStorageAccess = isFullStorageMode(),
+                    ).toList().sortedByDescending(ScreenshotMediaFile::sizeBytes)
                 }
                 val ids = refreshed.map { it.uri.toString() }.toSet()
                 _uiState.update {
@@ -240,4 +249,6 @@ class ScreenshotCleanerViewModel(application: Application) : AndroidViewModel(ap
             )
         }
     }
+
+    private fun isFullStorageMode(): Boolean = accessCoordinator.currentState().mode == StorageAccessMode.FULL
 }

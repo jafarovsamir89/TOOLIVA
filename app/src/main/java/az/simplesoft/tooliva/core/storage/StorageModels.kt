@@ -6,7 +6,6 @@ enum class StorageAccessMode {
     FULL,
     LIMITED,
 }
-
 enum class StorageCategory {
     ALL,
     VIDEO,

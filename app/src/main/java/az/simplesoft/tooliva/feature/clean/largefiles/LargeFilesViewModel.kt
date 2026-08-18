@@ -10,30 +10,27 @@ import az.simplesoft.tooliva.core.media.LargeMediaFile
 import az.simplesoft.tooliva.core.media.MediaStoreDeleteCoordinator
 import az.simplesoft.tooliva.core.media.PendingMediaDelete
 import az.simplesoft.tooliva.core.media.PreparedCleanupDeletion
+import az.simplesoft.tooliva.core.storage.FullStorageProvider
+import az.simplesoft.tooliva.core.storage.MediaStoreStorageProvider
 import az.simplesoft.tooliva.core.storage.StorageAccessCoordinator
+import az.simplesoft.tooliva.core.storage.StorageAccessMode
 import az.simplesoft.tooliva.core.storage.StorageAccessState
 import az.simplesoft.tooliva.core.storage.StorageCategory
+import az.simplesoft.tooliva.core.storage.StorageProvider
+import az.simplesoft.tooliva.core.storage.StorageScanEvent
 import az.simplesoft.tooliva.core.storage.StorageSortOrder
-import az.simplesoft.tooliva.core.storage.index.IndexedStorageEntry
-import az.simplesoft.tooliva.core.storage.index.StorageIndexCoordinator
-import az.simplesoft.tooliva.core.storage.index.StorageIndexQuery
-import az.simplesoft.tooliva.core.storage.index.StorageIndexRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class LargeFilesUiState(
     val isLoading: Boolean = false,
-    val isIndexing: Boolean = false,
     val isPreparingDelete: Boolean = false,
     val files: List<LargeMediaFile> = emptyList(),
     val selectedUris: Set<String> = emptySet(),
@@ -84,40 +81,19 @@ data class LargeFilesUiState(
     }
 }
 
-@OptIn(FlowPreview::class)
 class LargeFilesViewModel(application: Application) : AndroidViewModel(application) {
     private val accessCoordinator = StorageAccessCoordinator(application)
-    private val indexRepository = StorageIndexRepository(application)
-    private val indexCoordinator = StorageIndexCoordinator.getInstance(application)
     private val _uiState = MutableStateFlow(
         LargeFilesUiState(accessState = accessCoordinator.currentState()),
     )
     val uiState = _uiState.asStateFlow()
     private var scanJob: Job? = null
-    private var indexRefreshJob: Job? = null
     private var nextDeleteRequestId = 0L
-
-    init {
-        indexRefreshJob = viewModelScope.launch {
-            indexCoordinator.state
-                .debounce(350L)
-                .filter {
-                    it.accessMode == _uiState.value.accessState.mode &&
-                        (it.phase != az.simplesoft.tooliva.core.storage.index.StorageIndexScanPhase.IDLE ||
-                            it.status in setOf(
-                                az.simplesoft.tooliva.core.storage.index.StorageIndexRunStatus.COMPLETED,
-                                az.simplesoft.tooliva.core.storage.index.StorageIndexRunStatus.CANCELED,
-                                az.simplesoft.tooliva.core.storage.index.StorageIndexRunStatus.FAILED,
-                            ))
-                }
-                .collect { loadIndexIntoState() }
-        }
-    }
 
     fun refreshAccess() {
         val latest = accessCoordinator.currentState()
         _uiState.update { state ->
-            if (state.accessState == latest) state else state.copy(accessState = latest, files = emptyList(), selectedUris = emptySet(), isIndexing = false, errorMessage = null)
+            if (state.accessState == latest) state else state.copy(accessState = latest, files = emptyList(), selectedUris = emptySet())
         }
     }
 
@@ -125,16 +101,40 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
         if (_uiState.value.isLoading || _uiState.value.isPreparingDelete) return
         scanJob?.cancel()
         scanJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null, visitedFiles = 0L) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, files = emptyList(), visitedFiles = 0L) }
             try {
-                loadIndexIntoState()
-                _uiState.update { it.copy(isIndexing = true) }
-                indexCoordinator.start(_uiState.value.accessState.mode)
+                val accumulator = LargeFilesScanAccumulator()
+                provider().scan(LargeFilesUiState.MIN_LARGE_FILE_BYTES).collect { event ->
+                    when (event) {
+                        StorageScanEvent.Started -> Unit
+                        is StorageScanEvent.EntryFound -> {
+                            val entry = event.entry
+                            _uiState.update { it.copy(files = accumulator.add(entry.toLargeMediaFile())) }
+                        }
+                        is StorageScanEvent.Progress -> {
+                            _uiState.update { it.copy(visitedFiles = event.visitedFiles) }
+                        }
+                        is StorageScanEvent.Warning -> Unit
+                        StorageScanEvent.Completed -> Unit
+                    }
+                }
+                updateScannedFiles(accumulator.snapshot())
             } catch (cancellation: CancellationException) {
-                _uiState.update { it.copy(isLoading = false, isIndexing = false) }
+                _uiState.update { it.copy(isLoading = false) }
                 throw cancellation
+            } catch (security: SecurityException) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = if (it.accessState.mode == StorageAccessMode.FULL) {
+                            "Full Storage Access was revoked. Tooliva switched to Limited Mode."
+                        } else {
+                            "Media access is unavailable. Grant access or use Full Storage Mode."
+                        },
+                    )
+                }
             } catch (error: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to read the storage index.") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to scan accessible storage.") }
             }
         }
     }
@@ -145,22 +145,18 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
 
     fun setThreshold(bytes: Long) {
         _uiState.update { it.copy(thresholdBytes = bytes) }
-        reloadIndex()
     }
 
     fun setCategory(category: StorageCategory) {
         _uiState.update { it.copy(categoryFilter = category) }
-        reloadIndex()
     }
 
     fun setSortOrder(order: StorageSortOrder) {
         _uiState.update { it.copy(sortOrder = order) }
-        reloadIndex()
     }
 
     fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
-        reloadIndex()
     }
 
     fun toggleSelection(uri: String) {
@@ -183,7 +179,6 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun onAccessRevoked() {
-        indexCoordinator.cancel()
         refreshAccess()
         _uiState.update { it.copy(errorMessage = "Full Storage Access is unavailable. Tooliva is using Limited Mode.") }
     }
@@ -256,6 +251,12 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(cleanupResult = null) }
     }
 
+    private fun provider(): StorageProvider = if (_uiState.value.accessState.mode == StorageAccessMode.FULL) {
+        FullStorageProvider(getApplication())
+    } else {
+        MediaStoreStorageProvider(getApplication())
+    }
+
     private fun finishWithResult(result: CleanupResult) {
         // The deletion coordinator has already verified this operation. Do not make the
         // user wait for a second full-storage scan before showing that confirmed result.
@@ -271,64 +272,71 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
                 errorMessage = null,
             )
         }
-        refreshAfterCleanup(result)
+        refreshAfterCleanup()
     }
 
-    private fun refreshAfterCleanup(result: CleanupResult) {
+    private fun refreshAfterCleanup() {
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    indexRepository.removeEntriesByRefs(
-                        accessMode = _uiState.value.accessState.mode,
-                        refs = result.removedRefs,
+                val refreshed = scanAll().sortedByDescending(LargeMediaFile::sizeBytes)
+                val ids = refreshed.map { it.uri.toString() }.toSet()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        files = refreshed,
+                        selectedUris = it.selectedUris.intersect(ids),
                     )
                 }
-                loadIndexIntoState()
+            } catch (_: SecurityException) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "Storage access changed while refreshing the list.",
+                    )
+                }
             } catch (error: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Cleanup finished, but the index could not be refreshed.") }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Cleanup finished, but the list could not be refreshed.",
+                    )
+                }
             }
         }
     }
 
-    private fun reloadIndex() {
-        if (_uiState.value.isPreparingDelete || _uiState.value.isLoading) return
-        scanJob?.cancel()
-        scanJob = viewModelScope.launch {
-            runCatching { loadIndexIntoState() }
-                .onFailure { error -> _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to read the storage index.") } }
+    private suspend fun scanAll(): List<LargeMediaFile> = withContext(Dispatchers.IO) {
+        val result = mutableListOf<LargeMediaFile>()
+        provider().scan(LargeFilesUiState.MIN_LARGE_FILE_BYTES).collect { event ->
+            if (event is StorageScanEvent.EntryFound) result += event.entry.toLargeMediaFile()
         }
+        result
     }
 
-    private suspend fun loadIndexIntoState() {
-        val snapshot = _uiState.value
-        val query = StorageIndexQuery(
-            accessMode = snapshot.accessState.mode,
-            minimumSizeBytes = snapshot.thresholdBytes,
-            category = snapshot.categoryFilter.takeUnless { it == StorageCategory.ALL },
-            searchQuery = snapshot.searchQuery,
-            sortOrder = snapshot.sortOrder,
-        )
-        val indexed = withContext(Dispatchers.IO) { indexRepository.query(query) }
-        val files = indexed.map { it.toLargeMediaFile() }
-        val ids = files.map { it.uri.toString() }.toSet()
-        _uiState.update {
-            it.copy(
-                isLoading = false,
-                isIndexing = indexCoordinator.state.value.phase != az.simplesoft.tooliva.core.storage.index.StorageIndexScanPhase.IDLE,
-                files = files,
-                selectedUris = it.selectedUris.intersect(ids),
-                errorMessage = null,
-            )
-        }
+    private fun updateScannedFiles(files: List<LargeMediaFile>) {
+        val sorted = files.sortedByDescending(LargeMediaFile::sizeBytes)
+        val ids = sorted.map { it.uri.toString() }.toSet()
+        _uiState.update { it.copy(isLoading = false, files = sorted, selectedUris = it.selectedUris.intersect(ids)) }
     }
 
-    private fun IndexedStorageEntry.toLargeMediaFile() = LargeMediaFile(
+    private fun az.simplesoft.tooliva.core.storage.StorageEntry.toLargeMediaFile() = LargeMediaFile(
         uri = ref,
-        displayName = displayName,
+        displayName = name,
         sizeBytes = sizeBytes,
         mimeType = mimeType,
-        modifiedEpochSeconds = modifiedTimeMillis / 1000L,
+        modifiedEpochSeconds = modifiedAtMillis / 1000L,
         category = category,
         path = path,
     )
+}
+
+internal class LargeFilesScanAccumulator {
+    private val files = mutableListOf<LargeMediaFile>()
+
+    fun add(file: LargeMediaFile): List<LargeMediaFile> {
+        files += file
+        return files.toList()
+    }
+
+    fun snapshot(): List<LargeMediaFile> = files.toList()
 }

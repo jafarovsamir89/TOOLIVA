@@ -14,10 +14,7 @@ class MediaStoreStorageProvider(context: Context) : StorageProvider {
 
     override fun scan(minBytes: Long): Flow<StorageScanEvent> = flow {
         emit(StorageScanEvent.Started)
-        val volumeId = "mediastore:external"
-        emit(StorageScanEvent.RootStarted(volumeId))
         var matched = 0L
-        var folders = 0L
         var bytes = 0L
         repository.scan(minBytes).collect { file ->
             val entry = StorageEntry(
@@ -29,15 +26,13 @@ class MediaStoreStorageProvider(context: Context) : StorageProvider {
                 modifiedAtMillis = file.modifiedEpochSeconds * 1000L,
                 mimeType = file.mimeType,
                 extension = file.displayName.substringAfterLast('.', "").lowercase().takeIf { it.isNotBlank() },
-                volumeId = volumeId,
             )
             matched++
             bytes += file.sizeBytes
             emit(StorageScanEvent.EntryFound(entry))
-            if (matched % 128L == 0L) emit(StorageScanEvent.Progress(matched, folders, bytes))
+            if (matched % 128L == 0L) emit(StorageScanEvent.Progress(matched, matched, bytes))
         }
-        emit(StorageScanEvent.Progress(matched, folders, bytes))
-        emit(StorageScanEvent.RootCompleted(volumeId, true))
-        emit(StorageScanEvent.Completed(setOf(volumeId)))
+        emit(StorageScanEvent.Progress(matched, matched, bytes))
+        emit(StorageScanEvent.Completed)
     }.flowOn(Dispatchers.IO)
 }

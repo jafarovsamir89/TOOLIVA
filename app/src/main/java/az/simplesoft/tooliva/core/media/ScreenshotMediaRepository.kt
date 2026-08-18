@@ -5,8 +5,12 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import az.simplesoft.tooliva.core.storage.FullStorageProvider
+import az.simplesoft.tooliva.core.storage.StorageCategory
+import az.simplesoft.tooliva.core.storage.StorageScanEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
@@ -52,9 +56,41 @@ object ScreenshotClassifier {
 }
 
 class ScreenshotMediaRepository(context: Context) {
+    private val appContext = context.applicationContext
     private val resolver = context.applicationContext.contentResolver
 
-    fun scan(maxAgeDays: Int): Flow<ScreenshotMediaFile> = flow {
+    fun scan(maxAgeDays: Int, fullStorageAccess: Boolean = false): Flow<ScreenshotMediaFile> = if (fullStorageAccess) {
+        scanFullStorage(maxAgeDays)
+    } else {
+        scanMediaStore(maxAgeDays)
+    }
+
+    private fun scanFullStorage(maxAgeDays: Int): Flow<ScreenshotMediaFile> = flow {
+        val now = System.currentTimeMillis()
+        FullStorageProvider(appContext).scan(minBytes = 0L).collect { event ->
+            if (event is StorageScanEvent.EntryFound && !event.entry.isDirectory && event.entry.category == StorageCategory.IMAGE) {
+                val path = event.entry.path
+                val bucket = path.substringBeforeLast('/', missingDelimiterValue = "").substringAfterLast('/').takeIf { it.isNotBlank() }
+                val item = ScreenshotMediaFile(
+                    uri = event.entry.ref,
+                    displayName = event.entry.name,
+                    sizeBytes = event.entry.sizeBytes,
+                    mimeType = event.entry.mimeType,
+                    modifiedEpochSeconds = event.entry.modifiedAtMillis / 1_000L,
+                    dateTakenMillis = 0L,
+                    relativePath = path,
+                    bucketDisplayName = bucket,
+                )
+                if (ScreenshotAgeFilter.isOlderThan(item.ageTimestampMillis, now, maxAgeDays) &&
+                    ScreenshotClassifier.isScreenshotCandidate(item.displayName, item.relativePath, item.bucketDisplayName)
+                ) {
+                    emit(item)
+                }
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+
+    private fun scanMediaStore(maxAgeDays: Int): Flow<ScreenshotMediaFile> = flow {
         val now = System.currentTimeMillis()
         val cutoffTimestamp = now - maxAgeDays.coerceAtLeast(1).toLong() * 86_400_000L
         val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
