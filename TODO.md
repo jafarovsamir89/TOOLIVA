@@ -49,18 +49,18 @@ This is the current highest priority. Do not start new product modules until R0 
 
 ## Recovery implementation
 
-- [ ] [P0] Revert/remove mandatory index changes introduced by `7836ea` and `71f35ca` while preserving unrelated good work/docs
-- [ ] [P0] Restore direct progressive `StorageProvider -> StorageScanEvent -> LargeFilesViewModel/UI` flow based on known-good baseline
-- [ ] [P0] Remove Storage Index technical card/status from Clean UI
-- [ ] [P0] Remove automatic heavy Large Files scan on navigation
-- [ ] [P0] Keep explicit user-controlled Scan/Refresh action
-- [ ] [P0] Preserve FullStorageProvider / StorageProvider abstraction
-- [ ] [P0] Preserve centralized cleanup/delete coordinator
-- [ ] [P0] Preserve Cleanup Receipt accounting
-- [ ] [P0] Preserve filters/search/sort/select/open/delete behavior
-- [ ] [P0] Remove Room/KSP/storage-index dependencies/files if no current feature uses them after recovery; do not keep dead architecture “for later”
-- [ ] [P0] Automated regression tests/build green
-- [ ] [P0] Install fresh debug APK on Xiaomi
+- [x] [P0] Revert/remove mandatory index changes introduced by `7836ea` and `71f35ca` while preserving unrelated good work/docs
+- [x] [P0] Restore direct progressive `StorageProvider -> StorageScanEvent -> LargeFilesViewModel/UI` flow based on known-good baseline
+- [x] [P0] Remove Storage Index technical card/status from Clean UI
+- [x] [P0] Remove automatic heavy Large Files scan on navigation
+- [x] [P0] Keep explicit user-controlled Scan/Refresh action
+- [x] [P0] Preserve FullStorageProvider / StorageProvider abstraction
+- [x] [P0] Preserve centralized cleanup/delete coordinator
+- [x] [P0] Preserve Cleanup Receipt accounting
+- [x] [P0] Preserve filters/search/sort/select/open/delete behavior
+- [x] [P0] Remove Room/KSP/storage-index dependencies/files if no current feature uses them after recovery; do not keep dead architecture “for later”
+- [x] [P0] Automated regression tests/build green
+- [x] [P0] Install fresh debug APK on Xiaomi
 - [ ] [P0] Human manual regression PASS before Phase R1
 
 ---
