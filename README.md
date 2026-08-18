@@ -2,141 +2,203 @@
 
 **Tooliva — Cleaner, File Manager & Device Tools**
 
-> A serious Android storage cleaner and file manager first, with diagnostics, privacy and everyday utilities around it.
+> Find what is taking space. Review it quickly. Remove it safely. Understand exactly what happened.
+
+## Source of truth
+
+Before changing product direction or storage architecture, read:
+
+1. `docs/PRODUCT_CONSTITUTION.md`
+2. `docs/DECISION_LOG.md`
+3. `AGENTS.md`
+4. `TECH_SPEC.md`
+5. `ARCHITECTURE.md`
+6. `TODO.md`
+7. `docs/PLAY_POLICY.md`
+8. `docs/QA_PLAN.md`
+9. `docs/MARKET_RESEARCH_2026.md`
+
+The Constitution has precedence when older code/comments/docs disagree.
 
 ## Product direction
 
-Tooliva is no longer defined as a shallow `all-in-one app with many icons`.
+Tooliva is not a shallow all-in-one toolbox and not an architecture experiment.
 
 Its core jobs are:
 
-1. **Understand storage** — what is actually taking space?
-2. **Clean safely** — what can the user review and remove?
-3. **Manage files** — browse, search, sort, move, copy, rename and delete shared-storage files.
-4. **Maintain the phone** — app/storage/device diagnostics.
-5. **Stay useful after cleanup** — Notification History, image/PDF/QR/network tools, and later Vault/App Lock.
+1. **Clean storage** — useful, progressive, explainable cleanup results.
+2. **Manage files** — real File Manager/search/actions.
+3. **Maintain the phone** — apps and trustworthy diagnostics.
+4. **Stay useful after cleanup** — Notification History and later selected tools.
 
-The market basis for this direction is documented in:
+## Product principles
 
-- `docs/MARKET_RESEARCH_2026.md`
+- real Cleaner, not gallery-only in Full Mode;
+- one understandable storage-access model;
+- no fake RAM boost/CPU cooling/virus theater;
+- no mysterious junk totals;
+- no silent deletion;
+- progressive real results;
+- explicit user control over heavy scan actions;
+- measured optimization only;
+- local-first privacy;
+- Cleanup Receipt after destructive operations;
+- no ad spam in sensitive/core flows.
 
-## Product promise
+## Cleaner architecture
 
-**Find what is taking your storage. Clean it safely. Manage your phone with one trusted toolbox.**
+Primary Cleaner path:
 
-Tooliva must never use:
-- fake RAM boost;
-- fake CPU cooling;
-- fake antivirus warnings;
-- invented battery-health scores;
-- unexplained fake `junk` totals;
-- silent deletion.
+```text
+User action
+ -> StorageProvider
+ -> progressive cancellable scan
+ -> lightweight classifiers
+ -> live UI results
+ -> review/select
+ -> safe operation
+ -> verified Cleanup Receipt
+```
 
-## Core V1 product
+A mandatory whole-device Room index is **not** the primary Cleaner architecture.
 
-### CLEAN
-- Deep Storage Scan
-- Explainable junk candidates
-- Large Files across accessible shared storage
+See `docs/DECISION_LOG.md` for the rejected Storage Index experiment.
+
+## Storage access
+
+### Full Mode — Android 11+
+
+When `MANAGE_EXTERNAL_STORAGE` is granted, it is the primary shared-storage Cleaner/File Manager path.
+
+It powers, where Android permits:
+
+- Large Files;
+- Downloads;
+- APKs;
+- Archives;
+- Documents;
+- media/screenshot cleanup;
+- File Manager/search.
+
+A Full Mode user should not immediately be asked for a redundant Photos/Videos permission for the same Cleaner purpose.
+
+### Limited Mode
+
+When Full Mode is denied/unavailable:
+
+- MediaStore;
+- granular media permission when genuinely needed;
+- SAF where user-mediated selection is appropriate.
+
+Limited Mode never pretends to cover the whole phone.
+
+## Cleaner V1 target
+
+- Storage overview
+- Large Files
 - Downloads
 - APK installers
 - Archives
 - Documents
-- Images / Videos / Audio
 - Old Files
 - Screenshot Cleaner
-- Exact duplicate files
+- Explainable junk candidates
+- official system-mediated Cache Cleanup
+- Exact Duplicates
 - Cleanup Swipe
-- Empty folders
-- system-mediated Cache Cleanup
 - verified Cleanup Receipt
 
-### FILES
-- Internal/shared storage browser
-- SD/USB where available
-- Downloads/Documents/APKs/Archives/Images/Videos/Audio shortcuts
-- global search
-- sort/filter by name/size/date/type
-- open/share/details
+## File Manager V1 target
+
+- browse accessible shared storage/volumes
+- category shortcuts
+- search
+- sort by name/size/date
+- details/open/share
 - rename
+- create folder
 - copy/move
 - delete/trash
-- create folder
-- Storage Map
-- ZIP/unZIP later in the same file subsystem
+- collision handling
+- progress/cancel
 
-### DIAGNOSE / APPS
-- App Manager
-- large/unused app review
-- Phone Doctor
-- battery/thermal/device facts
-- sensor inventory
-- hardware tests
+File Manager is real core functionality, not a placeholder for permissions.
 
-### PROTECT
-- Notification History — high priority after cleaner core
-- Private Vault — later
-- App Lock — only after reliability/policy validation
+## Known-good baseline
 
-### TOOLS
-- Image Compress / Resize / Convert
-- EXIF Privacy Clean
-- Images → PDF
-- QR / barcode
-- Network tools
-- Compass / Level / Flashlight
-- Magnifier and small tools later
+Reference baseline before the index regression:
 
-## Storage access model
+`b767aa8` — `Fix cleanup result and home navigation`
 
-Tooliva supports two modes.
+Manual Xiaomi validation around this baseline confirmed:
 
-### Full Storage Mode
+- APK/ZIP/PDF/DOC/PNG/MP4 discovery in Full Mode;
+- selection/open/delete;
+- Cleanup Result;
+- Screenshot Cleaner;
+- Home navigation.
 
-Uses Android All Files Access (`MANAGE_EXTERNAL_STORAGE`) for the product's core file-management, on-device-search and storage-maintenance experience.
+## Rejected Storage Index experiment
 
-Production use is subject to Google Play restricted-permission declaration and approval.
+Rejected as primary Cleaner architecture:
 
-### Limited Mode
+- `7836ea` — Room Storage Index v1
+- `71f35ca` — fast-first/deep-index attempt
 
-Uses MediaStore and Storage Access Framework when Full Storage Mode is not granted.
+Real Xiaomi testing showed worse UX: long/heavy first scan, broken/unreliable Large Files behavior, technical clutter, hidden auto-scan, and confusing permission flow.
 
-Limited Mode remains useful, but the UI must never pretend it scanned every shared-storage file.
+Do not add more layers to rescue that architecture. Recover the direct progressive scan path first.
 
-The existing MediaStore work remains valuable fallback infrastructure.
+## Current milestone
 
-## Why Tooliva can win
+**RECOVERY v1**
 
-Research of current Google Play leaders shows a split:
+1. revert/remove mandatory index experiment;
+2. restore direct progressive Large Files scan;
+3. remove index UI/autoscan;
+4. unify Full Mode permission behavior;
+5. build/install debug APK;
+6. human Xiaomi manual regression test;
+7. only after PASS continue to Downloads/APK/Archives/Documents/Old Files/Cache.
 
-- serious cleaners/storage analyzers can be powerful but complex or ad-heavy;
-- Files by Google is trusted and simple but not trying to be a deep system toolbox;
-- device-info apps are technically strong but do not solve cleanup;
-- AppLock/notification-history apps solve one recurring problem each;
-- giant all-in-one toolboxes often become walls of shallow features.
+See `TODO.md` for exact tasks.
 
-Tooliva's target is:
+## Testing ownership
 
-**deep cleaner + real file manager + trustworthy UX + strong recurring utilities.**
+Coding agent:
 
-Key differentiators:
-- Verified Cleanup Receipt
-- Trash vs Physically Freed accounting
-- Storage Map
-- explainable cleanup candidates
-- Full/Limited access modes
-- one scan → action plan
-- local-first privacy
-- respectful monetization
+- writes code/tests;
+- runs automated checks;
+- builds debug APK;
+- installs APK on connected Xiaomi;
+- performs crash smoke-check;
+- gives numbered manual checklist.
+
+Human user:
+
+- performs functional phone testing;
+- reports PASS/FAIL;
+- is the authority for device-dependent UX completion.
+
+The agent must stop before the next major slice until human PASS.
 
 ## Design
 
 Visual source of truth:
+
 - `docs/design/tooliva-ui-showcase.webp`
 - `docs/design/tooliva-ui-system.webp`
 - `docs/design/README.md`
 
-The new cleaner/file-manager screens extend the same dark graphite + teal Material 3 language.
+Direction:
+
+- dark graphite;
+- teal/cyan primary actions;
+- Material 3;
+- rounded cards;
+- clean hierarchy;
+- no fake red danger theater;
+- technical backend concepts stay out of consumer UI.
 
 ## Technology
 
@@ -144,74 +206,64 @@ The new cleaner/file-manager screens extend the same dark graphite + teal Materi
 - Jetpack Compose
 - Material 3
 - Coroutines / Flow
-- Room
-- DataStore
-- WorkManager only where justified
 - MediaStore
 - Storage Access Framework
-- full shared-storage provider for Full Storage Mode
-- UsageStatsManager
-- NotificationListenerService
-- SensorManager
-- ConnectivityManager
-- Android Keystore
-- AndroidX Biometric
-- CameraX where needed
+- Full shared-storage provider for Full Mode
+- Room only for features with demonstrated persistence needs
+- DataStore/WorkManager/Hilt only when justified by active features
+- AndroidX/platform APIs preferred
 
-### Android targets
+Targets:
 
-- `compileSdk`: 36
-- `targetSdk`: 36
-- `minSdk`: 26
+- compileSdk 36
+- targetSdk 36
+- minSdk 26
 
 ## Backend
 
-No backend is required for core Tooliva functionality.
+No backend required for core Tooliva functionality.
 
-Storage scans, fingerprints, Notification History and Vault data remain local.
+User file inventory, fingerprints, notification history and Vault content remain local unless a future explicit user-controlled transfer feature is designed.
 
-## Monetization
+## Competitive strategy
 
-### Free
-- real useful cleaner/file manager
-- restrained ads only on non-sensitive screens
+Market references include:
 
-### Pro Lifetime
-Initial hypothesis remains a one-time purchase instead of a costly weekly subscription.
+- CCleaner
+- AVG Cleaner
+- Files by Google
+- Phone Cleaner / AI Cleaner
+- 1Tap Cleaner
+- SD Maid 2/SE
+- Storage Analyzer
+- established File Managers
 
-Possible Pro value:
-- remove ads
-- advanced filters
-- similar-photo tools
-- advanced Storage Map/history
-- additional premium local utilities
+Tooliva should combine market-proven breadth with calmer UX, explainable cleanup and verified results.
 
-Never block a requested cleanup result behind an ad.
+Do not copy proprietary code/assets/layouts.
 
-## Repository docs
+## Differentiators
 
-- `TECH_SPEC.md` — product/engineering specification
-- `TODO.md` — current implementation roadmap
-- `AGENTS.md` — mandatory AI-agent rules
-- `docs/MARKET_RESEARCH_2026.md` — competitive analysis and product conclusions
-- `docs/PLAY_POLICY.md` — restricted-permission / Play strategy
-- `docs/FEATURE_MATRIX.md` — feature/access priorities
-- `docs/PRIVACY_SECURITY.md` — privacy/security model
-- `docs/QA_PLAN.md` — QA strategy
-- `docs/design/` — visual references
+- Cleanup Receipt
+- Trash vs Physically Freed accounting
+- Explainable Junk
+- real Full Mode Cleaner beyond gallery
+- real File Manager
+- local-first privacy
+- truthful Phone Doctor later
+- restrained monetization
 
-## Current status
+## Repository documents
 
-Already implemented in `agent/android-bootstrap`:
-- Android/Compose foundation
-- Home baseline
-- MediaStore scanner foundation
-- Large Files media fallback flow
-- Screenshot Cleaner flow
-- centralized Trash/delete architecture
-- verified Cleanup Result model
-- Xiaomi physical-device baseline
-
-Current highest-priority milestone:
-
-**Full Storage Mode → StorageProvider/index → Deep Cleaner categories → real File Manager → Storage Map.**
+- `docs/PRODUCT_CONSTITUTION.md` — highest-level permanent rules
+- `docs/DECISION_LOG.md` — decisions/rejected experiments
+- `AGENTS.md` — mandatory coding-agent operating rules
+- `TECH_SPEC.md` — product/technical specification
+- `ARCHITECTURE.md` — current architecture
+- `TODO.md` — active roadmap
+- `docs/MARKET_RESEARCH_2026.md` — competitive research
+- `docs/PLAY_POLICY.md` — Android/Google Play permission strategy
+- `docs/QA_PLAN.md` — testing strategy
+- `docs/PRIVACY_SECURITY.md` — privacy/security
+- `docs/FEATURE_MATRIX.md` — feature/access matrix
+- `docs/design/` — visual source of truth
