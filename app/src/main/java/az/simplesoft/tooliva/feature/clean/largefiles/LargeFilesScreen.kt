@@ -237,7 +237,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                                     Formatter.formatFileSize(context, state.visibleFiles.sumOf { it.sizeBytes }),
                                     color = MaterialTheme.colorScheme.primary,
                                 )
-                                if (state.isLoading) Text("Visited ${state.visitedFiles} files", style = MaterialTheme.typography.bodySmall)
+                                if (state.isLoading) Text("Loading indexed results…", style = MaterialTheme.typography.bodySmall)
                             }
                             if (state.isLoading) CircularProgressIndicator()
                             if (state.visibleFiles.isNotEmpty()) {

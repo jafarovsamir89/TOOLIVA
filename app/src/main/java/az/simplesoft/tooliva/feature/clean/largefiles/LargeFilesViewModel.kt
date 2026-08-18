@@ -10,21 +10,18 @@ import az.simplesoft.tooliva.core.media.LargeMediaFile
 import az.simplesoft.tooliva.core.media.MediaStoreDeleteCoordinator
 import az.simplesoft.tooliva.core.media.PendingMediaDelete
 import az.simplesoft.tooliva.core.media.PreparedCleanupDeletion
-import az.simplesoft.tooliva.core.storage.FullStorageProvider
-import az.simplesoft.tooliva.core.storage.MediaStoreStorageProvider
 import az.simplesoft.tooliva.core.storage.StorageAccessCoordinator
-import az.simplesoft.tooliva.core.storage.StorageAccessMode
 import az.simplesoft.tooliva.core.storage.StorageAccessState
 import az.simplesoft.tooliva.core.storage.StorageCategory
-import az.simplesoft.tooliva.core.storage.StorageProvider
-import az.simplesoft.tooliva.core.storage.StorageScanEvent
 import az.simplesoft.tooliva.core.storage.StorageSortOrder
+import az.simplesoft.tooliva.core.storage.index.IndexedStorageEntry
+import az.simplesoft.tooliva.core.storage.index.StorageIndexQuery
+import az.simplesoft.tooliva.core.storage.index.StorageIndexRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -83,6 +80,7 @@ data class LargeFilesUiState(
 
 class LargeFilesViewModel(application: Application) : AndroidViewModel(application) {
     private val accessCoordinator = StorageAccessCoordinator(application)
+    private val indexRepository = StorageIndexRepository(application)
     private val _uiState = MutableStateFlow(
         LargeFilesUiState(accessState = accessCoordinator.currentState()),
     )
@@ -103,39 +101,12 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
         scanJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, files = emptyList(), visitedFiles = 0L) }
             try {
-                val scanned = mutableListOf<LargeMediaFile>()
-                provider().scan(LargeFilesUiState.MIN_LARGE_FILE_BYTES).collect { event ->
-                    when (event) {
-                        StorageScanEvent.Started -> Unit
-                        is StorageScanEvent.EntryFound -> {
-                            val entry = event.entry
-                            scanned += entry.toLargeMediaFile()
-                            _uiState.update { it.copy(files = scanned.toList()) }
-                        }
-                        is StorageScanEvent.Progress -> {
-                            _uiState.update { it.copy(visitedFiles = event.visitedFiles) }
-                        }
-                        is StorageScanEvent.Warning -> Unit
-                        StorageScanEvent.Completed -> Unit
-                    }
-                }
-                updateScannedFiles(scanned)
+                loadIndexIntoState(showMissingIndexError = true)
             } catch (cancellation: CancellationException) {
                 _uiState.update { it.copy(isLoading = false) }
                 throw cancellation
-            } catch (security: SecurityException) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = if (it.accessState.mode == StorageAccessMode.FULL) {
-                            "Full Storage Access was revoked. Tooliva switched to Limited Mode."
-                        } else {
-                            "Media access is unavailable. Grant access or use Full Storage Mode."
-                        },
-                    )
-                }
             } catch (error: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to scan accessible storage.") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to read the storage index.") }
             }
         }
     }
@@ -146,18 +117,22 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
 
     fun setThreshold(bytes: Long) {
         _uiState.update { it.copy(thresholdBytes = bytes) }
+        reloadIndex()
     }
 
     fun setCategory(category: StorageCategory) {
         _uiState.update { it.copy(categoryFilter = category) }
+        reloadIndex()
     }
 
     fun setSortOrder(order: StorageSortOrder) {
         _uiState.update { it.copy(sortOrder = order) }
+        reloadIndex()
     }
 
     fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
+        reloadIndex()
     }
 
     fun toggleSelection(uri: String) {
@@ -252,12 +227,6 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(cleanupResult = null) }
     }
 
-    private fun provider(): StorageProvider = if (_uiState.value.accessState.mode == StorageAccessMode.FULL) {
-        FullStorageProvider(getApplication())
-    } else {
-        MediaStoreStorageProvider(getApplication())
-    }
-
     private fun finishWithResult(result: CleanupResult) {
         // The deletion coordinator has already verified this operation. Do not make the
         // user wait for a second full-storage scan before showing that confirmed result.
@@ -273,59 +242,67 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
                 errorMessage = null,
             )
         }
-        refreshAfterCleanup()
+        refreshAfterCleanup(result)
     }
 
-    private fun refreshAfterCleanup() {
+    private fun refreshAfterCleanup(result: CleanupResult) {
         viewModelScope.launch {
             try {
-                val refreshed = scanAll().sortedByDescending(LargeMediaFile::sizeBytes)
-                val ids = refreshed.map { it.uri.toString() }.toSet()
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        files = refreshed,
-                        selectedUris = it.selectedUris.intersect(ids),
+                withContext(Dispatchers.IO) {
+                    indexRepository.removeEntriesByRefs(
+                        accessMode = _uiState.value.accessState.mode,
+                        refs = result.removedRefs,
                     )
                 }
-            } catch (_: SecurityException) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = "Storage access changed while refreshing the list.",
-                    )
-                }
+                loadIndexIntoState(showMissingIndexError = false)
             } catch (error: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = error.message ?: "Cleanup finished, but the list could not be refreshed.",
-                    )
-                }
+                _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Cleanup finished, but the index could not be refreshed.") }
             }
         }
     }
 
-    private suspend fun scanAll(): List<LargeMediaFile> = withContext(Dispatchers.IO) {
-        val result = mutableListOf<LargeMediaFile>()
-        provider().scan(LargeFilesUiState.MIN_LARGE_FILE_BYTES).collect { event ->
-            if (event is StorageScanEvent.EntryFound) result += event.entry.toLargeMediaFile()
+    private fun reloadIndex() {
+        if (_uiState.value.isPreparingDelete || _uiState.value.isLoading) return
+        scanJob?.cancel()
+        scanJob = viewModelScope.launch {
+            runCatching { loadIndexIntoState(showMissingIndexError = false) }
+                .onFailure { error -> _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to read the storage index.") } }
         }
-        result
     }
 
-    private fun updateScannedFiles(files: List<LargeMediaFile>) {
-        val sorted = files.sortedByDescending(LargeMediaFile::sizeBytes)
-        val ids = sorted.map { it.uri.toString() }.toSet()
-        _uiState.update { it.copy(isLoading = false, files = sorted, selectedUris = it.selectedUris.intersect(ids)) }
+    private suspend fun loadIndexIntoState(showMissingIndexError: Boolean) {
+        val snapshot = _uiState.value
+        val query = StorageIndexQuery(
+            accessMode = snapshot.accessState.mode,
+            minimumSizeBytes = snapshot.thresholdBytes,
+            category = snapshot.categoryFilter.takeUnless { it == StorageCategory.ALL },
+            searchQuery = snapshot.searchQuery,
+            sortOrder = snapshot.sortOrder,
+        )
+        val indexed = withContext(Dispatchers.IO) { indexRepository.query(query) }
+        val hasIndex = withContext(Dispatchers.IO) { indexRepository.lastSuccessfulScan(snapshot.accessState.mode) != null }
+        val files = indexed.map { it.toLargeMediaFile() }
+        val ids = files.map { it.uri.toString() }.toSet()
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                files = files,
+                selectedUris = it.selectedUris.intersect(ids),
+                errorMessage = if (showMissingIndexError && !hasIndex) {
+                    "No storage index is ready. Open Clean and tap Scan Storage first."
+                } else {
+                    null
+                },
+            )
+        }
     }
 
-    private fun az.simplesoft.tooliva.core.storage.StorageEntry.toLargeMediaFile() = LargeMediaFile(
+    private fun IndexedStorageEntry.toLargeMediaFile() = LargeMediaFile(
         uri = ref,
-        displayName = name,
+        displayName = displayName,
         sizeBytes = sizeBytes,
         mimeType = mimeType,
-        modifiedEpochSeconds = modifiedAtMillis / 1000L,
+        modifiedEpochSeconds = modifiedTimeMillis / 1000L,
         category = category,
         path = path,
     )

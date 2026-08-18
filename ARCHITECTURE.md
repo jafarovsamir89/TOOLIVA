@@ -240,6 +240,25 @@ UI Flows / Search / Storage Map
 
 Do not perform expensive hashing during the initial cheap index pass unless needed.
 
+## Storage Index v1 implementation contract
+
+The first Room index uses three local tables: indexed entries, active access-mode/volume
+scopes, and scan generations. Entries written by a new generation are invisible to queries
+until every corresponding root reports a successful completion. Only then does the scope point
+to that generation and stale entries for that successful root are removed. Cancelled or failed
+generations therefore cannot replace the last known-good index.
+
+Full and Limited entries are scoped separately by `StorageAccessMode`. If Full Storage Access is
+revoked, Large Files queries use only the Limited scope after a Limited scan; old Full entries
+remain stale informational data and are not used for file actions. Index rows contain metadata
+and local references only—never file contents or thumbnails.
+
+Indexing uses a single cancellable filesystem traversal and bounded Room batches. Unchanged
+metadata (`stable key`, path/ref, size and modified time plus normalized fields) reuses the
+existing row and only advances its generation marker. No hashing or file-content reads are
+performed. Feature queries are Room-filtered and bounded rather than loading the whole table
+into Compose.
+
 ---
 
 # ScanCoordinator

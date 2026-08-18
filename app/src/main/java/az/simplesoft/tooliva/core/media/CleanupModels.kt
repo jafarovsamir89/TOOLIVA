@@ -48,6 +48,7 @@ data class CleanupResult(
     val failedBytes: Long,
     val unchangedCount: Int,
     val unchangedBytes: Long,
+    val removedRefs: Set<String> = emptySet(),
     val note: String? = null,
 ) {
     companion object {

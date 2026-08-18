@@ -8,6 +8,7 @@ import android.os.storage.StorageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
@@ -15,6 +16,12 @@ import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import kotlin.coroutines.coroutineContext
 
+/**
+ * Cancellable, single-traversal provider for accessible shared storage.
+ *
+ * Traversal is deliberately bounded to one producer. It keeps only the current directory
+ * stack in memory and lets the index repository perform bounded database batches.
+ */
 class FullStorageProvider(context: Context) : StorageProvider {
     private val appContext = context.applicationContext
 
@@ -22,12 +29,16 @@ class FullStorageProvider(context: Context) : StorageProvider {
 
     override fun scan(minBytes: Long): Flow<StorageScanEvent> = flow {
         emit(StorageScanEvent.Started)
-        var visited = 0L
-        var matched = 0L
-        var matchedBytes = 0L
+        var filesDiscovered = 0L
+        var foldersVisited = 0L
+        var indexedBytes = 0L
+        val successfulVolumes = mutableSetOf<String>()
 
         roots().forEach { root ->
-            if (!root.exists() || !root.isDirectory) return@forEach
+            coroutineContext.ensureActive()
+            val volumeId = runCatching { root.canonicalPath }.getOrElse { root.absolutePath }
+            emit(StorageScanEvent.RootStarted(volumeId))
+            var rootCompletedSuccessfully = true
             val seenDirectories = HashSet<String>()
             val stack = ArrayDeque<File>()
             stack.add(root)
@@ -36,61 +47,107 @@ class FullStorageProvider(context: Context) : StorageProvider {
                 coroutineContext.ensureActive()
                 val directory = stack.removeLast()
                 val canonicalDirectory = runCatching { directory.canonicalPath }.getOrNull()
-                    ?: continue
+                if (canonicalDirectory == null) {
+                    emit(StorageScanEvent.Warning(StorageScanWarning.UNREADABLE_ENTRY))
+                    continue
+                }
                 if (!seenDirectories.add(canonicalDirectory) || isProtectedPath(canonicalDirectory)) continue
 
+                foldersVisited++
                 val children = runCatching { directory.listFiles() }.getOrNull()
                 if (children == null) {
-                    emit(StorageScanEvent.Warning(canonicalDirectory))
+                    rootCompletedSuccessfully = false
+                    emit(StorageScanEvent.Warning(StorageScanWarning.UNREADABLE_ENTRY))
                     continue
                 }
 
                 children.forEach { child ->
                     coroutineContext.ensureActive()
-                    val path = child.absolutePath
-                    if (isProtectedPath(path)) return@forEach
-                    if (child.isDirectory) {
+                    val absolutePath = child.absolutePath
+                    if (isProtectedPath(absolutePath)) return@forEach
+                    val symbolicLink = runCatching { Files.isSymbolicLink(child.toPath()) }.getOrNull()
+                    if (symbolicLink == null) {
+                        emit(StorageScanEvent.Warning(StorageScanWarning.UNREADABLE_ENTRY))
+                        return@forEach
+                    }
+                    if (symbolicLink) return@forEach
+
+                    val isDirectory = runCatching { child.isDirectory }.getOrNull()
+                    if (isDirectory == null) {
+                        emit(StorageScanEvent.Warning(StorageScanWarning.UNREADABLE_ENTRY))
+                        return@forEach
+                    }
+                    if (isDirectory) {
                         stack.add(child)
-                        return@forEach
-                    }
-                    if (!child.isFile || Files.isSymbolicLink(child.toPath())) return@forEach
-
-                    visited++
-                    val size = runCatching { child.length() }.getOrDefault(0L)
-                    if (size < minBytes) {
-                        if (visited % PROGRESS_INTERVAL == 0L) {
-                            emit(StorageScanEvent.Progress(visited, matched, matchedBytes))
-                        }
+                        val directoryEntry = metadataFor(child, volumeId, isDirectory = true)
+                        if (directoryEntry != null) emit(StorageScanEvent.EntryFound(directoryEntry))
+                        else emit(StorageScanEvent.Warning(StorageScanWarning.ENTRY_CHANGED))
                         return@forEach
                     }
 
-                    val attributes = runCatching {
-                        Files.readAttributes(child.toPath(), BasicFileAttributes::class.java)
-                    }.getOrNull()
-                    val category = classify(child)
-                    val entry = StorageEntry(
-                        ref = Uri.fromFile(child),
-                        name = child.name,
-                        path = path,
-                        category = category,
-                        sizeBytes = size,
-                        modifiedAtMillis = attributes?.lastModifiedTime()?.toMillis() ?: child.lastModified(),
-                        mimeType = mimeTypeFor(child),
-                        extension = extensionFor(child),
-                        volumeId = root.absolutePath,
-                    )
-                    matched++
-                    matchedBytes += size
+                    val isFile = runCatching { child.isFile }.getOrNull()
+                    if (isFile == null) {
+                        emit(StorageScanEvent.Warning(StorageScanWarning.UNREADABLE_ENTRY))
+                        return@forEach
+                    }
+                    if (!isFile) return@forEach
+                    filesDiscovered++
+                    val entry = metadataFor(child, volumeId, isDirectory = false)
+                    if (entry == null) {
+                        emit(StorageScanEvent.Warning(StorageScanWarning.ENTRY_CHANGED))
+                        return@forEach
+                    }
+                    if (entry.sizeBytes < minBytes) {
+                        emitProgressIfNeeded(filesDiscovered, foldersVisited, indexedBytes, canonicalDirectory)
+                        return@forEach
+                    }
+
+                    indexedBytes += entry.sizeBytes
                     emit(StorageScanEvent.EntryFound(entry))
-                    if (matched % PROGRESS_INTERVAL == 0L) {
-                        emit(StorageScanEvent.Progress(visited, matched, matchedBytes))
-                    }
+                    emitProgressIfNeeded(filesDiscovered, foldersVisited, indexedBytes, canonicalDirectory)
                 }
             }
+
+            if (rootCompletedSuccessfully) successfulVolumes += volumeId
+            emit(StorageScanEvent.RootCompleted(volumeId, rootCompletedSuccessfully))
         }
-        emit(StorageScanEvent.Progress(visited, matched, matchedBytes))
-        emit(StorageScanEvent.Completed)
+
+        emit(StorageScanEvent.Progress(filesDiscovered, foldersVisited, indexedBytes))
+        emit(StorageScanEvent.Completed(successfulVolumes))
     }.flowOn(Dispatchers.IO)
+
+    private suspend fun FlowCollector<StorageScanEvent>.emitProgressIfNeeded(
+        filesDiscovered: Long,
+        foldersVisited: Long,
+        indexedBytes: Long,
+        currentPath: String,
+    ) {
+        if (filesDiscovered % PROGRESS_INTERVAL == 0L) {
+            emit(StorageScanEvent.Progress(filesDiscovered, foldersVisited, indexedBytes, currentPath))
+        }
+    }
+
+    private fun metadataFor(child: File, volumeId: String, isDirectory: Boolean): StorageEntry? {
+        val canonicalPath = runCatching { child.canonicalPath }.getOrNull() ?: return null
+        if (!child.exists() || isProtectedPath(canonicalPath)) return null
+        val attributes = runCatching {
+            Files.readAttributes(child.toPath(), BasicFileAttributes::class.java)
+        }.getOrNull()
+        val modified = attributes?.lastModifiedTime()?.toMillis() ?: child.lastModified()
+        val size = if (isDirectory) 0L else runCatching { child.length() }.getOrDefault(0L)
+        return StorageEntry(
+            ref = Uri.fromFile(child),
+            name = child.name,
+            path = canonicalPath,
+            category = if (isDirectory) StorageCategory.OTHER else classify(child),
+            sizeBytes = size,
+            modifiedAtMillis = modified,
+            mimeType = if (isDirectory) null else mimeTypeFor(child),
+            extension = if (isDirectory) null else extensionFor(child),
+            isDirectory = isDirectory,
+            volumeId = volumeId,
+        )
+    }
 
     private fun roots(): List<File> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
@@ -135,7 +192,7 @@ class FullStorageProvider(context: Context) : StorageProvider {
         .getMimeTypeFromExtension(extensionFor(file))
 
     companion object {
-        private const val PROGRESS_INTERVAL = 128L
+        const val PROGRESS_INTERVAL = 128L
         private val VIDEO_EXTENSIONS = setOf("mp4", "mkv", "mov", "avi", "webm", "3gp", "m4v")
         private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "heic", "gif", "bmp", "tiff")
         private val AUDIO_EXTENSIONS = setOf("mp3", "m4a", "aac", "wav", "flac", "ogg", "opus", "amr")

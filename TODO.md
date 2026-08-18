@@ -53,7 +53,7 @@ Do not prioritize unrelated micro-tools until Cleaner + File Manager are strong.
 - [x] [P0] Unit/UI test foundation
 - [x] [P0] CI build/test workflow
 - [ ] [P1] Introduce version catalog if it improves maintainability without churn
-- [ ] [P0] Add Room for storage index / fingerprints / receipts
+- [~] [P0] Add Room for storage index / fingerprints / receipts — Storage Index v1 schema and repository added; fingerprints/receipts remain separate future work
 - [ ] [P0] Add DataStore for settings/access state
 - [ ] [P1] Add Hilt when dependency graph justifies it
 - [ ] [P1] Add WorkManager only for justified deferred/index work
@@ -78,7 +78,7 @@ Do not prioritize unrelated micro-tools until Cleaner + File Manager are strong.
 - [x] [P0] Distinguish Trash bytes vs physically freed bytes
 - [~] [P0] Large Files media implementation — useful fallback but not full product scope
 - [~] [P0] Screenshot Cleaner with 30/90/365, thumbnails, multi-select, Select all
-- [~] [P0] Physical-device validation on Xiaomi
+- [~] [P0] Physical-device validation on Xiaomi — manual PASS confirmed for immediate Large Files Cleanup Result, Screenshot Cleaner Trash result, and Home navigation; Storage Index v1 still needs manual validation
 
 Do **not** delete the existing MediaStore implementation. It becomes Limited Mode/fallback infrastructure.
 
@@ -110,13 +110,13 @@ This is now the highest-priority engineering phase.
 
 ## Index
 
-- [ ] [P0] Room-backed storage index
-- [ ] [P0] Progressive full-storage indexing
-- [ ] [P0] Cancellation
-- [ ] [P0] Bounded concurrency
-- [ ] [P0] Handle files disappearing/changing during scan
-- [ ] [P0] Incremental/reuse strategy so unchanged storage is not fully rescanned every time
-- [ ] [P0] Stress test 50k files
+- [x] [P0] Room-backed storage index — entries, scopes, generations, exported schema
+- [~] [P0] Progressive full-storage indexing — real counters/progress and Clean UI implemented; physical UX validation pending
+- [x] [P0] Cancellation — automated connected test confirms canceled generation preserves the last successful index
+- [x] [P0] Bounded concurrency — single cancellable traversal with bounded Room batches; no per-file coroutine fan-out
+- [~] [P0] Handle files disappearing/changing during scan — per-entry failures are isolated and changed metadata is tested; physical revoke/disappearance validation pending
+- [x] [P0] Incremental/reuse strategy so unchanged storage is not fully rescanned every time — metadata reuse and stale cleanup covered by 50k test
+- [x] [P0] Stress test 50k files — connected Room stress test passed on Xiaomi
 - [ ] [P1] Stress test 100k+ files
 
 ---
@@ -455,7 +455,7 @@ Do this after the core utility proves valuable.
 - [ ] [P0] Android 14
 - [ ] [P0] Android 15
 - [ ] [P0] Android 16
-- [~] [P0] Xiaomi physical-device baseline
+- [~] [P0] Xiaomi physical-device baseline — latest manual PASS covers Cleaner result timing and Home navigation; broader index/access regression remains
 - [ ] [P0] Samsung physical device
 - [ ] [P0] Pixel physical device
 - [ ] [P1] Oppo/Realme if available
