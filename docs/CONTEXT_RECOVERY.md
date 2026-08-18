@@ -143,7 +143,7 @@ After Recovery + Permission UX manual PASS:
 4. Documents
 5. Old Files
 6. Explainable Junk rules
-7. Cache v1
+7. Cache Cleaner v2 + selected-app cache automation + Phone Optimizer
 8. File Manager
 9. Exact Duplicates
 10. Cleanup Swipe
@@ -152,6 +152,8 @@ After Recovery + Permission UX manual PASS:
 13. Phone Doctor / Check My Phone
 14. Notification History
 15. later Vault/App Lock/content tools/monetization
+
+The current approved vertical slice is Cache Cleaner v2 + Phone Optimizer. It must preserve the direct Cleaner scanner and wait for human device PASS before the next major module.
 
 ## 11. Product invariant
 

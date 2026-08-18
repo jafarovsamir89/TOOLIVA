@@ -357,6 +357,19 @@ On supported Android:
 - no fake cache byte count;
 - no claim of direct private-cache access.
 
+Cache Cleaner v2 automated tests:
+
+- browser discovery is intent-based, deduplicated and excludes unavailable packages;
+- YouTube appears only when installed;
+- Usage Access denied/granted/revoked states are truthful;
+- cache stats measured/zero/unavailable/security/io/package-disappeared cases are isolated;
+- selection starts empty, Select all excludes unavailable values, selected totals are exact;
+- before/after reduction clamps negative values to zero and never fabricates an unavailable result;
+- Accessibility state machine ignores wrong target/settings, clicks only exact Clear cache and fails on Clear data/storage/ambiguous controls;
+- timeout, revoked service, stale session and manual fallback are covered.
+
+Manual Xiaomi cache slice remains human-owned: verify browser/YouTube values, Accessibility disclosure/enablement, selected sequence, Clear cache-only behavior, before/after result and manual fallback.
+
 ## 16. App Manager tests
 
 Before broad package visibility:
@@ -388,6 +401,13 @@ Cross-check against system/ADB where reasonable:
 - sensors.
 
 Unsupported values show `Unavailable`, never fabricated values.
+
+Phone Optimizer tests additionally cover:
+
+- real total/available memory, non-negative used estimate and Normal/High pressure mapping;
+- system cache action launch/cancel/unsupported/error;
+- before/after memory/storage readings without claiming RAM freed;
+- Xiaomi manual navigation and system-dialog behavior.
 
 ## 18. Notification History tests
 

@@ -181,8 +181,8 @@ The UI must clearly state that coverage is limited.
 ### Other restricted access
 
 - `QUERY_ALL_PACKAGES`: not approved automatically; add only after a real App Manager need is demonstrated and current Play policy is re-reviewed.
-- AccessibilityService: not approved for Cleaner/App Lock without a separate explicit human decision and policy review.
-- Usage Access: only for real app-usage/unused-app features after user opt-in.
+- AccessibilityService: explicitly approved only for the user-started, selected-app cache-cleaning experiment documented in the decision log; never for App Lock, RAM killing, force-stop, ad interaction, background automation or unrelated UI control.
+- Usage Access: opt-in only for real local app-cache statistics and later app-usage features, with clear disclosure and revoke handling.
 - Notification Access: only for Notification History after prominent disclosure.
 
 ## 9. Cleaner UX contract
@@ -291,7 +291,7 @@ For V1, prefer the official Android system-mediated cache action where supported
 
 Do not claim direct silent access to private cache of every other app.
 
-Advanced Accessibility-based cache automation is a later, separately approved experiment only.
+Accessibility-based cache automation is approved only for a narrow, user-started selected-app experiment. It must remain disabled until the user explicitly enables the service, must operate only in expected Android Settings screens, and must never press Clear data, Clear storage, Erase data or Manage storage. It is not approved for App Lock, RAM killing, force-stop, ad interaction or background actions.
 
 ## 14. Testing ownership
 

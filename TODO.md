@@ -223,8 +223,31 @@ Candidate rules to research/implement one by one:
 - [x] [P0] explain system-mediated behavior
 - [x] [P0] handle supported/unsupported/cancel/error honestly
 - [x] [P0] no fake per-app private-cache visibility or cache amount
-- [~] [P0] Xiaomi manual test — APK installed and crash-smoke passed; functional system dialog test pending
-- [ ] [P2] Accessibility-based automation only after separate explicit approval/policy review
+- [x] [P0] Xiaomi manual test — user confirmed the v1 system cache flow works
+
+## Cache Cleaner v2 + selected-app automation
+
+- [x] [P0] discover installed browsers through intent-based package visibility without `QUERY_ALL_PACKAGES`
+- [x] [P0] include YouTube only when `com.google.android.youtube` is installed
+- [x] [P0] detect Usage Access grant/revoke and provide a just-in-time disclosure/settings flow
+- [x] [P0] measure Android-provided `StorageStats.cacheBytes` off the main thread
+- [x] [P0] show unavailable per-app stats honestly and isolate per-package failures
+- [x] [P0] browser/video grouping, cache totals, largest-first ordering and empty initial selection
+- [x] [P0] select/unselect, Select all, selected total and manual App Info fallback
+- [x] [P0] prominent disclosure and affirmative consent before optional automation
+- [x] [P0] deterministic selected-app Accessibility state machine with exact Clear cache safety guard
+- [x] [P0] no Clear data/storage/erase/manage-storage clicks, gestures, OCR, screenshots or browser-content inspection
+- [x] [P0] finite timeout, stale-session cleanup, failure fallback and measured before/after result math
+- [~] [P0] Xiaomi real browser/YouTube cache measurements and Usage Access flow — manual test required
+- [~] [P0] Xiaomi Accessibility enable, Chrome/YouTube sequence and before/after reduction — manual test required
+
+## Phone Optimizer / Memory v1
+
+- [x] [P0] move the official system-mediated cache action into Phone Optimizer
+- [x] [P0] show real total RAM, available memory, used estimate and memory pressure
+- [x] [P0] show before/after device readings without fake RAM-freed claims
+- [x] [P0] handle Full Storage Access, cancel, unsupported and launch failure honestly
+- [~] [P0] Xiaomi system action, RAM UI and Home/Clean navigation — manual test required
 
 ## App Manager
 
@@ -305,6 +328,7 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 
 ## Phone Doctor
 
+- [ ] [P0] Phone Optimizer Xiaomi manual regression PASS
 - [ ] [P0] device/model/Android/security patch
 - [ ] [P0] CPU/ABI public facts
 - [ ] [P0] RAM/storage facts

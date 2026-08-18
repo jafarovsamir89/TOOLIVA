@@ -409,3 +409,11 @@ A normal user can:
 8. understand exactly what was removed;
 9. browse/manage files;
 10. never encounter fake optimization/scareware behavior.
+
+## 18. App cache analysis and selected cleanup
+
+Cache Cleaner v2 is a focused app-cache review, not a whole App Manager. It discovers installed browsers through an `ACTION_VIEW`/`BROWSABLE` web intent and adds YouTube only when that exact package is installed. After explicit Usage Access consent, `StorageStatsManager` supplies Android-provided `StorageStats.cacheBytes` off the main thread.
+
+Nothing is selected or cleaned automatically. Unavailable statistics remain unavailable, and totals include only measured cache bytes. Users can select apps, see the exact selected total, refresh, or open App Info for manual Clear cache.
+
+Optional automatic cleaning is limited to the selected packages and starts only after prominent disclosure, affirmative consent and the user's explicit action. Its AccessibilityService may navigate only expected Settings screens and click only a validated Clear cache node; it never clicks Clear data/Storage or reads unrelated app content. The service has a finite timeout and a manual fallback.

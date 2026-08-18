@@ -152,7 +152,21 @@ It must distinguish requested, missing, Trash, physically freed, failed, cancele
 
 **Decision:** use the official system-mediated cache-clearing flow where supported.
 
-**Consequence:** no claim of silent private-cache deletion. Accessibility-based automation is deferred until separately reviewed and explicitly approved.
+**Consequence:** no claim of silent private-cache deletion from V1. The V2 analyzer may use Android-provided `StorageStats.cacheBytes` after Usage Access, while the V1 system action is moved to Phone Optimizer.
+
+---
+
+## D-018 — Selected-app cache automation approval
+
+**Decision:** the human explicitly approved AccessibilityService for one narrow experiment: cleaning caches of apps selected by the user.
+
+**Scope:** installed browsers discovered through browser intent resolution plus the explicitly visible YouTube package. The flow is user-started, local-only and deterministic: open App Info, navigate to Storage/cache and click only an exact `Clear cache` control.
+
+**Hard exclusions:** App Lock, RAM killing, force-stop, ad clicking, background autonomous actions, arbitrary Settings control, browser/page inspection, OCR, screenshots, gestures, network and collection of accessibility text.
+
+**Safety:** the service is disabled by default, requires prominent disclosure and affirmative consent, filters to expected Settings packages, has a finite timeout, and fails safely when a target or safe node cannot be confirmed. `isAccessibilityTool` remains false because Tooliva is not an accessibility tool for people with disabilities.
+
+**Release consequence:** Play Console Accessibility declaration, accurate listing disclosure and a demo package/video are required before any production submission. Physical Xiaomi automation remains `[~]` until human PASS.
 
 ---
 

@@ -131,19 +131,22 @@ Tooliva must not claim direct silent deletion of every other app's private inter
 
 Handle unsupported/cancel/error honestly.
 
-## 9. Accessibility
+## 9. Accessibility — selected-app cache cleaning only
 
-AccessibilityService is **not approved by default** for Cleaner or App Lock.
+The human explicitly approved an experimental AccessibilityService for one narrow purpose: clearing cache for apps the user selected in Cache Cleaner. Tooliva is not an accessibility tool for people with disabilities and must not set `isAccessibilityTool=true`.
 
-Competitor use does not automatically make it appropriate for Tooliva.
+Required safeguards:
 
-If considered later:
+1. prominent in-app disclosure immediately before the capability is requested;
+2. affirmative user consent and an explicit Android Settings enable step;
+3. service disabled/no-op without an active user-started session;
+4. only expected Android Settings packages and the selected target package flow;
+5. only exact, safety-validated Clear cache nodes via `ACTION_CLICK`;
+6. never Clear data, Clear storage, Erase data, Manage storage, force-stop, ad click, gesture, OCR, screenshot or browser-page inspection;
+7. finite timeout, stale-session cancellation and manual App Info fallback;
+8. no accessibility text persisted, logged or sent over the network.
 
-1. define exact user-facing need;
-2. verify current Google Play Accessibility policy;
-3. obtain explicit human approval;
-4. implement prominent disclosure;
-5. avoid autonomous/deceptive behavior prohibited by policy.
+Before production submission, complete the Play Console Accessibility declaration, accurate store listing disclosure and a demo/video package. Google Play policy states that non-accessibility apps using this API require prominent disclosure and declaration, and that the API must not be used for autonomous/deceptive behavior. This feature remains an experimental release gate until policy review and device validation are complete.
 
 ## 10. Notification Access
 

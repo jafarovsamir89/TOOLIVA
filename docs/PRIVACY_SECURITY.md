@@ -155,9 +155,13 @@ Uninstall always goes through user/system-mediated Android behavior.
 
 # 8. Cache cleanup
 
-Tooliva V1 uses the official system-mediated cache action where supported.
+Cache Cleaner v2 uses package metadata for discovered browsers/YouTube and Android-provided `StorageStats.cacheBytes` only after explicit Usage Access. Values stay local, package failures are isolated and unavailable values are not replaced with fake zeroes.
 
-Do not claim direct access to every app's private cache.
+The selected package list and before/after measurements are local ephemeral session data. They are cleared after completion/cancel/timeout and never sent to backend, analytics or ads.
+
+The optional AccessibilityService is user-started and local-only. It observes only the expected Android Settings UI needed to locate Storage/cache/Clear cache. It does not collect browser pages, URLs, history, cookies, passwords, messages, account data, screenshots or screen recordings. No accessibility event text is logged or persisted.
+
+The official system-mediated Phone Optimizer action still does not expose a per-app deletion list or a cache-specific byte guarantee.
 
 Do not display fake per-app reclaimable cache values if Android does not expose defensible figures.
 
@@ -225,7 +229,7 @@ Biometric:
 
 Do not claim protection against root/system attackers.
 
-AccessibilityService remains unapproved until explicit product/policy review.
+AccessibilityService is approved only for selected-app cache cleaning under Decision D-018. It is not approved for App Lock, RAM killing, force-stop, ad interaction, background autonomous actions or unrelated Settings control. The service must remain `isAccessibilityTool=false`, use least-privilege event handling, and stop when no active session exists.
 
 ---
 
