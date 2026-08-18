@@ -1,200 +1,244 @@
 # Tooliva — Technical Specification
 
-Version: 0.2 — market-driven rewrite  
+Version: 0.3 — direct-cleaner architecture  
+Revision: 2026-08-18  
 Platform: Android  
-Product: Cleaner + File Manager + Device Toolbox  
-Research baseline: `docs/MARKET_RESEARCH_2026.md`
+Product: Cleaner + File Manager + Device Tools
+
+Authoritative context:
+- `docs/PRODUCT_CONSTITUTION.md`
+- `docs/DECISION_LOG.md`
+- `AGENTS.md`
 
 ## 1. Product goal
 
-Build a best-in-class Android device-maintenance utility whose **core purposes are storage cleaning and file management**, then retain users with diagnostics, privacy and everyday tools.
+Build a best-in-class Android storage Cleaner and real File Manager first, then add trustworthy device-maintenance and retention utilities.
 
-Tooliva must be useful in the way mainstream users expect a real cleaner to be useful:
+The core Cleaner must:
 
-- scan shared storage beyond the photo gallery;
-- explain what occupies space;
-- find large/old/duplicate/unnecessary candidates;
-- surface APKs, archives, documents, downloads, media and other accessible shared-storage files;
-- manage files safely;
-- analyze installed applications where policy-approved;
-- provide a system-mediated cache-cleaning flow;
-- verify exactly what happened after cleanup.
+- scan accessible shared storage beyond the gallery;
+- progressively surface useful results;
+- find large files, downloads, APKs, archives, documents, media, screenshots and old-file candidates;
+- explain why each cleanup candidate is shown;
+- allow safe review/open/select/delete flows;
+- verify what changed;
+- show a truthful Cleanup Receipt;
+- remain simple enough that a normal user never needs to understand internal Android/database architecture.
 
-The product must never sacrifice trust for fake optimization claims.
+## 2. Non-goals
 
-## 2. Product pillars
+Do not implement/claim:
 
-Priority order:
-
-1. **CLEAN** — deep storage analysis and cleanup
-2. **FILES** — full shared-storage file management/search
-3. **DIAGNOSE / APPS** — device and application maintenance
-4. **PROTECT** — notification history, Vault, App Lock if reliable
-5. **TOOLS** — image/PDF/QR/network/sensor utilities
-
-Cleaner and File Manager are core functionality, not side tools.
-
----
-
-# 3. Non-goals / prohibited behavior
-
-V1 must not implement or claim:
-
-- fake RAM booster;
-- fake CPU cooler;
-- invented battery health percentage;
-- fake virus alerts;
-- fake `phone is damaged` warnings;
-- silent deletion of user files;
-- silent clearing of private app data;
-- root-required behavior in the normal Play build;
+- fake RAM boost;
+- fake CPU cooling;
+- fake antivirus warnings;
+- invented battery-health score;
+- mysterious fake junk totals;
+- silent deletion;
+- hidden root/exploit behavior;
+- automatic private-cache wiping claims;
 - hidden Accessibility automation;
-- hidden package/app inventory collection;
-- server upload of scanned filenames/content;
-- mandatory account creation;
-- ad gating before showing a requested scan/result;
-- manipulative weekly-subscription traps.
+- mandatory account/backend for core tools;
+- ad-gated scan results;
+- architecture whose only justification is hypothetical future scale.
 
-Every number displayed as reclaimable space must be explainable.
+## 3. Product modules and order
 
----
+### P0 core
 
-# 4. Storage access architecture
+1. CLEAN
+2. FILES
+3. APPS / maintenance
+4. DIAGNOSE / CHECKUP
+5. NOTIFICATION HISTORY
 
-Tooliva uses two explicit modes.
+### Later
 
-## 4.1 Full Storage Mode — preferred cleaner mode
+- Vault
+- App Lock
+- image/PDF tools
+- QR/network/sensor mini-tools
+- monetization polish
 
-Target capability:
+Do not build later modules while the Cleaner/File Manager regression/recovery work remains unresolved.
+
+# 4. Storage access model
+
+## 4.1 Full Mode — preferred modern Cleaner/File Manager path
+
+On Android 11+ when granted:
+
 `MANAGE_EXTERNAL_STORAGE`
 
-Reason:
-Tooliva's core purpose includes file management, on-device file search and shared-storage maintenance. This mode is necessary to provide the full consumer cleaner experience across shared storage.
+Use Full Mode for the shared-storage functions it enables:
 
-Capabilities where Android permits:
-- enumerate shared-storage files/folders;
-- APK/archive/document discovery;
-- global file search;
-- full-storage size/date/type indexing;
-- file manager actions;
-- deep storage visualization;
-- official cache-clearing intent.
+- Large Files;
+- Downloads;
+- APK/archives/documents;
+- media cleanup;
+- Screenshot Cleaner;
+- File Manager;
+- on-device file search;
+- storage analysis.
 
-Requirements:
-- prominent explanation before opening Special App Access;
-- user explicitly enables All Files Access;
-- app remains useful if denied;
-- policy/declaration review before production Play submission;
-- no attempt to bypass Android protected/private areas.
+Implementation requirements:
 
-## 4.2 Limited Mode — mandatory fallback
+- truthful pre-permission disclosure;
+- open correct Special App Access page;
+- `Environment.isExternalStorageManager()` state detection;
+- handle grant/deny/revoke;
+- no attempt to enter Android-protected paths through bypasses;
+- production remains contingent on current Google Play declaration approval.
 
-Use:
-- MediaStore;
-- Storage Access Framework;
-- user-granted document/tree URIs where appropriate.
+### Critical UX rule
 
-Limited Mode must never pretend to be a full-device scan.
+If Full Storage Access is already granted, Cleaner submodules must not ask for redundant broad Photos/Videos permission for the same storage-cleaning job.
 
-UI must clearly label when results are limited by Android permissions.
+## 4.2 Limited Mode
 
-## 4.3 StorageProvider abstraction
+When Full Mode is denied/not supported:
 
-Do not couple cleaner UI directly to one Android storage API.
+- MediaStore for media-focused flows;
+- SAF for user-mediated files/folders;
+- granular media permissions only when a Limited Mode media feature genuinely needs them.
 
-Suggested domain interface:
+Limited Mode UI explicitly states reduced coverage.
+
+# 5. Storage domain
+
+Retain simple provider abstraction:
 
 ```kotlin
 interface StorageProvider {
     val accessMode: StorageAccessMode
-    fun scan(request: StorageScanRequest): Flow<StorageEntry>
-    suspend fun search(query: String, filters: FileFilters): List<StorageEntry>
-    suspend fun resolve(uriOrPath: StorageRef): StorageEntry?
+    fun scan(request: StorageScanRequest): Flow<StorageScanEvent>
+    suspend fun stat(ref: StorageRef): StorageEntry?
 }
 ```
 
-Implementations can include:
+Core models describe:
+
+- ref/path identity;
+- name;
+- extension/MIME;
+- size;
+- modified time;
+- category;
+- parent/volume where useful;
+- file/directory status.
+
+Providers may include:
+
 - `FullStorageProvider`
 - `MediaStoreStorageProvider`
-- `SafStorageProvider`
+- `SafStorageProvider` when needed
 
-Existing MediaStore work must be preserved as fallback/reusable infrastructure.
+Features consume domain models, not Android cursor/filesystem details directly.
 
----
+# 6. Cleaner engine
 
-# 5. CLEAN — primary product module
+## 6.1 Main architecture
 
-## 5.1 Deep Storage Scan
+The primary Cleaner path is direct and progressive:
 
-Primary CTA:
-`SCAN STORAGE`
+```text
+User taps Scan / opens explicit scan action
+        ↓
+StorageProvider
+        ↓
+progressive cancellable traversal/query
+        ↓
+lightweight classifier pipeline
+        ├─ Large Files
+        ├─ Downloads
+        ├─ APK
+        ├─ Archives
+        ├─ Documents
+        ├─ Media
+        ├─ Old Files
+        └─ Explainable candidate rules
+        ↓
+UI updates as matches are discovered
+```
 
-Scan output must include real accessible categories:
+### Requirements
 
-- reclaimable candidates;
-- large files;
-- downloads;
-- APKs;
-- archives: ZIP/RAR/7Z where identifiable;
-- documents: PDF/DOC/DOCX/PPT/PPTX/XLS/XLSX/TXT etc.;
-- videos;
-- images;
-- audio;
-- screenshots;
-- duplicate candidates;
-- old files;
-- empty folders;
-- installed/unused applications when App Manager access is enabled;
-- leftover candidates only when classification is defensible.
+- no filesystem work on main thread;
+- results appear progressively;
+- user can cancel;
+- single unreadable/disappearing file does not abort the scan;
+- avoid symlink/path loops where applicable;
+- do not materialize the whole phone tree before producing results;
+- do not hash file contents during normal scan;
+- do not decode/generate thumbnails for all files;
+- do not persist every discovered file to Room as a mandatory step;
+- do not auto-start heavy whole-storage traversal simply by navigation.
 
-Scan requirements:
-- coroutine/IO execution;
-- progressive results;
-- cancellation;
-- resumable/cached index where beneficial;
-- handle disappearing files;
-- no unbounded memory accumulation;
-- exclude Tooliva's own working/temp files from cleanup suggestions;
-- never scan Android-protected data by bypass methods.
+## 6.2 Persistence rule
 
-## 5.2 Storage dashboard
+Room is optional infrastructure, not the primary Cleaner gateway.
 
-Show:
-- total / used / available;
-- indexed bytes;
-- access mode: Full / Limited;
-- category breakdown;
-- top space consumers;
-- highest-value cleanup actions.
+Acceptable persistence cases:
 
-Do not show one unexplained `Junk = X GB` total.
+- duplicate fingerprint cache;
+- Notification History;
+- saved cleanup decisions/history;
+- explicit scan history/receipts if product value is demonstrated;
+- a small measured cache only after real performance evidence.
 
-## 5.3 Explainable Junk Candidates
+Rejected:
 
-`Junk` is a presentation group, not a magic classifier.
+```text
+filesystem -> mandatory whole-device Room index -> active generation -> UI
+```
 
-Every item/group must have a reason such as:
-- obsolete APK installer;
-- temporary/download residue;
-- empty file/folder;
-- known thumbnail/cache artifact in accessible shared storage;
-- duplicate exact file;
-- old screenshot;
-- user-selected old download;
-- leftover candidate linked to removed app with confidence/explanation.
+for ordinary Large Files/Cleaner discovery.
 
-Risky/ambiguous items require review and are not preselected by default.
+# 7. Cleaner screen UX
 
-## 5.4 Large Files
+The Clean screen should expose consumer concepts only.
 
-Must work across every file type accessible in Full Storage Mode.
+Top:
 
-Default thresholds:
-- >100 MB
-- >500 MB
-- >1 GB
+- storage used / total / available;
+- one clear `SCAN` or `ANALYZE` action when a scan is required;
+- access status only when useful/actionable.
 
-Filters:
+Result/category cards:
+
+- Junk & leftovers (only explainable rules)
+- Large Files
+- Downloads
+- APK installers
+- Archives
+- Documents
+- Screenshots
+- Old Files
+- Exact Duplicates
+- Cache
+- Apps
+
+Cards display real item count and/or bytes when known.
+
+Do not expose:
+
+- Room/index terminology;
+- generations/scopes;
+- database progress;
+- coordinator internals.
+
+# 8. Large Files
+
+Full Mode target: every accessible shared-storage file type.
+
+Default size thresholds:
+
+- 100 MB+
+- 500 MB+
+- 1 GB+
+
+Categories:
+
 - All
 - Video
 - Image
@@ -205,597 +249,348 @@ Filters:
 - Download
 - Other
 
-Sort:
-- size
-- modified date
-- name
-- path/folder
-
 Actions:
-- preview/open;
+
+- search by name/path;
+- sort size/newest/oldest/name;
+- select/multi-select/select-all-visible;
+- open;
 - share;
-- file details;
-- multi-select;
-- select all in current filter;
+- details;
 - delete/trash;
-- locate in Files.
+- later locate in File Manager.
 
-## 5.5 Downloads cleanup
+### UX behavior
 
-Automatic category in Full Storage Mode.
+A user-initiated scan progressively appends matching files.
+
+The screen must not wait for completion of a whole-device database generation.
+
+Opening Large Files must not automatically trigger a heavy full scan unless explicitly approved later after measurements.
+
+# 9. Downloads / APK / Archives / Documents
+
+## 9.1 Downloads
+
+Automatic Full Mode analysis of the Downloads area.
 
 Subcategories:
-- installers/APK;
+
+- APK installers;
 - archives;
 - documents;
 - media;
 - old downloads;
-- very large downloads.
+- large downloads.
 
-Limited Mode may use user-mediated SAF and must state its limitation.
+## 9.2 APK installers
 
-## 5.6 APK / Installer cleanup
+Show where safely available:
 
-Show:
 - filename;
 - size;
-- modified date;
-- APK package/app label/version where safely parseable;
-- installed/not-installed relation where package visibility permits;
-- duplicate APK versions;
-- old installer candidates.
+- modified time;
+- label/package/version via safe APK parsing;
+- installed relation only when package visibility supports it.
 
-Never auto-delete an APK solely because it is old.
+Never preselect an APK solely because it is old.
 
-## 5.7 Archives/Documents
+## 9.3 Archives
 
-Show size/date/path and open/share/delete actions.
+Classify common archive extensions/MIME such as ZIP/RAR/7Z when identifiable.
 
-Do not classify documents as junk without explicit user-driven filters/review.
+Show size/date/path + open/share/details/delete.
 
-## 5.8 Screenshot Cleaner
+## 9.4 Documents
 
-Keep the already built architecture.
+Classify PDF/Office/text documents.
 
-Required:
-- screenshot bucket/path detection;
-- 30+/90+/365+ filters;
-- thumbnails;
+Never call a normal document junk merely because it is old/large.
+
+# 10. Screenshot Cleaner
+
+Requirements:
+
+- use Full Mode storage access when already granted and sufficient;
+- use MediaStore/granular media permission only as Limited Mode fallback where required;
+- detect screenshot buckets/path patterns;
+- filters 30/90/365 days;
+- real thumbnails;
 - multi-select;
 - Select all;
-- shared central delete/trash flow;
-- Cleanup Result.
+- central delete/trash pipeline;
+- immediate Cleanup Receipt.
 
-## 5.9 Old Files
+Do not require the user to grant Full Storage Access and then separately grant photos just to use the Full Mode screenshot cleanup path.
 
-User-controlled filters:
-- 30 days
-- 90 days
-- 180 days
+# 11. Old Files
+
+User-controlled age filters:
+
+- 30
+- 90
+- 180
 - 365 days
 
-Default category should focus on downloads/installers/screenshots first.
+Prioritize categories where age is meaningful for review:
 
-Do not claim `unused` unless there is reliable usage evidence.
+- Downloads;
+- APK installers;
+- screenshots;
+- archives;
+- user-selected folders.
 
-## 5.10 Exact Duplicate Finder
+Do not call a file `unused` without real usage evidence.
 
-Scope: files, not only photos.
+# 12. Explainable Junk
+
+Junk is a grouping of deterministic cleanup reasons, not a magic scanner.
+
+Every candidate includes:
+
+- reason id;
+- user-facing explanation;
+- risk/confidence;
+- whether default selection is allowed.
+
+Examples:
+
+- known accessible temp artifact;
+- obsolete installer candidate with clear reason;
+- empty writable folder;
+- exact duplicate;
+- old screenshot;
+- old download under user-selected rule.
+
+Ambiguous files are not preselected.
+
+# 13. Exact Duplicates
+
+Do not hash the entire phone blindly.
 
 Pipeline:
-1. group by size;
-2. optional lightweight metadata grouping;
-3. hash candidates;
-4. confirm exact byte/content match;
-5. persist fingerprint cache keyed by stable metadata where possible.
 
-UI:
-- groups;
-- total duplicate bytes;
-- keep-one helper;
-- preview/open;
-- selection review;
-- safe cleanup.
+1. pre-group by size;
+2. optional cheap metadata reduction;
+3. hash only candidate groups;
+4. verify exact content;
+5. cache fingerprints in Room where metadata proves cache validity;
+6. group exact duplicates;
+7. review/delete through central cleanup pipeline.
 
-Hashing must be cancellable and incremental.
+Support accessible file types, not only photos.
 
-## 5.11 Similar Photos — P1/P2
+Similar photos are a separate later feature and must never be labelled duplicates.
 
-Separate from exact duplicates.
+# 14. Cache cleanup
 
-Use local perceptual techniques only.
+V1 target on Android 11+:
 
-Must never imply two visually similar photos are identical.
-
-## 5.12 Cleanup Swipe
-
-General review mode inspired by proven market behavior.
-
-Support selected queues:
-- screenshots;
-- old downloads;
-- old photos/videos;
-- user-selected folder/category.
-
-Actions:
-- swipe keep;
-- swipe mark delete;
-- skip;
-- undo;
-- save/continue session;
-- final review before cleanup.
-
-No file changes until final confirmation.
-
-## 5.13 Empty folders
-
-Detect only writable/accessible shared-storage folders.
-
-Exclude:
-- protected/system paths;
-- folders with semantic placeholder files unless user reviews them;
-- Tooliva internal storage.
-
-## 5.14 Cache cleanup
-
-On Android 11+ use the official user-mediated:
 `StorageManager.ACTION_CLEAR_APP_CACHE`
 
 Requirements:
-- requires Full Storage Mode permission;
-- explain that Android/system performs the action;
-- do not claim Tooliva can directly read/delete every app's private internal cache;
-- handle cancel/error/result honestly.
 
-Optional Accessibility automation of per-app Settings screens is **not approved for V1** and requires separate policy/product decision.
+- Full Mode/access prerequisites handled truthfully;
+- launch official system-mediated flow;
+- explain Android performs/controls the action;
+- no fake cache-size promises;
+- handle cancel/error/unsupported OEM behavior.
 
----
+Accessibility-based automated cache clearing is not approved for V1.
 
-# 6. Cleanup safety architecture
+# 15. File Manager
 
-The existing centralized cleanup architecture is a product differentiator and must remain authoritative.
-
-## 6.1 Cleanup Receipt / Result
-
-Always distinguish:
-- requested files/bytes;
-- already missing;
-- moved to Trash;
-- physically freed;
-- still present / failed;
-- canceled;
-- permission changed.
-
-If a file is moved to Android Trash, do not report its bytes as physically freed.
-
-## 6.2 Destructive flow
-
-1. scan/index
-2. user selects
-3. show selected count + bytes
-4. system/user confirmation as required
-5. perform action
-6. re-query/re-scan
-7. verify result
-8. show Cleanup Receipt
-
-No ad between steps 3–8.
-
----
-
-# 7. FILES — core file manager
-
-Tooliva needs a real file manager because it is both useful and strategically aligned with the deep-cleaner permission model.
-
-## 7.1 Main file views
-
-- Internal storage
-- SD card / USB if present and accessible
-- Downloads
-- Documents
-- APKs
-- Archives
-- Images
-- Videos
-- Audio
-- Recent
-- Large
-- Favorites
-
-## 7.2 Browser actions
+File Manager is genuine core functionality.
 
 P0:
-- folder navigation;
-- breadcrumbs/path;
-- list/grid;
+
+- shared/internal accessible volumes;
+- folder browser;
+- breadcrumbs;
+- category shortcuts: Downloads/Documents/APKs/Archives/Images/Videos/Audio/Recent/Large;
 - search;
 - sort name/size/date;
-- file details;
-- open;
-- share;
+- details;
+- open/share;
 - rename;
+- create folder;
 - copy;
 - move;
 - delete/trash;
-- create folder.
+- collision handling;
+- long-operation progress/cancel.
 
-P1:
-- ZIP;
-- unzip;
-- hashes;
-- favorites;
-- multi-pane/tablet improvements.
+File Manager should reuse `StorageProvider` and shared file-operation code where practical.
 
-All copy/move operations require collision handling and progress/cancel states.
+It must not require completion of a whole-device Room index before basic browsing.
 
-## 7.3 Global Search
+# 16. Storage Map — later Cleaner/File Manager differentiator
 
-Search indexed accessible shared storage by:
-- name;
-- extension/type;
-- minimum/maximum size;
-- modified date;
-- folder.
+Storage Map may aggregate folder sizes during an explicit analysis and render a treemap/sunburst-like view plus accessible list fallback.
 
-Search must work offline.
+Do not make Storage Map a prerequisite for basic Cleaner/File Manager usage.
 
-## 7.4 Storage Map
+# 17. Cleanup safety / Receipt
 
-P0/P1 differentiator.
+The centralized cleanup architecture is authoritative.
 
-Provide visual drill-down of storage usage using a treemap/sunburst-like representation.
+Flow:
 
-Must also provide an accessible list fallback because visual sectors can be hard to select on small screens.
+1. user review/select;
+2. selected count + bytes;
+3. system/user confirmation;
+4. execute;
+5. verify/re-stat;
+6. show Cleanup Receipt immediately;
+7. update visible results without an unnecessary full-device rescan.
 
----
+Receipt states:
 
-# 8. APP MANAGER
+- requested;
+- missing before;
+- moved to Trash;
+- physically freed;
+- unchanged/failed;
+- canceled;
+- permission revoked.
 
-Purpose:
-- understand app storage impact;
-- find large/unused apps;
-- uninstall user-selected apps;
-- connect accessible leftover files to applications where defensible.
+Trash bytes are not physically freed bytes.
 
-Potential data:
-- app label/icon;
-- package;
-- installed size where Android exposes a defensible value;
-- last used through UsageStats after explicit Usage Access;
+# 18. App Manager
+
+After Cleaner/File Manager core.
+
+Target:
+
+- label/icon/package;
 - install/update dates;
-- system/user app;
+- user/system distinction;
 - launch;
-- open system App Info;
-- request uninstall.
+- App Info;
+- request uninstall;
+- defensible storage size when Android exposes it;
+- usage/rarely-used recommendations only after explicit Usage Access.
 
-`QUERY_ALL_PACKAGES` is restricted. Do not add until the broad-visibility need is implemented and documented. When required for the core App Manager/File Manager, perform a separate Play declaration review.
+Do not add `QUERY_ALL_PACKAGES` until narrower visibility is tested and a real core product gap is documented/approved.
 
-No installed-app inventory may be sent to ad analytics.
+# 19. Phone Doctor / Check My Phone
 
----
+Show real platform facts:
 
-# 9. DIAGNOSE / PHONE DOCTOR
+- device/model/Android/security patch;
+- ABI/CPU facts through public APIs;
+- RAM/storage;
+- battery level/state/source/voltage/temperature/current where exposed;
+- thermal state;
+- sensors;
+- network facts;
+- guided hardware tests.
 
-Benchmark against serious device-information apps, not fake cleaner dashboards.
+`CHECK MY PHONE` becomes an action plan composed from existing modules, not a fake health score.
 
-## 9.1 Device
-- manufacturer/model;
-- Android/API/security patch;
-- ABI;
-- display/resolution/density;
-- storage volumes.
+# 20. Notification History
 
-## 9.2 Battery
-- level;
-- charging state/source;
-- voltage;
-- temperature;
-- current/power when exposed;
-- technology/status.
+After cleaner core:
 
-Never fabricate true battery capacity/health when Android/OEM data is not trustworthy.
-
-## 9.3 Memory
-- total/available RAM;
-- low-memory state;
-- current process/device memory facts where supported.
-
-Do not expose `Free RAM` as a performance problem that needs boosting.
-
-## 9.4 Network
-- connection type;
-- local IPv4/IPv6;
-- DNS/link properties;
-- Wi-Fi facts allowed by current permissions;
-- mobile network/SIM facts where safely available;
-- public IP only via explicit network request.
-
-## 9.5 Sensors/tests
-- sensor inventory + live values;
-- display/dead-pixel test;
-- touch/multitouch;
-- vibration;
-- flashlight;
-- speaker;
-- microphone;
-- proximity;
-- accelerometer;
-- compass.
-
-Label manual vs automatic test results.
-
----
-
-# 10. PROTECT / retention modules
-
-## 10.1 Notification History — high priority after cleaner core
-
-After explicit Notification Access:
-- local archive;
-- grouped by app;
-- search;
-- date/channel filters;
-- exclude apps;
-- retention 1/7/30/90 days;
+- prominent Notification Access disclosure;
+- local Room persistence;
+- group/search/filter;
+- retention controls;
+- excluded apps;
 - clear all;
-- pin/favorite;
-- noisy-app insights;
-- optional export later.
+- noisy-app insights later.
 
-Notification content stays local and never enters ads/analytics.
+Notification content never enters ads/analytics.
 
-## 10.2 Private Vault — later
+# 21. Vault / App Lock / Tools
 
-- PIN + biometric;
-- Android Keystore;
-- authenticated encryption;
-- secure import/export;
-- auto-lock;
-- uninstall/data-loss warning.
+Later unless explicitly reprioritized.
 
-## 10.3 App Lock — later / experimental
+Vault:
 
-Must compete on reliability, not checkbox presence.
+- Keystore-backed authenticated encryption;
+- PIN/biometric;
+- verify copy before source deletion;
+- safe export;
+- auto-lock.
 
-Candidate functionality if technically/policy viable:
-- PIN/pattern/biometric;
-- random PIN keyboard;
-- relock rules;
-- notification privacy;
-- intruder selfie later;
-- recent-app protection if Android permits reliably.
+App Lock:
 
-AccessibilityService remains prohibited until explicit approval after prototype/policy research.
+- only after reliability and Play path validated;
+- Accessibility not approved by default.
 
----
+Tools later:
 
-# 11. FILE / CONTENT TOOLS
+- image compress/resize/convert;
+- EXIF privacy clean;
+- images-to-PDF;
+- QR;
+- network tools;
+- compass/level/flashlight.
 
-P1 after the cleaner/file-manager core:
+# 22. Performance rules
 
-## Images
-- compress;
-- resize;
-- JPEG/PNG/WebP convert;
-- batch processing;
-- metadata/EXIF viewer;
-- remove GPS/private metadata.
+Measure before optimizing.
 
-## PDF
-- images → PDF;
-- reorder pages;
-- page size/margins;
-- compression;
-- save/share.
+Key user metrics:
 
-## Archives
-- ZIP/unzip;
-- zip-slip/path traversal protection.
+- time from explicit scan tap to first useful result;
+- time to complete targeted scan;
+- UI responsiveness;
+- cancellation latency;
+- memory use;
+- deletion/verification latency.
 
-## Hash
-- SHA-256;
-- SHA-512;
-- MD5 compatibility.
+No architecture change is considered successful if it worsens user-perceived speed/control on the physical test device.
 
----
+# 23. Testing process
 
-# 12. EVERYDAY TOOLS
+Automated by agent:
 
-- QR/barcode scan;
-- QR generator: text/URL/contact/Wi-Fi;
-- network info;
-- ping;
-- DNS lookup;
-- compass;
-- bubble level;
-- flashlight;
-- magnifier later;
-- small offline converters/generators later.
+- unit tests;
+- compilation;
+- debug build;
+- instrumentation/connected tests where appropriate;
+- static regression checks;
+- install fresh debug APK;
+- crash smoke-check.
 
-Do not build 100 shallow tools before the cleaner/file manager is excellent.
+Manual by human user:
 
----
+- permissions;
+- scan UX/speed;
+- result correctness;
+- navigation;
+- open/share/delete flows;
+- OEM/system dialogs;
+- subjective responsiveness.
 
-# 13. PHONE CHECKUP
+After device-dependent implementation the agent must stop and provide `MANUAL TEST REQUIRED` checklist before new major work.
 
-`CHECK MY PHONE` becomes an action plan, not a fake score.
+# 24. Current recovery milestone
 
-Pipeline:
-1. access mode and storage state;
-2. deep storage scan summary;
-3. reclaimable explained categories;
-4. biggest files/folders;
-5. duplicates/screenshots;
-6. unused/large apps if access enabled;
-7. battery/thermal facts;
-8. sensor availability;
-9. notification noise if enabled;
-10. usage facts if enabled.
+Before new Cleaner categories:
 
-Output examples:
-- `Downloads: 4.2 GB, including 8 APK installers`
-- `Largest folder: Movies — 12.8 GB`
-- `Exact duplicates: 1.1 GB`
-- `Screenshots older than 90 days: 824 MB`
-- `3 apps larger than 2 GB`
+1. remove/revert the mandatory Storage Index experiment introduced by `7836ea` and `71f35ca` without losing unrelated good work;
+2. restore the direct progressive scan behavior represented by `b767aa8`;
+3. remove technical index UI from Clean;
+4. stop automatic heavy scan on Large Files navigation;
+5. make Full Mode the single primary storage permission path for Cleaner submodules on Android 11+;
+6. make Screenshot Cleaner use Full Mode when granted instead of immediately requiring separate media permission;
+7. build/install;
+8. human Xiaomi regression test;
+9. only after PASS proceed to Downloads/APK/Archives/Documents/Old Files/Cache.
 
-Actions deep-link into the exact review screen.
+# 25. Release principles
 
----
+Do not ship until:
 
-# 14. Permissions strategy
-
-Permissions/special access are requested only when the relevant feature is used.
-
-## Approved for implementation
-
-### `MANAGE_EXTERNAL_STORAGE`
-Approved for prototype/product implementation because Cleaner + File Manager + on-device file search are now explicit core purposes.
-
-Production release remains contingent on Google Play Permissions Declaration approval.
-
-Must provide:
-- prominent in-app disclosure;
-- clear Special App Access flow;
-- Limited Mode fallback;
-- policy documentation.
-
-## Conditional / later
-
-### `QUERY_ALL_PACKAGES`
-Only when App Manager/file attribution demonstrably requires broad visibility. Requires separate declaration review.
-
-### `PACKAGE_USAGE_STATS`
-Only after explicit user opt-in for unused-app/app-usage features.
-
-### Notification Listener
-Only for Notification History, after disclosure.
-
-### AccessibilityService
-Not approved for Cleaner or App Lock in V1. Requires explicit human approval and current Play-policy review.
-
----
-
-# 15. Persistence and indexing
-
-Use Room for structured local index/cache where justified.
-
-Candidates:
-- `StorageIndexEntry`
-- `ScanSnapshot`
-- `FileFingerprint`
-- `DuplicateGroupCache`
-- `CleanupReceipt`
-- `NotificationRecord`
-- `NotificationAppRule`
-- `UsageSnapshot`
-- `ToolFavorite`
-
-DataStore:
-- preferences;
-- onboarding/access state;
-- UI settings.
-
-Do not persist full filenames/paths in analytics.
-
----
-
-# 16. Performance targets
-
-- no filesystem scan on main thread;
-- progressive first results;
-- scan cancellation;
-- incremental index updates where practical;
-- duplicate hashing only after cheap pre-grouping;
-- bounded concurrency;
-- handle 100k+ file indexes without OOM;
-- avoid rescanning unchanged volumes unnecessarily;
-- background work only when user benefit justifies it;
-- no permanent foreground service for normal browsing.
-
----
-
-# 17. UI principles
-
-Visual source remains `docs/design/`.
-
-Product UX additions:
-- Home must prominently expose `Clean` and `Files`;
-- Cleaner top screen is action-oriented, not a list of random tools;
-- always show Full vs Limited access when relevant;
-- large numerical storage values are readable;
-- category cards show real bytes/item counts;
-- destructive controls stay reachable with fixed bottom actions for long lists;
-- empty/loading/error/permission states are mandatory;
-- no red panic color for normal cleanup opportunities.
-
----
-
-# 18. Monetization
-
-Free version must be genuinely useful.
-
-Allowed:
-- restrained banner/native ads on non-sensitive screens;
-- occasional interstitial only after a completed non-sensitive workflow, after result is visible;
-- Lifetime Pro purchase.
-
-Never:
-- show interstitial before scan result;
-- gate cleanup behind an ad video;
-- place ads on delete/trash confirmation;
-- place ads on All Files Access disclosure;
-- place ads in Vault/App Lock auth;
-- claim free and immediately force a weekly subscription.
-
-Initial Pro hypothesis remains lifetime rather than weekly subscription.
-
----
-
-# 19. Release order
-
-## Cleaner/File Manager Beta
-Must include:
-- Full Storage Mode + Limited fallback;
-- Deep Storage Scan;
-- real Large Files across shared storage;
-- Downloads/APK/Archives/Documents categories;
-- Screenshots;
-- exact duplicates;
-- Cleanup Receipt;
-- File Manager browse/search/sort;
-- basic Storage Map;
-- cache-clear system action;
-- privacy/permission disclosures;
-- Xiaomi/Samsung/Pixel validation.
-
-## Tooliva 1.0
-Add:
-- Cleanup Swipe;
-- App Manager / unused apps;
-- Phone Checkup / Phone Doctor;
-- Notification History;
-- image/EXIF/PDF basics;
-- QR/network/compass/level/flashlight;
-- monetization + Pro;
-- Play declarations/Data Safety.
-
-Vault/App Lock may ship later if they are not yet production-grade.
-
----
-
-# 20. Release criteria
-
-Do not publish until:
-- targetSdk 36;
-- deep scan behavior validated on Android 11–16;
-- fallback behavior validated without All Files Access;
-- All Files Access declaration is prepared and reviewed;
-- any package visibility declaration is justified separately;
-- destructive operations are verified on physical devices;
-- Trash vs physically freed accounting is correct;
-- large indexes do not ANR/OOM;
-- privacy policy/Data Safety match the actual build;
-- merged manifest and SDKs are audited;
-- no fake optimization language exists in UI/store listing;
-- monetization cannot interrupt a cleanup result.
+- no P0 destructive bug;
+- Full Mode works on modern Android;
+- Limited Mode is honest/useful;
+- Cleaner/File Manager core is fast and understandable;
+- Play restricted-permission declaration package is prepared;
+- privacy/Data Safety match the build;
+- ads do not interrupt core/sensitive flows;
+- Xiaomi/Samsung/Pixel coverage reaches required gate;
+- closed test shows no critical file-loss/regression issues.
