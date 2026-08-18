@@ -1,18 +1,59 @@
 # Tooliva — QA Plan
 
-Revision: 2026-08-16
+Revision: 2026-08-18
 
-## QA principle
+Authoritative product source: `docs/PRODUCT_CONSTITUTION.md`
 
-Tooliva touches user files. A crash is bad; a wrong-file deletion is unacceptable.
+## 1. QA principle
 
-Cleaner/File Manager QA has higher priority than adding more features.
+Tooliva touches user files. Wrong-file deletion is unacceptable, and a technically correct architecture that makes the product feel frozen is also a failure.
 
----
+QA therefore covers both:
 
-# 1. Device / Android matrix
+- correctness/safety;
+- real human usability/perceived responsiveness.
+
+## 2. Testing ownership
+
+### Coding agent owns
+
+- unit tests;
+- compile/build checks;
+- instrumentation/connected tests where deterministic and safe;
+- synthetic datasets;
+- regression tests;
+- debug APK build;
+- installation of the fresh debug APK on the connected Xiaomi;
+- crash smoke-check.
+
+### Human user owns
+
+- permission UX;
+- system/OEM dialogs;
+- perceived speed/responsiveness;
+- navigation;
+- real scan results;
+- file open/select/delete behavior;
+- subjective product quality.
+
+**ADB/shell/automated input never substitutes for human device PASS.**
+
+After every device-dependent vertical slice the agent must output:
+
+`MANUAL TEST REQUIRED — <feature>`
+
+with a short numbered checklist and stop before the next major slice.
+
+## 3. Device matrix
 
 Required before Cleaner/File Manager Beta:
+
+- Xiaomi/MIUI or HyperOS — primary active development device
+- Samsung/One UI
+- Pixel/AOSP-like Android
+
+Android coverage before release:
+
 - Android 11
 - Android 12
 - Android 13
@@ -20,117 +61,129 @@ Required before Cleaner/File Manager Beta:
 - Android 15
 - Android 16
 
-Compatibility checks:
-- Android 8–10 Limited/legacy paths where minSdk support remains
+Legacy compatibility smoke checks where minSdk remains 26:
 
-Physical OEM minimum:
-- Xiaomi/Redmi/HyperOS or MIUI
-- Samsung/One UI
-- Pixel/AOSP-like Android
+- Android 8–10
 
-Optional later:
-- Oppo/Realme
-- Vivo
-- Motorola
+## 4. Known-good regression suite
 
----
+Every storage refactor must preserve these user-validated behaviors from the `b767aa8` reference baseline:
 
-# 2. Storage access matrix
+1. Full Mode can discover synthetic APK.
+2. Full Mode can discover ZIP/archive.
+3. Full Mode can discover PDF/document.
+4. Full Mode can discover image.
+5. Full Mode can discover video.
+6. Large Files can select multiple items.
+7. Large Files can open a selected file via safe URI/FileProvider path.
+8. Delete/trash flow works.
+9. Cleanup Receipt appears immediately after confirmed operation.
+10. Cleanup Receipt distinguishes Trash from physically freed bytes.
+11. Screenshot Cleaner works.
+12. Screenshot Cleaner -> Home navigation works.
+13. Full Mode does not ask for redundant broad media permission for the same Cleaner purpose after permission unification is implemented.
+14. Opening Clean/Large Files does not start a heavy scan that makes the app feel frozen.
 
-For every supported modern Android version verify:
+A refactor that fails this suite is not accepted even if automated architecture tests pass.
 
-## Full Storage Mode
-- permission not granted
-- disclosure shown
-- open Special App Access
-- grant
-- return to Tooliva
-- access state refreshes
-- deep scan works
-- revoke while app backgrounded
-- return to app
-- state downgrades to Limited without crash
+## 5. Storage permission matrix
 
-## Limited Mode
-- deny All Files Access
-- media access grant/deny
-- SAF grant/cancel where used
-- UI explicitly says coverage is limited
-- no false `full scan completed` claim
+### Android 11+ Full Mode
 
----
+Test manually:
 
-# 3. Synthetic storage dataset
+- access absent;
+- disclosure understandable;
+- open All Files Access settings;
+- grant;
+- return to Tooliva;
+- state refreshes;
+- Large Files uses Full Mode;
+- Screenshot Cleaner does not ask for a second redundant Photos permission for the same task;
+- revoke Full Mode;
+- return to Tooliva;
+- no crash;
+- feature switches to truthful Limited Mode behavior.
 
-Maintain a reproducible test dataset that contains disposable files only.
+### Limited Mode
+
+- deny Full Mode;
+- enter a media feature;
+- granular media access is requested only when genuinely required;
+- deny media permission;
+- app remains usable;
+- coverage is labelled Limited;
+- SAF cancellation does not dead-end the UI.
+
+## 6. Synthetic storage dataset
+
+Maintain disposable fixtures only.
 
 Minimum:
-- images
-- videos
-- audio
-- screenshots with old/new dates
-- APK installers
-- ZIP
-- RAR/7Z if supported
-- PDF
-- DOC/DOCX
-- XLS/XLSX
-- PPT/PPTX
-- TXT
-- unknown extensions
-- zero-byte files
-- empty folders
-- nested folders
-- Unicode names
-- names with spaces/symbols
-- same filename in different folders
-- duplicate exact files
-- same-size but different-content files
-- files >100 MB
-- files >500 MB
-- files >1 GB when test storage allows
 
-Never use irreplaceable personal media for destructive QA.
+- APK;
+- ZIP;
+- RAR/7Z when supported;
+- PDF;
+- DOC/DOCX;
+- XLS/XLSX;
+- PPT/PPTX;
+- TXT;
+- images;
+- videos;
+- audio;
+- screenshots old/new;
+- unknown extension;
+- zero-byte file;
+- nested folders;
+- Unicode/symbol names;
+- same filename in different folders;
+- exact duplicate bytes;
+- same-size different-content files;
+- >100 MB files;
+- >500 MB files where practical;
+- >1 GB fixture only where storage/time safely allows.
 
----
+Never use irreplaceable personal files for destructive tests.
 
-# 4. Scan tests
+## 7. Direct scan tests
 
-- progressive first results
-- cancel immediately
-- cancel mid-scan
-- restart after cancel
-- file deleted externally during scan
-- file renamed externally during scan
-- volume removed during scan
-- unreadable path
-- very deep folder structure
-- large folder count
-- scan after permission revoke
-- scan after permission re-grant
-- repeated scan uses index/reuse strategy correctly
-- Tooliva internal/temp files excluded
+Automated where possible:
 
-Performance datasets:
-- 1k files
-- 10k files
-- 50k files P0
-- 100k+ P1
+- no main-thread filesystem traversal;
+- progressive `EntryFound` behavior;
+- cancellation;
+- restart after cancel;
+- one unreadable entry does not fail the scan;
+- file disappears while scanning;
+- file metadata changes;
+- protected path excluded;
+- malformed/unreadable entry handled;
+- no unbounded coroutine-per-file fan-out;
+- no ordinary scan hashing/file-content reads;
+- no mandatory Room persistence requirement.
 
-Measure:
-- scan time
-- time to first useful result
-- peak memory
-- ANR
-- cancellation latency
-- index DB size
+Manual Xiaomi:
 
----
+- tap explicit Scan/Refresh;
+- first useful result appears without long frozen state;
+- files visibly appear progressively where expected;
+- navigation remains responsive;
+- Cancel reacts promptly;
+- repeated use does not require mysterious index-building step.
 
-# 5. Cleaner category tests
+Measure, but do not make brittle CI thresholds:
 
-## Large Files
-Verify categories:
+- tap -> first useful result;
+- scan completion time;
+- cancellation latency;
+- memory/jank/ANR observations.
+
+## 8. Large Files tests
+
+Categories:
+
+- All
 - Video
 - Image
 - Audio
@@ -140,272 +193,263 @@ Verify categories:
 - Download
 - Other
 
-Verify thresholds:
-- 100 MB
-- 500 MB
-- 1 GB
+Thresholds:
 
-Verify sorting:
+- 100 MB+
+- 500 MB+
+- 1 GB+
+
+Sorting:
+
 - size
-- date
+- newest
+- oldest
 - name
 
-## Downloads
-- APK
-- archives
-- documents
-- media
-- old files
-- large files
+Actions:
 
-## Old files
-- 30/90/180/365 filters
-- boundary dates
-- unknown modified date
+- search name/path;
+- select/deselect;
+- Select all visible;
+- open;
+- share when implemented;
+- details when implemented;
+- delete/trash;
+- cancel operation;
+- Cleanup Receipt;
+- visible list reconciles without forcing whole-device rescan.
 
-## Junk rules
-Every rule gets unit fixtures for:
-- positive match
-- negative match
-- ambiguous case
-- default-selected state
-- reason text/domain reason
+## 9. Downloads/APK/Archive/Document tests
 
-Documents must not become generic junk by accident.
+Downloads:
 
----
+- installers;
+- archives;
+- documents;
+- media;
+- old-age boundaries;
+- large-size thresholds.
 
-# 6. Screenshot tests
+APK:
 
-- screenshot bucket/path variants from Xiaomi/Samsung/Pixel
-- 30/90/365 filters
-- real thumbnails
-- missing/corrupt thumbnail
-- multi-select
-- Select all
-- deselect
-- permission deny/revoke
-- trash cancel
-- trash success
-- rescan removes active entry
-- Cleanup Receipt accurate
+- valid APK metadata;
+- malformed APK;
+- old APK never auto-selected solely by age;
+- open/share/delete.
 
----
+Archives:
 
-# 7. Duplicate tests
+- ZIP/RAR/7Z classification;
+- unknown/misleading extension;
+- open/share/delete.
 
-Fixtures:
-- exact duplicate bytes / different names
-- exact duplicate / different folders
-- same size / different content
-- image re-encoded visually same but not exact
-- file modified after fingerprint cached
-- hash cancellation
-- large duplicate files
+Documents:
 
-Verify:
-- exact groups only contain verified exact matches
-- keep-one helper never selects every copy
-- recoverable byte total correct
-- cache invalidates stale fingerprints
+- PDF/Office/text;
+- normal document never generically labelled junk.
 
-Similar-photo feature later must use separate labels/tests.
+## 10. Screenshot Cleaner tests
 
----
+- Full Mode path when All Files Access is granted;
+- Limited MediaStore path when Full Mode absent;
+- no duplicate permission wall;
+- screenshot bucket/path variants;
+- 30/90/365 filters;
+- thumbnails;
+- missing/corrupt thumbnail;
+- multi-select;
+- Select all;
+- Trash cancel;
+- Trash success;
+- Cleanup Receipt;
+- Home navigation.
 
-# 8. File Manager tests
+## 11. Explainable Junk tests
+
+Every rule requires:
+
+- positive fixture;
+- negative fixture;
+- ambiguous fixture;
+- reason text/domain reason;
+- default-selected policy;
+- byte total reconciliation.
+
+No unexplained aggregate `Junk = X GB`.
+
+## 12. Exact duplicate tests
+
+- exact bytes/different names;
+- exact bytes/different folders;
+- same size/different content;
+- modified file invalidates fingerprint;
+- candidate size grouping avoids hashing unique sizes;
+- hashing cancellation;
+- keep-one never selects every copy;
+- recoverable byte total correct;
+- Cleanup Receipt correct.
+
+Room fingerprint cache is valid here because persistent hashing work has demonstrated value.
+
+## 13. File Manager tests
 
 Navigation:
-- root/volume
-- nested folders
-- breadcrumbs
-- category shortcuts
+
+- volume/root;
+- nested folders;
+- breadcrumbs;
+- category shortcuts.
 
 Operations:
-- open
-- share
-- rename
-- create folder
-- copy
-- move
-- delete/trash
 
-Collision cases:
-- destination exists
-- same name different contents
-- same source/destination
-- nested target invalid
+- open;
+- share;
+- rename;
+- create folder;
+- copy;
+- move;
+- delete/trash.
 
-Failure cases:
-- destination read-only
-- insufficient space
-- source disappears
-- permission revoked
-- volume removed
-- process death/cancel during copy/move
+Failure/collision:
 
-For move fallback using copy+delete:
-- destination verification must happen before source deletion.
+- destination exists;
+- insufficient space;
+- source disappears;
+- permission revoked;
+- volume removed;
+- cancel mid-copy/move;
+- move fallback verifies destination before deleting source.
 
----
+Basic browsing must work without completion of a whole-device database index.
 
-# 9. Destructive operation suite
+## 14. Destructive operation suite
 
-For each applicable file type:
-- image
-- video
-- APK
-- ZIP
-- PDF
-- document
-- audio
-- unknown
+For image/video/APK/archive/PDF/document/audio/unknown:
 
-Test:
-- select one
-- select many
-- cancel before platform action
-- cancel platform action
-- success
-- partial result
-- file already missing
-- permission revoked
-- repeat scan
+- one selected;
+- many selected;
+- cancel before action;
+- cancel platform action;
+- success;
+- partial failure;
+- already missing;
+- permission revoke;
+- visible-list reconciliation.
 
-Cleanup Receipt must correctly report:
-- requested
-- already missing
-- moved to Trash
-- physically freed
-- unchanged/failed
-- canceled
+Receipt must correctly report:
 
-Do not accept a release if Trash bytes are shown as physically freed.
+- requested;
+- missing;
+- Trash;
+- physically freed;
+- unchanged/failed;
+- canceled;
+- permission revoked.
 
----
+## 15. Cache cleanup tests
 
-# 10. Cache cleanup
+On supported Android:
 
-On API 30+:
-- Full Storage permission missing
-- launch official action
-- user cancels
-- success result
-- OEM does not implement as expected
-- no fake cache amount shown
+- Full Mode missing;
+- official cache action launch;
+- user cancels;
+- OEM unsupported/unexpected behavior;
+- no fake cache byte count;
+- no claim of direct private-cache access.
 
-Tooliva must never imply direct private-cache deletion if the system action is unavailable.
+## 16. App Manager tests
 
----
+Before broad package visibility:
 
-# 11. App Manager tests
+- test actual visible apps;
+- record which core user behavior is missing.
 
-Before `QUERY_ALL_PACKAGES`:
-- inspect real visibility and document missing user-facing behavior
+Only if `QUERY_ALL_PACKAGES` is later explicitly approved:
 
-If broad visibility is approved later:
-- user apps
-- system apps
-- disabled apps where visible
-- launch
-- App Info
-- uninstall request
-- no package list in logs/analytics
+- user/system apps;
+- launch;
+- App Info;
+- uninstall request;
+- no package inventory in logs/analytics.
 
 Usage Access:
-- deny
-- grant
-- revoke
-- no `unused` recommendation without evidence
 
----
+- deny/grant/revoke;
+- no `unused` label without evidence.
 
-# 12. Storage Map
+## 17. Phone Doctor tests
 
-- total displayed bytes reconcile with indexed hierarchy
-- large folder drill-down
-- tiny sectors remain accessible through list fallback
-- empty volume
-- huge number of children
-- path opens correct File Manager location
+Cross-check against system/ADB where reasonable:
 
----
+- battery level/temp/voltage;
+- RAM/storage;
+- device/build info;
+- thermal state;
+- sensors.
 
-# 13. Phone Doctor
+Unsupported values show `Unavailable`, never fabricated values.
 
-Verify values against system settings/ADB where possible:
-- battery level
-- temperature
-- voltage
-- RAM
-- storage
-- thermal state
-- sensors
+## 18. Notification History tests
 
-Unsupported values display `Unavailable`, never fabricated values.
+- access deny/grant/revoke;
+- received/removed notifications;
+- excluded apps;
+- retention;
+- search/filter;
+- large local dataset;
+- no notification content in logs/network analytics.
 
----
+## 19. Ads/privacy regression
 
-# 14. Notification History
+No ad:
 
-- access deny/grant/revoke
-- notification received/removed
-- excluded app
-- long text
-- 10k records
-- retention cleanup
-- search/filter
-- no notification text in logs/network analytics
+- before useful scan result;
+- on storage permission explanation;
+- in select -> confirm -> operation -> Receipt flow;
+- in Vault/authentication.
 
----
+Network/privacy audit during storage scan:
 
-# 15. Ads / monetization regression
+- no filename/path/hash/content upload;
+- no app inventory upload;
+- no notification text upload.
 
-- no ad on All Files disclosure
-- no ad before scan result
-- no ad during selection→delete→receipt
-- no ad on Cleanup Receipt
-- offline ad failure cannot block utility
-- Pro removes ads
-- restore purchase
-- no fake system-looking ad surface
+## 20. Release gates
 
----
+### Cleaner Recovery Gate
 
-# 16. Network/privacy audit
+Must pass before new Cleaner modules:
 
-During storage scan and file operations capture network traffic.
+- mandatory index experiment removed from primary flow;
+- direct progressive Large Files restored;
+- no index UI/autoscan regression;
+- Full Mode permission UX unified;
+- automated build/tests green;
+- fresh APK installed;
+- human Xiaomi PASS.
 
-Required result:
-- no filename/path/hash/file-content upload
-- no installed-app inventory upload
-- no Notification History upload
+### Cleaner/File Manager Beta
 
-Audit production logs for same data.
+Must additionally have:
 
----
+- Large Files current Xiaomi PASS;
+- Downloads/APK/Archives/Documents/Old Files;
+- explainable cleanup rules;
+- Screenshot Cleaner;
+- Cache v1;
+- File Manager critical operations;
+- Exact Duplicates;
+- destructive regression suite;
+- Samsung + Pixel smoke coverage;
+- CI green.
 
-# 17. Release gates
+### Tooliva 1.0
 
-## Cleaner/File Manager Beta
-Must have:
-- Full + Limited access tests
-- Xiaomi/Samsung/Pixel smoke test
-- 50k-file stress
-- all-type Large Files
-- File Manager critical operations
-- destructive regression suite
-- duplicates/screenshots
-- Storage Map basic
-- cache action tested
-- CI green
-
-## Tooliva 1.0
 Additionally:
-- App Manager
-- Phone Doctor/Checkup
-- Notification History
-- core content/tools
-- monetization regression
-- Data Safety/privacy/restricted-permission review
-- closed test with no P0 file-loss bugs
+
+- App Manager;
+- Phone Doctor/Checkup;
+- Notification History;
+- privacy/Data Safety/restricted-permission review;
+- monetization regression;
+- closed test with no P0 file-loss or major UX regression.
