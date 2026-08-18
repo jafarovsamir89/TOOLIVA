@@ -353,8 +353,13 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                     enabled = !state.isPreparingDelete,
                     modifier = Modifier.fillMaxWidth().padding(12.dp),
                 ) {
-                    Icon(Icons.Outlined.Delete, contentDescription = null)
-                    Text("${if (directDelete) "Delete" else "Move"} ${state.selectedFiles.size} · ${Formatter.formatFileSize(context, state.selectedBytes)}", modifier = Modifier.padding(start = 8.dp))
+                    if (state.isPreparingDelete) {
+                        CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp), strokeWidth = 2.dp)
+                        Text("Preparing cleanup…")
+                    } else {
+                        Icon(Icons.Outlined.Delete, contentDescription = null)
+                        Text("${if (directDelete) "Delete" else "Move"} ${state.selectedFiles.size} · ${Formatter.formatFileSize(context, state.selectedBytes)}", modifier = Modifier.padding(start = 8.dp))
+                    }
                 }
             }
         }

@@ -180,40 +180,51 @@ class ScreenshotCleanerViewModel(application: Application) : AndroidViewModel(ap
         _uiState.update { it.copy(cleanupResult = null) }
     }
 
-    private suspend fun finishWithResult(result: CleanupResult) {
-        try {
-            val refreshed = withContext(Dispatchers.IO) {
-                repository.scan(_uiState.value.ageDays).toList().sortedByDescending(ScreenshotMediaFile::sizeBytes)
-            }
-            val ids = refreshed.map { it.uri.toString() }.toSet()
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    isPreparingDelete = false,
-                    files = refreshed,
-                    selectedUris = it.selectedUris.intersect(ids),
-                    cleanupResult = result,
-                    errorMessage = null,
-                )
-            }
-        } catch (_: SecurityException) {
-            _uiState.update {
-                it.copy(
-                    isPreparingDelete = false,
-                    cleanupResult = result.copy(
-                        status = az.simplesoft.tooliva.core.media.CleanupResultStatus.PERMISSION_REVOKED,
-                        note = "Photo access was revoked while refreshing the list. The result could not be fully rechecked.",
-                    ),
-                    errorMessage = "Photo access is no longer available.",
-                )
-            }
-        } catch (error: Exception) {
-            _uiState.update {
-                it.copy(
-                    isPreparingDelete = false,
-                    cleanupResult = result,
-                    errorMessage = error.message ?: "Cleanup finished, but the screenshot list could not be refreshed.",
-                )
+    private fun finishWithResult(result: CleanupResult) {
+        // The deletion coordinator has already verified this operation. Show the receipt
+        // immediately and refresh the screenshot grid in the background.
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                isPreparingDelete = false,
+                pendingDelete = null,
+                files = emptyList(),
+                selectedUris = emptySet(),
+                cleanupResult = result,
+                errorMessage = null,
+            )
+        }
+        refreshAfterCleanup()
+    }
+
+    private fun refreshAfterCleanup() {
+        viewModelScope.launch {
+            try {
+                val refreshed = withContext(Dispatchers.IO) {
+                    repository.scan(_uiState.value.ageDays).toList().sortedByDescending(ScreenshotMediaFile::sizeBytes)
+                }
+                val ids = refreshed.map { it.uri.toString() }.toSet()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        files = refreshed,
+                        selectedUris = it.selectedUris.intersect(ids),
+                    )
+                }
+            } catch (_: SecurityException) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "Photo access was revoked while refreshing the list.",
+                    )
+                }
+            } catch (error: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Cleanup finished, but the screenshot list could not be refreshed.",
+                    )
+                }
             }
         }
     }

@@ -324,11 +324,16 @@ fun ScreenshotCleanerRoute(viewModel: ScreenshotCleanerViewModel = viewModel()) 
                     enabled = !state.isPreparingDelete,
                     modifier = Modifier.fillMaxWidth().padding(12.dp),
                 ) {
-                    Icon(Icons.Outlined.Delete, contentDescription = null)
-                    Text(
-                        "Move ${state.selectedFiles.size} to Trash · ${Formatter.formatFileSize(context, state.selectedBytes)}",
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
+                    if (state.isPreparingDelete) {
+                        CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp), strokeWidth = 2.dp)
+                        Text("Preparing cleanup…")
+                    } else {
+                        Icon(Icons.Outlined.Delete, contentDescription = null)
+                        Text(
+                            "Move ${state.selectedFiles.size} to Trash · ${Formatter.formatFileSize(context, state.selectedBytes)}",
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
                 }
             }
         }

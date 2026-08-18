@@ -133,14 +133,14 @@ This is now the highest-priority engineering phase.
 
 ## Large Files — full scope
 
-- [~] [P0] Scan all accessible shared-storage file types in Full Mode — scanner implemented; manual APK/ZIP/PDF verification pending
+- [x] [P0] Scan all accessible shared-storage file types in Full Mode — user confirmed APK/ZIP/PDF/media fixtures were found on Xiaomi
 - [~] [P0] Filters: All / Video / Image / Audio / APK / Archive / Document / Download / Other
 - [~] [P0] Thresholds 100 MB / 500 MB / 1 GB — implemented; manual UI verification pending
 - [~] [P0] Sort by size/date/name — implemented; manual UI verification pending
 - [~] [P0] Open/share/details — open implemented; share/details remain
 - [~] [P0] Multi-select / Select all — implemented; manual UI verification pending
 - [~] [P0] Safe delete/trash + Cleanup Receipt — direct Full Mode deletion and existing Limited Trash flow implemented; physical verification pending
-- [ ] [P0] Xiaomi physical test with APK + ZIP + PDF + media
+- [~] [P0] Xiaomi physical test with APK + ZIP + PDF + media — user confirmed discovery, selection and deletion; cleanup receipt timing fix awaits retest
 - [ ] [P0] Samsung physical test
 - [ ] [P0] Pixel physical test
 

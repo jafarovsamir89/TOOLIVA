@@ -258,33 +258,51 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
         MediaStoreStorageProvider(getApplication())
     }
 
-    private suspend fun finishWithResult(result: CleanupResult) {
-        try {
-            val refreshed = scanAll().sortedByDescending(LargeMediaFile::sizeBytes)
-            val ids = refreshed.map { it.uri.toString() }.toSet()
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    isPreparingDelete = false,
-                    files = refreshed,
-                    selectedUris = it.selectedUris.intersect(ids),
-                    cleanupResult = result,
-                    errorMessage = null,
-                )
+    private fun finishWithResult(result: CleanupResult) {
+        // The deletion coordinator has already verified this operation. Do not make the
+        // user wait for a second full-storage scan before showing that confirmed result.
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                isPreparingDelete = false,
+                pendingDelete = null,
+                files = emptyList(),
+                selectedUris = emptySet(),
+                visitedFiles = 0L,
+                cleanupResult = result,
+                errorMessage = null,
+            )
+        }
+        refreshAfterCleanup()
+    }
+
+    private fun refreshAfterCleanup() {
+        viewModelScope.launch {
+            try {
+                val refreshed = scanAll().sortedByDescending(LargeMediaFile::sizeBytes)
+                val ids = refreshed.map { it.uri.toString() }.toSet()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        files = refreshed,
+                        selectedUris = it.selectedUris.intersect(ids),
+                    )
+                }
+            } catch (_: SecurityException) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "Storage access changed while refreshing the list.",
+                    )
+                }
+            } catch (error: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Cleanup finished, but the list could not be refreshed.",
+                    )
+                }
             }
-        } catch (_: SecurityException) {
-            _uiState.update {
-                it.copy(
-                    isPreparingDelete = false,
-                    cleanupResult = result.copy(
-                        status = az.simplesoft.tooliva.core.media.CleanupResultStatus.PERMISSION_REVOKED,
-                        note = "Storage access changed while refreshing the list. The result could not be fully rechecked.",
-                    ),
-                    errorMessage = "Storage access changed while refreshing the list.",
-                )
-            }
-        } catch (error: Exception) {
-            _uiState.update { it.copy(isPreparingDelete = false, cleanupResult = result, errorMessage = error.message ?: "Cleanup finished, but the list could not be refreshed.") }
         }
     }
 

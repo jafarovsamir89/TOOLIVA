@@ -56,12 +56,14 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             NavigationBar {
                 topDestinations.forEach { destination ->
                     NavigationBarItem(
-                        selected = currentRoute == destination.route,
+                        selected = topLevelRoute(currentRoute) == destination.route,
                         onClick = {
                             navController.navigate(destination.route) {
-                                popUpTo("home") { saveState = true }
+                                // Nested Cleaner screens must not be restored when the user
+                                // explicitly chooses a top-level destination such as Home.
+                                popUpTo("home") { saveState = false }
                                 launchSingleTop = true
-                                restoreState = true
+                                restoreState = false
                             }
                         },
                         icon = { Icon(destination.icon, contentDescription = destination.label) },
@@ -117,6 +119,8 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
         }
     }
 }
+
+internal fun topLevelRoute(route: String?): String? = route?.substringBefore('/')
 
 @Composable
 private fun ModulePlaceholder(title: String, subtitle: String) {
