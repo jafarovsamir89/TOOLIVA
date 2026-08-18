@@ -1,349 +1,365 @@
 # Tooliva — Instructions for AI Coding Agents
 
-This file is authoritative for Codex/Claude/Gemini or other coding agents working in this repository.
+Status: AUTHORITATIVE  
+Revision: 2026-08-18
 
-## Mission
+This file governs Codex/Claude/Gemini and other coding agents working in this repository.
 
-Build a production-quality Android utility whose core strengths are:
+## 0. Required reading and precedence
 
-1. deep storage cleaning;
-2. file management / on-device file search;
-3. trustworthy device maintenance;
-4. retention utilities that remain useful after cleanup.
+Before any major task, read in this order:
 
-Optimize for:
-- real user value;
-- reliability;
-- deletion safety;
+1. `docs/PRODUCT_CONSTITUTION.md`
+2. `docs/DECISION_LOG.md`
+3. `AGENTS.md`
+4. `TECH_SPEC.md`
+5. `ARCHITECTURE.md`
+6. `TODO.md`
+7. `docs/PLAY_POLICY.md`
+8. `docs/QA_PLAN.md`
+9. `docs/MARKET_RESEARCH_2026.md`
+10. `docs/design/README.md` and both WebP references for UI work
+
+If an older comment, TODO item, implementation experiment, or lower-priority document conflicts with a higher-priority source, follow the higher-priority source and update the stale documentation.
+
+## 1. Mission
+
+Build **Tooliva — Cleaner, File Manager & Device Tools**.
+
+Until Cleaner + File Manager Beta is strong, optimize for:
+
+- immediate user value;
+- simple predictable UX;
+- safe deletion;
+- fast progressive results;
 - privacy;
 - truthful behavior;
-- fast UX;
-- maintainable code;
 - Google Play compliance;
-- visual consistency with the approved Tooliva design reference.
+- maintainable code;
+- regression prevention.
 
-The product strategy is based on the current-market research in `docs/MARKET_RESEARCH_2026.md`. Read it before changing cleaner/file-manager scope.
+Do not optimize for architecture elegance at the cost of product usability.
 
----
+## 2. Hard rules
 
-# Hard product rules
+1. Kotlin + Jetpack Compose for app implementation unless a dependency requires otherwise.
+2. Target API 36; minSdk 26 unless explicitly changed.
+3. Cleaner must not be gallery-only in Full Mode.
+4. `MANAGE_EXTERNAL_STORAGE` is approved for Cleaner/File Manager prototype/full-mode development, subject to final Play declaration/review.
+5. When Full Storage Access is granted, do not request redundant broad image/video permission for the same Cleaner storage job.
+6. MediaStore/SAF are Limited Mode and specialized platform tools, not a second permission wall after Full Mode.
+7. Never add `QUERY_ALL_PACKAGES` without a demonstrated App Manager need, current policy review, documentation, and explicit approval.
+8. Never add AccessibilityService without a separate explicit human decision and policy review.
+9. Never add permissions “just in case.”
+10. Never bypass Android protected/private storage using root, exploits, hidden APIs, or deceptive flows in the normal Play build.
+11. Never delete a user file without explicit user selection/review/confirmation appropriate to the platform.
+12. Never implement fake RAM boost, CPU cooling, fake antivirus alerts, fake phone-health scores, or fake reclaimable bytes.
+13. Never upload filenames, file contents, hashes, notification text, Vault content, or installed-app inventory to analytics/ads/server unless a future feature explicitly requires and documents user-controlled transfer.
+14. Core Cleaner/File Manager functions work offline.
+15. No ads on permission disclosure, destructive confirmation, operation progress, or Cleanup Receipt.
+16. Do not copy proprietary competitor code, assets, strings, branding, or UI artwork.
+17. Do not mark placeholders/mock values as completed functionality.
+18. Do not start a new major module while the current device-dependent slice is waiting for human manual PASS/FAIL.
 
-1. Kotlin only unless an external library requires otherwise.
-2. Jetpack Compose for app UI.
-3. Target Android API 36.
-4. **Do not downgrade the Cleaner to gallery/media-only behavior.** Tooliva is intended to be a real Cleaner + File Manager.
-5. `MANAGE_EXTERNAL_STORAGE` is explicitly approved for implementation/prototyping because file management/on-device file search/storage maintenance are core purposes. It still requires a truthful disclosure, fallback mode and Play declaration before production.
-6. Preserve the existing MediaStore implementation as Limited Mode/fallback; do not delete working scoped-storage code merely because Full Storage Mode is added.
-7. Never add `QUERY_ALL_PACKAGES` merely for convenience. Prototype the App Manager first; add broad visibility only if the product need is demonstrated and separately documented.
-8. Never add AccessibilityService without explicit human approval. Market competitors using Accessibility does not automatically approve it for Tooliva.
-9. Never add permissions `just in case`.
-10. Never bypass Android protected/private storage using exploits, root, hidden APIs or deceptive flows in the normal Play build.
-11. Never delete a user file without explicit user action/review/confirmation appropriate to the platform.
-12. Never implement fake RAM boost, CPU cooling, fake antivirus warnings or invented health scores.
-13. Never upload scanned filenames, file contents, notification text, Vault content or installed-app inventory to a server/analytics provider.
-14. Never log filenames, notification content, secrets or Vault contents in production logs.
-15. Never add an ad SDK directly inside a feature package.
-16. Never show ads on permission explanations, delete/trash confirmation, Cleanup Result, Vault or biometric/PIN screens.
-17. Do not create a backend unless a task explicitly requires one.
-18. Core storage/file utilities must work offline.
-19. Do not redesign Tooliva from scratch. Use `docs/design/` as visual source of truth unless product requirements now require an additional screen/component.
-20. Do not mark placeholders/mock values/fake scan results as completed functionality.
-21. Do not copy proprietary source code, assets, strings or UI artwork from competitors. Market research defines requirements, not implementation copying.
+## 3. Known-good baseline and rejected index experiment
 
----
+Reference known-good baseline:
 
-# Product source of truth
+`b767aa8` — direct progressive Full Storage Large Files flow + Cleanup Result/navigation fixes.
 
-Before major work, read:
+The user manually confirmed on Xiaomi that this path could find/delete APK, ZIP, PDF, DOC, PNG and MP4 fixtures and that Screenshot Cleaner/navigation worked.
 
-- `README.md`
-- `TECH_SPEC.md`
-- `TODO.md`
-- `docs/MARKET_RESEARCH_2026.md`
-- `docs/PLAY_POLICY.md`
-- `docs/PRIVACY_SECURITY.md`
-- `docs/FEATURE_MATRIX.md`
-- `docs/design/README.md`
+Rejected as primary Cleaner architecture:
 
-For UI work also inspect:
-- `docs/design/tooliva-ui-showcase.webp`
-- `docs/design/tooliva-ui-system.webp`
+- `7836ea` — mandatory Room Storage Index
+- `71f35ca` — fast-first/non-blocking index attempt
 
-If old comments/code conflict with the rewritten `TECH_SPEC.md` and `TODO.md`, follow the newer market-driven specification, while preserving already working code where it can become a fallback/component.
+Do not build more layers on top of this rejected index-first approach.
 
----
+The primary Cleaner path must return to/directly preserve:
 
-# Current engineering priority
+```text
+StorageProvider -> Flow<StorageScanEvent> -> classifiers -> progressive UI
+```
 
-Until the Cleaner/File Manager Beta gate is reached, priority is:
+Room may be used later only for demonstrated persistence needs such as duplicate fingerprints, Notification History, saved decisions/history, or a small measured cache that is not a mandatory gateway.
 
-1. Full Storage Mode + Limited fallback
-2. storage abstraction/index
-3. deep cleaner categories
-4. real file manager/search
-5. storage map
-6. exact duplicates/screenshots/cleanup swipe
-7. app manager/cache workflow
+## 4. Simplicity / anti-overengineering gate
 
-Do not jump to Vault, App Lock, PDF micro-tools or monetization while these P0 items remain open unless a human explicitly reprioritizes.
+Before adding a database, cache, index, worker, background service, coordinator, queue, new abstraction layer, or concurrency framework, answer:
 
----
+1. What current measured user-visible problem does it solve?
+2. Can the problem be fixed with a smaller change?
+3. Will it preserve the known-good flow?
+4. How will we prove on the Xiaomi device that UX improved?
 
-# Full Storage Mode rules
+If the problem is hypothetical, do not add the complexity.
 
-`MANAGE_EXTERNAL_STORAGE` is approved for the current prototype/product direction.
+Never justify a regression with “more scalable architecture.”
 
-Implementation must include:
-- `Environment.isExternalStorageManager()` state check;
-- clear pre-permission explanation;
-- correct Special App Access intent/settings flow;
-- grant, deny and revoke handling;
-- visible `Full Storage Mode` vs `Limited Mode` state where relevant;
-- no crash or dead-end when access is denied;
-- tests/manual validation notes;
-- no attempt to enter protected directories Android still disallows.
+## 5. Cleaner architecture
 
-Do not pretend the permission has been granted merely because it exists in the manifest.
+The ordinary Cleaner scan is a progressive discovery/classification task, not a requirement to mirror the entire phone into a database.
 
----
+Preferred flow:
 
-# Storage architecture
-
-Cleaner UI must not depend directly on `MediaStore.Images`/`MediaStore.Video` as the sole storage source.
-
-Prefer a domain abstraction such as:
-- `StorageProvider`
-- `StorageEntry`
-- `StorageScanRequest`
-- `StorageAccessMode`
-
-Expected providers:
-- Full Storage provider
-- MediaStore Limited provider
-- SAF provider when user-mediated access is appropriate
-
-Preserve the existing central cleanup/delete coordinator.
-
-Storage scanning requirements:
-- never scan on main thread;
-- progressive results;
-- cancellation;
-- bounded concurrency;
-- handle disappearing/mutating files;
-- exclude Tooliva temp/internal data;
-- cache/index expensive data when appropriate;
-- test large file counts;
-- never call an ambiguous normal user file `junk` without an explainable rule.
-
----
-
-# Cleaner classification rules
-
-Every cleanup candidate must have a reason.
-
-Examples of acceptable categories:
-- large file;
-- old screenshot;
-- exact duplicate;
-- old APK installer;
-- old download;
-- accessible temp/residual candidate from an explicit rule;
-- empty accessible folder;
-- user-selected old file.
+```text
+explicit user action
+  -> StorageProvider
+  -> cancellable IO traversal/platform query
+  -> lightweight classifiers
+  -> progressive real results
+  -> review/select
+  -> safe operation
+  -> verified Cleanup Receipt
+```
 
 Rules:
-- ambiguous items are not preselected;
-- normal documents are not automatically `junk`;
-- age alone does not make a document/APK safe to delete;
-- `unused` requires real usage evidence;
-- duplicate means verified exact match unless UI explicitly says `similar`.
 
----
+- never scan on main thread;
+- emit matching useful results as they are found;
+- no required full scan before showing Large Files;
+- no automatic heavy whole-storage scan merely because a screen opened;
+- no full-file hashing in ordinary Cleaner scan;
+- no thumbnail generation for every file;
+- no requirement to retain every small file in memory/Room;
+- isolate unreadable/disappearing files instead of failing the whole scan;
+- cancellation must work;
+- protected directories remain excluded.
 
-# Destructive operations
+One traversal may feed multiple cheap classifiers when this reduces work without complicating UX.
 
-The existing verified Cleanup Receipt is a key product feature.
+## 6. Storage access model
+
+### Full Mode — Android 11+
+
+When `Environment.isExternalStorageManager()` is true, the primary shared-storage Cleaner/File Manager path uses Full Mode.
+
+Full Mode covers, where Android permits:
+
+- Large Files;
+- Downloads;
+- APKs;
+- Archives;
+- Documents;
+- media;
+- Screenshot Cleaner;
+- File Manager.
+
+Do not ask for `READ_MEDIA_IMAGES/VIDEO` solely because a Full Mode Cleaner sub-screen was opened.
+
+### Limited Mode
+
+When Full Mode is denied/not supported:
+
+- use MediaStore/SAF where appropriate;
+- request granular media permission only for a feature that genuinely needs it;
+- label limited coverage honestly;
+- never pretend the whole storage was scanned.
+
+## 7. Cleaner UX
+
+User-facing primary concepts:
+
+- storage used/free;
+- Scan/Analyze;
+- Large Files;
+- Downloads;
+- APK installers;
+- Archives;
+- Documents;
+- Screenshots;
+- Old Files;
+- Duplicates;
+- Cache;
+- Apps;
+- reviewable/reclaimable bytes;
+- Cleanup Receipt.
+
+Never make engineering concepts primary UI:
+
+- Storage Index;
+- generations/scopes;
+- Room progress;
+- fast/deep index;
+- coordinator state.
+
+If scan work takes time, show meaningful result/progress concepts, not internal database state.
+
+## 8. Explainable cleanup
+
+Every cleanup candidate/group has a reason.
+
+Acceptable examples:
+
+- file larger than chosen threshold;
+- old APK installer;
+- archive in Downloads;
+- screenshot older than user-selected age;
+- exact duplicate;
+- deterministic accessible temp/residual rule;
+- empty writable folder;
+- old download selected through an explicit age filter.
+
+Rules:
+
+- ambiguous candidates are not preselected;
+- normal documents are not generic junk;
+- age alone does not make an APK/document safe to delete;
+- `unused` requires real Usage evidence;
+- `duplicate` means exact verified match unless UI explicitly says `similar`.
+
+## 9. Destructive operations / Cleanup Receipt
+
+Centralized cleanup/delete code is authoritative.
 
 Required flow:
-1. scan/index;
-2. user review/select;
-3. show count + bytes;
-4. platform/system confirmation when required;
-5. execute;
-6. re-query/re-scan;
-7. verify;
-8. show Cleanup Receipt.
 
-Receipt must distinguish:
+1. review/select;
+2. show selected count + bytes;
+3. user/system confirmation;
+4. execute;
+5. verify/re-stat;
+6. show Cleanup Receipt immediately;
+7. reconcile visible results without an unnecessary full-device rescan.
+
+Receipt distinguishes:
+
 - requested;
-- already missing;
+- missing before action;
 - moved to Trash;
 - physically freed;
 - unchanged/failed;
 - canceled;
 - permission revoked.
 
-Never count Android Trash bytes as physically freed.
+Trash bytes are never reported as physically freed.
 
-No advertisement may interrupt this flow.
+Do not replace the receipt with a generic `Cleaned X GB` message.
 
----
+## 10. File Manager rules
 
-# File Manager rules
+File Manager is real core functionality.
 
-File Manager is core functionality.
+Eventually P0:
 
-P0 capabilities:
-- browse shared storage;
-- volume handling;
-- breadcrumbs/path;
+- shared-storage/volume browsing;
+- category shortcuts;
+- name/size/date sorting;
 - search;
-- type/size/date filters;
-- sort;
-- open/share/details;
+- details/open/share;
 - rename;
-- copy;
-- move;
+- copy/move;
 - create folder;
 - delete/trash;
 - collision handling;
 - long-operation progress/cancel.
 
-File actions must share domain/storage abstractions with Cleaner where practical instead of implementing duplicate filesystem logic.
+Reuse storage/file-operation primitives from Cleaner where practical, but never require a complete whole-device database index before browsing/searching basic files.
 
----
+## 11. Cache cleaning
 
-# App Manager / package visibility
+V1 uses official system-mediated cache clearing where supported.
 
-Do not add `QUERY_ALL_PACKAGES` before testing the narrower implementation.
+Do not claim Tooliva can silently delete every other app's private cache.
 
-If broader visibility is necessary:
-1. document the exact user-facing feature that fails without it;
-2. verify the current Google Play policy;
-3. update `docs/PLAY_POLICY.md` and `TECH_SPEC.md` if needed;
-4. obtain explicit human approval;
-5. add the permission;
-6. add disclosure/declaration notes;
-7. ensure installed-app inventory is never used for ads/analytics.
+Accessibility automation is deferred until a separate approval/policy decision.
 
-`PACKAGE_USAGE_STATS` requires explicit Usage Access by the user and is only for features that genuinely use it.
+## 12. Visual rules
 
----
+Read:
 
-# Cache cleaning
+- `docs/design/tooliva-ui-showcase.webp`
+- `docs/design/tooliva-ui-system.webp`
+- `docs/design/README.md`
 
-For Android 11+ use official system-mediated `StorageManager.ACTION_CLEAR_APP_CACHE` where supported and appropriate.
+Preserve:
 
-Do not claim Tooliva can directly silently wipe every other app's private internal cache.
-
-`CLEAR_APP_CACHE` is not a normal third-party permission; do not attempt privilege tricks.
-
-Accessibility automation of app Settings remains unapproved for V1.
-
----
-
-# Visual source of truth
-
-The approved visual language:
 - dark graphite surfaces;
 - teal/cyan primary actions;
-- restrained blue/green/orange secondary accents;
-- large rounded Material 3 cards;
-- strong hierarchy and readable numeric storage data;
-- 4dp spacing grid;
+- restrained secondary accents;
+- rounded Material 3 cards;
+- strong readable hierarchy;
+- 4dp grid;
 - minimum 48dp touch targets;
-- dark theme first, light theme supported;
-- no fake danger colors/manipulative warnings.
+- dark-first + supported light theme;
+- no fake danger/scare styling.
 
-Mockup values are examples only. Production UI uses real local data.
+Do not expose backend/debug concepts because they happen to exist in code.
 
-New cleaner/file-manager screens should extend this design system, not invent a second style.
+## 13. Testing ownership — mandatory workflow
 
----
+The agent performs:
 
-# Before coding a task
+- unit tests;
+- compile/build checks;
+- instrumentation/connected tests when safe and deterministic;
+- fresh debug APK build;
+- APK installation on the connected Xiaomi;
+- crash smoke-check only.
 
-1. Read the relevant source-of-truth docs.
-2. Inspect existing code before proposing replacement.
-3. Identify exact TODO items.
-4. State the smallest coherent vertical slice.
-5. Implement.
-6. Add/update tests.
-7. Run build/tests.
-8. Validate on a physical device when the feature depends on OEM/storage behavior.
-9. Inspect UI against design reference.
-10. Update TODO honestly using `[x]`, `[~]`, `[ ]` semantics.
-11. Commit and push focused changes.
-12. Report changed files, tests, physical-device coverage and remaining blockers.
+**The human user performs manual functional phone testing.**
 
-Do not mark a feature complete because the UI compiles.
+ADB/shell/UI automation does not substitute for user PASS.
 
----
+After every device-dependent vertical slice:
 
-# Architecture
+1. build/test;
+2. install fresh debug APK;
+3. launch only for crash smoke-check;
+4. stop coding the next major feature;
+5. output `MANUAL TEST REQUIRED — <feature>`;
+6. give a short numbered checklist;
+7. wait for the user's PASS/FAIL;
+8. fix failures;
+9. only after human PASS mark device-dependent TODO items `[x]`.
 
-Prefer:
-- package-by-feature;
-- unidirectional data flow;
-- immutable UI state;
-- repository/platform abstractions;
-- coroutines/Flow;
-- centralized storage access;
-- centralized permission/special-access handling;
-- centralized destructive-operation handling;
-- centralized ads/billing.
+## 14. Regression gate
 
-Avoid:
-- god classes;
-- global mutable state;
-- business logic in Composables;
-- direct database access from UI;
-- separate ad SDK calls inside features;
-- duplicate file-operation implementations in Cleaner and File Manager.
+Every refactor must preserve, unless explicitly changed by the human owner:
 
-Do not create abstraction layers that have no concrete purpose.
+- Full Mode discovers APK/ZIP/PDF/document/image/video fixtures;
+- Large Files shows progressive useful results;
+- select/open/delete works;
+- Cleanup Receipt appears immediately after confirmed action;
+- Screenshot Cleaner remains usable;
+- Home navigation works;
+- Full Mode does not trigger a redundant media permission request;
+- opening a screen does not start a heavy scan that makes the app feel frozen.
 
----
+If any invariant breaks, stop new work and fix/revert the regression first.
 
-# Testing minimum
+## 15. Coding discipline
 
-For each relevant feature verify:
-- happy path;
-- permission denied;
-- permission revoked after grant;
-- empty data;
-- large data set;
-- file disappears/changes during operation;
-- process recreation where meaningful;
-- Android version differences;
-- no main-thread blocking;
-- no unexpected network use.
+Before coding:
 
-For storage/destructive functionality also verify:
-- APK;
-- ZIP/archive;
-- PDF/document;
-- image;
-- video;
-- nested folders;
-- duplicate names;
-- copy/move collisions;
-- read-only/inaccessible path behavior;
-- low-storage state;
-- Trash vs physical deletion accounting.
+1. read authoritative docs;
+2. inspect existing implementation and known-good history;
+3. identify exact TODO slice;
+4. explain the smallest coherent change;
+5. preserve working code where possible;
+6. implement;
+7. add tests;
+8. build;
+9. install APK if device-dependent;
+10. provide manual checklist;
+11. update TODO only to verified reality;
+12. commit/push focused changes.
 
----
+Avoid broad refactors during feature work.
 
-# Definition of done
+Do not create speculative abstractions with no current consumer.
 
-A task is done only when:
-- it works end-to-end for its stated scope;
-- loading/error/empty/access-denied states exist;
-- tests are added where appropriate;
-- build passes;
-- physical-device validation is performed when required;
-- no policy/privacy issue was silently introduced;
-- UI follows `docs/design/`;
-- no mock/fake data remains in production path;
-- docs are updated if behavior/scope changed;
-- TODO reflects verified reality.
+## 16. Definition of done
+
+A task is complete only when:
+
+- stated behavior works end-to-end;
+- loading/error/empty/permission-denied states exist where relevant;
+- automated tests/build pass;
+- human device PASS exists when required;
+- known-good regressions are not introduced;
+- privacy/Play rules remain valid;
+- design reference is respected;
+- TODO/docs reflect reality;
+- no fake/mock production data remains.
