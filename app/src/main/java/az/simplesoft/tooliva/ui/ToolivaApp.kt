@@ -30,6 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import az.simplesoft.tooliva.feature.clean.CleanRoute
 import az.simplesoft.tooliva.feature.clean.largefiles.LargeFilesRoute
 import az.simplesoft.tooliva.feature.clean.downloads.DownloadsAnalyzerRoute
+import az.simplesoft.tooliva.feature.clean.recommendations.CleanupRecommendationsRoute
 import az.simplesoft.tooliva.feature.clean.screenshots.ScreenshotCleanerRoute
 import az.simplesoft.tooliva.feature.home.HomeRoute
 
@@ -101,6 +102,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             }
             composable("clean/large-files") { LargeFilesRoute() }
             composable("clean/downloads") { DownloadsAnalyzerRoute() }
+            composable("clean/recommendations") { CleanupRecommendationsRoute() }
             composable("clean/screenshots") { ScreenshotCleanerRoute() }
             composable("clean/duplicates") {
                 ModulePlaceholder("Exact duplicates", "Exact hash-based duplicate detection will live here.")

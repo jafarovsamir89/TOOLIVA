@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.FindInPage
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Screenshot
 import androidx.compose.material.icons.outlined.Storage
@@ -52,6 +53,7 @@ private data class CleanTool(
 private val cleanTools = listOf(
     CleanTool("large-files", "Large files", "Find the biggest files worth reviewing", Icons.Outlined.Storage),
     CleanTool("downloads", "Downloads", "Review installers, archives, documents and old downloads", Icons.Outlined.Download),
+    CleanTool("recommendations", "Files to review", "Old installers and downloads you may no longer need", Icons.Outlined.FindInPage),
     CleanTool("screenshots", "Screenshots", "Review old screenshots by age", Icons.Outlined.Screenshot),
     CleanTool("duplicates", "Exact duplicates", "Find byte-identical photos safely", Icons.Outlined.PhotoLibrary),
     CleanTool("old-videos", "Old videos", "Review large and old videos", Icons.Outlined.VideoLibrary),
