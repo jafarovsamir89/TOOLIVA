@@ -51,6 +51,9 @@ class StorageIndexRepositoryTest {
         assertEquals(50_000L, initial.filesDiscovered)
         assertEquals(50_000, repository.count(StorageIndexQuery(StorageAccessMode.FULL)))
         assertEquals(5_000, repository.query(StorageIndexQuery(StorageAccessMode.FULL)).size)
+        val summaries = repository.categorySummaries(StorageAccessMode.FULL)
+        assertEquals(500, summaries.single { it.category == StorageCategory.APK }.fileCount)
+        assertTrue(summaries.single { it.category == StorageCategory.APK }.totalBytes > 0L)
 
         val largest = repository.query(
             StorageIndexQuery(

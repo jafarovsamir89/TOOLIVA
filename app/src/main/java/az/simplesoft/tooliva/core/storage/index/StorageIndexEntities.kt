@@ -58,3 +58,9 @@ data class StorageIndexGenerationEntity(
     val indexedBytes: Long,
     val warningCount: Int,
 )
+
+data class StorageCategorySummaryRow(
+    val category: String,
+    val fileCount: Int,
+    val totalBytes: Long,
+)

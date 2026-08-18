@@ -243,10 +243,13 @@ Do not perform expensive hashing during the initial cheap index pass unless need
 ## Storage Index v1 implementation contract
 
 The first Room index uses three local tables: indexed entries, active access-mode/volume
-scopes, and scan generations. Entries written by a new generation are invisible to queries
-until every corresponding root reports a successful completion. Only then does the scope point
-to that generation and stale entries for that successful root are removed. Cancelled or failed
-generations therefore cannot replace the last known-good index.
+scopes, and scan generations. The first run has two ordered generations: a small priority
+snapshot for high-value shared-storage directories, followed by the complete deep generation.
+The priority snapshot is promoted only after its selected roots report successful completion,
+so Large Files can show useful rows while the complete generation is still running. The deep
+generation later replaces that snapshot and performs stale cleanup for each successfully
+completed full root. Cancelled or failed generations therefore cannot replace the last known-
+good scope.
 
 Full and Limited entries are scoped separately by `StorageAccessMode`. If Full Storage Access is
 revoked, Large Files queries use only the Limited scope after a Limited scan; old Full entries
@@ -256,8 +259,10 @@ and local references only—never file contents or thumbnails.
 Indexing uses a single cancellable filesystem traversal and bounded Room batches. Unchanged
 metadata (`stable key`, path/ref, size and modified time plus normalized fields) reuses the
 existing row and only advances its generation marker. No hashing or file-content reads are
-performed. Feature queries are Room-filtered and bounded rather than loading the whole table
-into Compose.
+performed. A process-scoped `StorageIndexCoordinator` owns the fast/deep sequence so Clean and
+Large Files cannot start parallel walks. Large Files reads the active Room snapshot immediately
+and refreshes as the deep generation enriches it. Feature queries are Room-filtered and bounded
+rather than loading the whole table into Compose.
 
 ---
 

@@ -38,6 +38,9 @@ interface StorageIndexDao {
     @Query("SELECT * FROM storage_index_generations WHERE accessMode = :accessMode AND status = 'COMPLETED' ORDER BY completedAtMillis DESC LIMIT 1")
     suspend fun lastSuccessfulGeneration(accessMode: String): StorageIndexGenerationEntity?
 
+    @Query("SELECT * FROM storage_index_generations WHERE accessMode = :accessMode ORDER BY startedAtMillis DESC LIMIT 1")
+    suspend fun latestGeneration(accessMode: String): StorageIndexGenerationEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertEntries(entries: List<StorageIndexEntity>)
 
@@ -120,4 +123,24 @@ interface StorageIndexDao {
         category: String?,
         searchQuery: String,
     ): Int
+
+    @Query(
+        """
+        SELECT e.category AS category, COUNT(*) AS fileCount, SUM(e.sizeBytes) AS totalBytes
+        FROM storage_index_entries e
+        INNER JOIN storage_index_scopes s
+          ON s.accessMode = e.accessMode
+         AND s.volumeId = e.volumeId
+         AND s.activeGeneration = e.scanGeneration
+        WHERE e.accessMode = :accessMode
+          AND e.isDirectory = 0
+          AND e.sizeBytes >= :minimumSizeBytes
+        GROUP BY e.category
+        ORDER BY totalBytes DESC
+        """,
+    )
+    suspend fun categorySummaries(
+        accessMode: String,
+        minimumSizeBytes: Long,
+    ): List<StorageCategorySummaryRow>
 }

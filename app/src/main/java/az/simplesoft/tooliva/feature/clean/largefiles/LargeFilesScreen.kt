@@ -126,7 +126,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
     }
 
     LaunchedEffect(fullMode, hasMediaAccess) {
-        if ((fullMode || hasMediaAccess) && state.files.isEmpty() && !state.isLoading && state.errorMessage == null) {
+        if ((fullMode || hasMediaAccess) && !state.isLoading && state.errorMessage == null) {
             viewModel.scan()
         }
     }
@@ -238,8 +238,13 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                                     color = MaterialTheme.colorScheme.primary,
                                 )
                                 if (state.isLoading) Text("Loading indexed results…", style = MaterialTheme.typography.bodySmall)
+                                if (state.isIndexing) Text(
+                                    "Results update while the deep scan runs.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
-                            if (state.isLoading) CircularProgressIndicator()
+                            if (state.isLoading || state.isIndexing) CircularProgressIndicator()
                             if (state.visibleFiles.isNotEmpty()) {
                                 TextButton(onClick = viewModel::toggleSelectAllVisible) {
                                     Text(if (state.allVisibleSelected) "Clear all" else "Select all")
@@ -316,7 +321,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                     }
                 }
 
-                if (state.isLoading) {
+                if (state.isLoading || state.isIndexing) {
                     item {
                         OutlinedButton(onClick = viewModel::cancelScan, modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Outlined.Cancel, contentDescription = null)
@@ -325,7 +330,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                     }
                 }
 
-                if (!state.isLoading && state.errorMessage == null && state.visibleFiles.isEmpty()) {
+                if (!state.isLoading && !state.isIndexing && state.errorMessage == null && state.visibleFiles.isEmpty()) {
                     item {
                         Text(
                             "No accessible files match the current filters.",

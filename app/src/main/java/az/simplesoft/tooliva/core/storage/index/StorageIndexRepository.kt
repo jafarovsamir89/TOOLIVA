@@ -79,6 +79,12 @@ data class IndexedStorageEntry(
     val isDirectory: Boolean,
 )
 
+data class StorageCategorySummary(
+    val category: StorageCategory,
+    val fileCount: Int,
+    val totalBytes: Long,
+)
+
 class StorageIndexRepository(
     private val database: StorageIndexDatabase,
     private val clock: () -> Long = { System.currentTimeMillis() },
@@ -288,6 +294,21 @@ class StorageIndexRepository(
 
     suspend fun lastSuccessfulScan(accessMode: StorageAccessMode): StorageIndexGenerationEntity? =
         dao.lastSuccessfulGeneration(accessMode.name)
+
+    suspend fun latestScan(accessMode: StorageAccessMode): StorageIndexGenerationEntity? =
+        dao.latestGeneration(accessMode.name)
+
+    suspend fun categorySummaries(
+        accessMode: StorageAccessMode,
+        minimumSizeBytes: Long = 0L,
+    ): List<StorageCategorySummary> = dao.categorySummaries(
+        accessMode = accessMode.name,
+        minimumSizeBytes = minimumSizeBytes,
+    ).mapNotNull { row ->
+        runCatching { StorageCategory.valueOf(row.category) }.getOrNull()?.let { category ->
+            StorageCategorySummary(category, row.fileCount, row.totalBytes)
+        }
+    }
 
     suspend fun removeEntriesByRefs(accessMode: StorageAccessMode, refs: Set<String>) {
         if (refs.isNotEmpty()) dao.deleteEntriesByRefs(accessMode.name, refs.toList())

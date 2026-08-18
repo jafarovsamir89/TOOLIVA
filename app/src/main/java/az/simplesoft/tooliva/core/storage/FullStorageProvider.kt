@@ -22,7 +22,15 @@ import kotlin.coroutines.coroutineContext
  * Traversal is deliberately bounded to one producer. It keeps only the current directory
  * stack in memory and lets the index repository perform bounded database batches.
  */
-class FullStorageProvider(context: Context) : StorageProvider {
+enum class FullStorageScanPlan {
+    PRIORITY,
+    COMPLETE,
+}
+
+class FullStorageProvider(
+    context: Context,
+    private val scanPlan: FullStorageScanPlan = FullStorageScanPlan.COMPLETE,
+) : StorageProvider {
     private val appContext = context.applicationContext
 
     override val accessMode: StorageAccessMode = StorageAccessMode.FULL
@@ -40,12 +48,13 @@ class FullStorageProvider(context: Context) : StorageProvider {
             emit(StorageScanEvent.RootStarted(volumeId))
             var rootCompletedSuccessfully = true
             val seenDirectories = HashSet<String>()
-            val stack = ArrayDeque<File>()
-            stack.add(root)
+            val stack = ArrayDeque<ScanNode>()
+            stack.add(ScanNode(root, recurseIntoChildren = scanPlan == FullStorageScanPlan.COMPLETE))
 
             while (stack.isNotEmpty()) {
                 coroutineContext.ensureActive()
-                val directory = stack.removeLast()
+                val node = stack.removeLast()
+                val directory = node.directory
                 val canonicalDirectory = runCatching { directory.canonicalPath }.getOrNull()
                 if (canonicalDirectory == null) {
                     emit(StorageScanEvent.Warning(StorageScanWarning.UNREADABLE_ENTRY))
@@ -61,7 +70,14 @@ class FullStorageProvider(context: Context) : StorageProvider {
                     continue
                 }
 
-                children.forEach { child ->
+                val orderedChildren = if (
+                    scanPlan == FullStorageScanPlan.PRIORITY && directory.canonicalPath == root.canonicalPath
+                ) {
+                    children.sortedWith(compareByDescending { priorityRank(it.name) })
+                } else {
+                    children.toList()
+                }
+                orderedChildren.forEach { child ->
                     coroutineContext.ensureActive()
                     val absolutePath = child.absolutePath
                     if (isProtectedPath(absolutePath)) return@forEach
@@ -78,7 +94,9 @@ class FullStorageProvider(context: Context) : StorageProvider {
                         return@forEach
                     }
                     if (isDirectory) {
-                        stack.add(child)
+                        val shouldRecurse = node.recurseIntoChildren ||
+                            (directory.canonicalPath == root.canonicalPath && child.name.lowercase() in PRIORITY_DIRECTORY_NAMES)
+                        stack.add(ScanNode(child, shouldRecurse))
                         val directoryEntry = metadataFor(child, volumeId, isDirectory = true)
                         if (directoryEntry != null) emit(StorageScanEvent.EntryFound(directoryEntry))
                         else emit(StorageScanEvent.Warning(StorageScanWarning.ENTRY_CHANGED))
@@ -160,6 +178,11 @@ class FullStorageProvider(context: Context) : StorageProvider {
             .distinctBy { it.absolutePath }
     }
 
+    private data class ScanNode(
+        val directory: File,
+        val recurseIntoChildren: Boolean,
+    )
+
     private fun isProtectedPath(path: String): Boolean {
         val normalized = path.replace(File.separatorChar, '/')
         return normalized.endsWith("/Android/data") ||
@@ -191,6 +214,16 @@ class FullStorageProvider(context: Context) : StorageProvider {
     private fun mimeTypeFor(file: File): String? = android.webkit.MimeTypeMap.getSingleton()
         .getMimeTypeFromExtension(extensionFor(file))
 
+    private fun priorityRank(name: String): Int = when (name.lowercase()) {
+        "download" -> 0
+        "movies" -> 1
+        "dcim" -> 2
+        "documents" -> 3
+        "pictures" -> 4
+        "music" -> 5
+        else -> 100
+    }
+
     companion object {
         const val PROGRESS_INTERVAL = 128L
         private val VIDEO_EXTENSIONS = setOf("mp4", "mkv", "mov", "avi", "webm", "3gp", "m4v")
@@ -199,6 +232,9 @@ class FullStorageProvider(context: Context) : StorageProvider {
         private val ARCHIVE_EXTENSIONS = setOf("zip", "rar", "7z", "tar", "gz", "bz2", "xz", "iso")
         private val DOCUMENT_EXTENSIONS = setOf(
             "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "csv", "epub",
+        )
+        private val PRIORITY_DIRECTORY_NAMES = setOf(
+            "download", "dcim", "pictures", "movies", "documents", "music",
         )
     }
 }

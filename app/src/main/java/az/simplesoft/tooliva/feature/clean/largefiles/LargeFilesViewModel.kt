@@ -15,19 +15,25 @@ import az.simplesoft.tooliva.core.storage.StorageAccessState
 import az.simplesoft.tooliva.core.storage.StorageCategory
 import az.simplesoft.tooliva.core.storage.StorageSortOrder
 import az.simplesoft.tooliva.core.storage.index.IndexedStorageEntry
+import az.simplesoft.tooliva.core.storage.index.StorageIndexCoordinator
 import az.simplesoft.tooliva.core.storage.index.StorageIndexQuery
 import az.simplesoft.tooliva.core.storage.index.StorageIndexRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class LargeFilesUiState(
     val isLoading: Boolean = false,
+    val isIndexing: Boolean = false,
     val isPreparingDelete: Boolean = false,
     val files: List<LargeMediaFile> = emptyList(),
     val selectedUris: Set<String> = emptySet(),
@@ -78,20 +84,40 @@ data class LargeFilesUiState(
     }
 }
 
+@OptIn(FlowPreview::class)
 class LargeFilesViewModel(application: Application) : AndroidViewModel(application) {
     private val accessCoordinator = StorageAccessCoordinator(application)
     private val indexRepository = StorageIndexRepository(application)
+    private val indexCoordinator = StorageIndexCoordinator.getInstance(application)
     private val _uiState = MutableStateFlow(
         LargeFilesUiState(accessState = accessCoordinator.currentState()),
     )
     val uiState = _uiState.asStateFlow()
     private var scanJob: Job? = null
+    private var indexRefreshJob: Job? = null
     private var nextDeleteRequestId = 0L
+
+    init {
+        indexRefreshJob = viewModelScope.launch {
+            indexCoordinator.state
+                .debounce(350L)
+                .filter {
+                    it.accessMode == _uiState.value.accessState.mode &&
+                        (it.phase != az.simplesoft.tooliva.core.storage.index.StorageIndexScanPhase.IDLE ||
+                            it.status in setOf(
+                                az.simplesoft.tooliva.core.storage.index.StorageIndexRunStatus.COMPLETED,
+                                az.simplesoft.tooliva.core.storage.index.StorageIndexRunStatus.CANCELED,
+                                az.simplesoft.tooliva.core.storage.index.StorageIndexRunStatus.FAILED,
+                            ))
+                }
+                .collect { loadIndexIntoState() }
+        }
+    }
 
     fun refreshAccess() {
         val latest = accessCoordinator.currentState()
         _uiState.update { state ->
-            if (state.accessState == latest) state else state.copy(accessState = latest, files = emptyList(), selectedUris = emptySet())
+            if (state.accessState == latest) state else state.copy(accessState = latest, files = emptyList(), selectedUris = emptySet(), isIndexing = false, errorMessage = null)
         }
     }
 
@@ -99,11 +125,13 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
         if (_uiState.value.isLoading || _uiState.value.isPreparingDelete) return
         scanJob?.cancel()
         scanJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null, files = emptyList(), visitedFiles = 0L) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, visitedFiles = 0L) }
             try {
-                loadIndexIntoState(showMissingIndexError = true)
+                loadIndexIntoState()
+                _uiState.update { it.copy(isIndexing = true) }
+                indexCoordinator.start(_uiState.value.accessState.mode)
             } catch (cancellation: CancellationException) {
-                _uiState.update { it.copy(isLoading = false) }
+                _uiState.update { it.copy(isLoading = false, isIndexing = false) }
                 throw cancellation
             } catch (error: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to read the storage index.") }
@@ -155,6 +183,7 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun onAccessRevoked() {
+        indexCoordinator.cancel()
         refreshAccess()
         _uiState.update { it.copy(errorMessage = "Full Storage Access is unavailable. Tooliva is using Limited Mode.") }
     }
@@ -254,7 +283,7 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
                         refs = result.removedRefs,
                     )
                 }
-                loadIndexIntoState(showMissingIndexError = false)
+                loadIndexIntoState()
             } catch (error: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Cleanup finished, but the index could not be refreshed.") }
             }
@@ -265,12 +294,12 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
         if (_uiState.value.isPreparingDelete || _uiState.value.isLoading) return
         scanJob?.cancel()
         scanJob = viewModelScope.launch {
-            runCatching { loadIndexIntoState(showMissingIndexError = false) }
+            runCatching { loadIndexIntoState() }
                 .onFailure { error -> _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Unable to read the storage index.") } }
         }
     }
 
-    private suspend fun loadIndexIntoState(showMissingIndexError: Boolean) {
+    private suspend fun loadIndexIntoState() {
         val snapshot = _uiState.value
         val query = StorageIndexQuery(
             accessMode = snapshot.accessState.mode,
@@ -280,19 +309,15 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
             sortOrder = snapshot.sortOrder,
         )
         val indexed = withContext(Dispatchers.IO) { indexRepository.query(query) }
-        val hasIndex = withContext(Dispatchers.IO) { indexRepository.lastSuccessfulScan(snapshot.accessState.mode) != null }
         val files = indexed.map { it.toLargeMediaFile() }
         val ids = files.map { it.uri.toString() }.toSet()
         _uiState.update {
             it.copy(
                 isLoading = false,
+                isIndexing = indexCoordinator.state.value.phase != az.simplesoft.tooliva.core.storage.index.StorageIndexScanPhase.IDLE,
                 files = files,
                 selectedUris = it.selectedUris.intersect(ids),
-                errorMessage = if (showMissingIndexError && !hasIndex) {
-                    "No storage index is ready. Open Clean and tap Scan Storage first."
-                } else {
-                    null
-                },
+                errorMessage = null,
             )
         }
     }

@@ -111,12 +111,14 @@ This is now the highest-priority engineering phase.
 ## Index
 
 - [x] [P0] Room-backed storage index — entries, scopes, generations, exported schema
-- [~] [P0] Progressive full-storage indexing — real counters/progress and Clean UI implemented; physical UX validation pending
+- [~] [P0] Progressive full-storage indexing — priority Fast Scan promotes useful rows first, then a non-blocking Deep Index continues with real counters; physical UX validation pending
 - [x] [P0] Cancellation — automated connected test confirms canceled generation preserves the last successful index
 - [x] [P0] Bounded concurrency — single cancellable traversal with bounded Room batches; no per-file coroutine fan-out
 - [~] [P0] Handle files disappearing/changing during scan — per-entry failures are isolated and changed metadata is tested; physical revoke/disappearance validation pending
 - [x] [P0] Incremental/reuse strategy so unchanged storage is not fully rescanned every time — metadata reuse and stale cleanup covered by 50k test
 - [x] [P0] Stress test 50k files — connected Room stress test passed on Xiaomi
+- [x] [P0] Fast-first scan coordinator — one process-scoped coordinator prevents parallel walks; priority roots are Download/DCIM/Pictures/Movies/Documents/Music plus shallow top-level coverage
+- [~] [P0] Large Files cache + live enrichment — Room cache opens immediately and refreshes as Fast/Deep generations complete; physical time-to-first-result validation pending
 - [ ] [P1] Stress test 100k+ files
 
 ---
@@ -125,11 +127,11 @@ This is now the highest-priority engineering phase.
 
 ## Cleaner dashboard
 
-- [ ] [P0] Rework Clean screen around one `SCAN STORAGE` flow
+- [~] [P0] Rework Clean screen around one `SCAN STORAGE` flow — usable dashboard remains available during scan; priority result cards and secondary deep-scan status implemented, manual UX validation pending
 - [ ] [P0] Show indexed/used/free bytes
-- [ ] [P0] Show Full/Limited access status
-- [ ] [P0] Show highest-value cleanup recommendations
-- [ ] [P0] Category cards use real item counts + bytes
+- [x] [P0] Show Full/Limited access status
+- [~] [P0] Show highest-value cleanup recommendations — real category summary cards for indexed large-file candidates; screenshot-specific aggregation remains separate
+- [~] [P0] Category cards use real item counts + bytes — APK/archive/download/media categories are Room-backed; physical UI validation pending
 
 ## Large Files — full scope
 
