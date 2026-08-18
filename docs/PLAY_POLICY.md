@@ -1,316 +1,275 @@
 # Tooliva — Google Play / Android Policy Notes
 
-Last reviewed: 2026-08-16
+Revision: 2026-08-18
 
 This is an engineering/product checklist, not legal advice.
 
-Primary official policy sources:
+Authoritative product source:
+- `docs/PRODUCT_CONSTITUTION.md`
+
+Primary official references:
 - Target API: https://developer.android.com/google/play/requirements/target-sdk
 - All Files Access: https://support.google.com/googleplay/android-developer/answer/10467955
+- Android All Files Access: https://developer.android.com/training/data-storage/manage-all-files
 - Package visibility: https://support.google.com/googleplay/android-developer/answer/10158779
-- Sensitive permissions/API overview: https://support.google.com/googleplay/android-developer/answer/16558241
-- Android All Files Access docs: https://developer.android.com/training/data-storage/manage-all-files
+- Accessibility: https://support.google.com/googleplay/android-developer/answer/10964491
 - StorageManager cache action: https://developer.android.com/reference/android/os/storage/StorageManager#ACTION_CLEAR_APP_CACHE
 
----
-
-# 1. Target API
+## 1. Target API
 
 Project baseline:
+
 - compileSdk 36
 - targetSdk 36
+- minSdk 26
 
-Starting 2026-08-31, new apps and updates submitted to Google Play must target Android 16 / API 36 or higher (with platform-category exceptions not relevant to Tooliva's phone app).
+Before release, re-check the current Google Play target API requirement.
 
----
+## 2. Product purpose and restricted permissions
 
-# 2. Product purpose matters to permission eligibility
-
-Tooliva's product definition is now intentionally:
+Tooliva is genuinely defined as:
 
 **Cleaner + File Manager + Device Tools**
 
-Core user-facing purposes:
-1. access/manage shared-storage files and folders;
-2. on-device file search and storage analysis;
-3. device-storage maintenance/cleanup.
+Core functions include:
 
-This positioning is not cosmetic. Restricted permissions must be genuinely required by and prominently tied to core functionality in the app and store listing.
+- shared-storage file management;
+- on-device file search;
+- storage analysis/cleanup.
 
-Do not later rewrite the Play listing as merely `photo cleaner + random utilities` while still requesting broad file access.
+Restricted permissions must remain directly tied to visible core functionality. The store listing, in-app UX, permission explanation, and actual build must tell the same story.
 
----
+## 3. `MANAGE_EXTERNAL_STORAGE` / All Files Access
 
-# 3. `MANAGE_EXTERNAL_STORAGE` / All Files Access
+This is a restricted permission requiring Google Play declaration/review.
 
-Google Play restricts this high-risk permission and requires a Permissions Declaration Form and approval.
+Tooliva decision:
 
-Current policy lists eligible core uses including:
-- file management;
-- backup/restore;
-- antivirus;
-- document management;
-- on-device search;
-- disk/folder encryption;
-- device migration.
+**approved for development/prototype and intended Full Mode**, because Cleaner + File Manager + on-device search are actual core functionality.
 
-Tooliva's intended justification is **file management + on-device search + storage maintenance as core functionality**.
+Production submission is contingent on current-policy review and approval.
 
-## Tooliva decision
+### Required Full Mode implementation
 
-`MANAGE_EXTERNAL_STORAGE` is **approved for implementation/prototyping**.
+- explain why shared-storage access is needed before Special App Access;
+- user explicitly enables it;
+- detect state with `Environment.isExternalStorageManager()` where applicable;
+- handle deny/revoke;
+- no protected/private path bypass;
+- no hidden analytics/ad use of file inventory;
+- no ad on disclosure screen.
 
-Production Play release remains contingent on:
-- current-policy re-check;
-- complete Play permission declaration;
-- app/store UX accurately showing the eligible core functionality;
-- review approval.
+### Full Mode UX rule
 
-## Required implementation behavior
+When Full Storage Access is granted on Android 11+, the core Cleaner/File Manager flow should use that access directly.
 
-Before sending user to Special App Access:
-- explain what Full Storage Mode enables;
-- explain that it scans shared storage to find/manage files;
-- do not imply access to private/protected data that Android still blocks;
-- explain Limited Mode fallback;
-- no ad on this screen.
+**Do not immediately ask the user for broad Photos/Videos permission for the same storage-cleaning purpose.**
 
-State detection:
-- use `Environment.isExternalStorageManager()` where applicable;
-- handle grant/deny/revoke;
-- do not infer grant from manifest presence.
+This applies to Full Mode Large Files, Downloads, APK/Archives/Documents, File Manager, and Screenshot Cleaner where Full Mode access is sufficient.
 
-Fallback:
-- MediaStore / SAF remain available as Limited Mode;
-- denial must not crash the app;
-- limited scan results must be labeled truthfully.
+## 4. Limited Mode / media permissions
 
-## Prohibited use
+If Full Mode is denied/not supported, Tooliva may use:
 
-Do not use broad access for unrelated hidden purposes, ad targeting, analytics collection or server upload of user file inventory.
+- MediaStore;
+- granular `READ_MEDIA_*` permissions on Android versions where required;
+- Storage Access Framework.
 
-Do not use it to bypass Android restrictions on protected app-private areas.
+Granular media permission must be requested just-in-time for a Limited Mode feature that genuinely needs it.
 
----
+Do not request media permission during onboarding “just in case.”
 
-# 4. `QUERY_ALL_PACKAGES`
+Do not present Full All Files Access plus Photos/Videos as two mandatory permissions for one Cleaner job.
 
-Google Play treats installed-app inventory as sensitive data.
+Limited Mode must be labelled as limited coverage.
 
-Current policy requires broad visibility to be directly necessary for core functionality. Listed permitted categories include file managers and device-search-style apps, but approval is still required.
+## 5. Manifest discipline
 
-## Tooliva decision
+A permission may remain declared for a valid Limited Mode feature, but declaration does not mean it should be prompted in Full Mode.
 
-Not automatically approved merely because competitors use it.
+Before release inspect the merged manifest and confirm:
 
-Workflow before adding:
-1. implement/prototype App Manager using narrower visibility;
-2. document which core user-facing behavior is incomplete;
-3. verify current policy;
-4. obtain explicit product approval;
-5. add permission only if justified;
-6. prepare Play declaration;
-7. never share app inventory with ad/analytics providers.
+- every permission has a current user-facing purpose;
+- no SDK pulled in unrelated sensitive access;
+- runtime/special-access prompts match actual feature flow;
+- denied access does not crash or trap the user.
 
-Potential eligible uses:
-- App Manager requiring broad app discovery;
-- mapping accessible leftover files to installed/removed packages when this is a genuine core maintenance feature.
+## 6. `QUERY_ALL_PACKAGES`
 
-Never request it only for statistics or convenience.
+Installed-app inventory is sensitive and broad visibility is restricted.
 
----
+Tooliva decision:
 
-# 5. Media permissions
+- not pre-approved;
+- first prototype App Manager with narrower PackageManager visibility;
+- document exactly which core behavior is missing;
+- re-check current policy;
+- obtain explicit human approval;
+- only then add/declaration if justified.
 
-On Android 13+, media access uses granular permissions such as `READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO`.
+Never use installed-app inventory for ad targeting/analytics.
 
-Tooliva may still use MediaStore in Limited Mode and for optimized media-specific flows even when Full Storage Mode exists.
+## 7. Usage Access
 
-Do not request broad media permissions at first launch unless the user enters a feature that requires them.
-
-Full Storage Mode and media permissions must not be mixed into a confusing permission wall.
-
----
-
-# 6. Cache cleanup
-
-`android.permission.CLEAR_APP_CACHE` itself has `signature|privileged` protection and is not a normal permission Tooliva can rely on as a third-party Play app.
-
-Android 11+ provides:
-`StorageManager.ACTION_CLEAR_APP_CACHE`
-
-It:
-- requires `MANAGE_EXTERNAL_STORAGE`;
-- launches a system/user-mediated cache-clearing flow;
-- does not silently clear caches by itself;
-- can clear external app cache directories after user/system confirmation.
-
-Tooliva V1 should prefer this official mechanism.
-
-Do not claim Tooliva can directly read/wipe every other app's private internal cache.
-
----
-
-# 7. Accessibility API
-
-Market competitors use Accessibility for features such as automating repeated Settings/cache actions or background-app stopping. This does **not** automatically make Accessibility approved for Tooliva.
-
-Google Play allows AccessibilityService use beyond accessibility tools only under strict policy/disclosure conditions.
-
-Tooliva rule:
-- no AccessibilityService in Cleaner V1;
-- no AccessibilityService for App Lock without explicit human approval;
-- if considered later, perform a fresh policy review and write a prominent disclosure before implementation.
-
-Official reference:
-- https://support.google.com/googleplay/android-developer/answer/10964491
-
----
-
-# 8. App usage access
-
-`PACKAGE_USAGE_STATS` requires user-granted Usage Access through system settings.
-
-Allowed Tooliva purposes may include:
-- last-used app facts;
-- app usage duration;
-- identifying rarely used apps for user review.
+`PACKAGE_USAGE_STATS` is only for real user-visible usage features, such as last-used or rarely-used app review.
 
 Requirements:
-- just-in-time disclosure;
-- no judgmental/scare language;
-- no app usage inventory sent to advertising analytics.
 
----
+- just-in-time explanation;
+- explicit system Settings grant;
+- deny/revoke handling;
+- no judgemental/scare language;
+- no usage inventory sent to ads.
 
-# 9. Notification access
+## 8. Cache cleanup
+
+`CLEAR_APP_CACHE` is not a normal third-party permission Tooliva can rely on.
+
+For Android 11+ V1, use the official system-mediated `StorageManager.ACTION_CLEAR_APP_CACHE` where supported/appropriate.
+
+Tooliva must not claim direct silent deletion of every other app's private internal cache.
+
+Handle unsupported/cancel/error honestly.
+
+## 9. Accessibility
+
+AccessibilityService is **not approved by default** for Cleaner or App Lock.
+
+Competitor use does not automatically make it appropriate for Tooliva.
+
+If considered later:
+
+1. define exact user-facing need;
+2. verify current Google Play Accessibility policy;
+3. obtain explicit human approval;
+4. implement prominent disclosure;
+5. avoid autonomous/deceptive behavior prohibited by policy.
+
+## 10. Notification Access
 
 Notification History requires explicit Notification Access.
 
 Requirements:
+
 - prominent disclosure;
-- local-first storage;
-- exclude-app controls;
-- retention controls;
-- no notification content sent to analytics/ads;
-- handle Android restrictions/redaction honestly.
+- local storage by default;
+- retention/exclusion controls;
+- no notification content in analytics/ads;
+- deny/revoke handling.
 
----
+## 11. File deletion / Trash
 
-# 10. Deletion / Trash
+Tooliva deletion rules:
 
-Use the centralized Tooliva cleanup architecture.
-
-Requirements:
-- explicit selection/review;
-- show selected count and bytes;
-- system confirmation where required;
-- verify after action;
+- explicit user selection/review;
+- selected count and bytes visible;
+- platform/system confirmation where required;
+- verify after operation;
 - distinguish Trash from physical deletion;
-- partial/canceled/permission-changed states;
-- no advertisement between selection and Cleanup Receipt.
+- report partial/missing/canceled/revoked states;
+- no ads during selection -> confirmation -> operation -> Cleanup Receipt.
 
-Do not market `Moved to Trash` bytes as physically freed storage.
+Never market bytes moved to Trash as physically freed space.
 
----
+## 12. Cleaner claims
 
-# 11. File Manager claims
+Forbidden unless actually supported:
 
-The store listing must visibly promote real file-management/on-device-search functions if the production build requests All Files Access.
+- `Boost RAM 300%`
+- `Cool CPU`
+- `Phone damaged`
+- fake virus detection
+- fake battery health
+- unexplained fake reclaimable bytes
+- calling ordinary documents junk without a rule/review context
 
-Expected core capabilities before permission declaration submission:
-- browse shared storage;
+Preferred factual claims:
+
+- `Find files larger than 1 GB`
+- `Review APK installers`
+- `Review screenshots older than 90 days`
+- `Find exact duplicate files`
+- `Moved 2.4 GB to Trash`
+- `Physically freed 620 MB`
+
+## 13. File Manager requirement for All Files strategy
+
+If Tooliva requests All Files Access in the production Play build, File Manager/on-device-search functionality must be real and visible, not a placeholder.
+
+Expected product capabilities before restricted-permission submission:
+
+- browse accessible shared storage;
 - search;
 - sort/filter;
 - open/share;
 - rename;
 - copy/move;
+- create folders;
 - delete/trash;
-- folder management;
-- categories such as APK/archive/document/download/media;
+- category views such as Downloads/APK/Archives/Documents/media;
 - storage analysis.
 
-A fake/placeholder file manager is not sufficient justification.
-
----
-
-# 12. Ads
+## 14. Ads
 
 Rules:
-- no full-screen ad at app startup before useful content;
-- no ad before scan results;
-- no interstitial after every tap;
-- no ad triggered by Back/exit;
-- no ad styled as a system/virus/security warning;
-- no ads on permission disclosure;
-- no ads on destructive confirmation;
-- no ads on Cleanup Receipt;
+
+- no startup full-screen ad before useful content;
+- no ad before showing a requested scan result;
+- no repeated interstitial after every action;
+- no fake system/virus-style ad;
+- no ad on permission disclosure;
+- no ad on destructive confirmation;
+- no ad during file operation;
+- no ad on Cleanup Receipt;
 - no ads in Vault/PIN/biometric screens;
 - frequency cap interstitials;
-- paid/no-ads state must actually remove ads.
+- paid/no-ads entitlement must actually suppress ads.
 
-The reviewed cleaner market shows that intrusive/scare ads directly damage trust. Tooliva must compete by being calmer.
+Tooliva should differentiate from ad-heavy cleaners through calmer monetization.
 
-Official policy references:
-- https://support.google.com/googleplay/android-developer/answer/9857753
-- https://support.google.com/googleplay/android-developer/answer/12271244
+## 15. Data/privacy implications
 
----
+Scanned file inventory is sensitive from a trust perspective.
 
-# 13. Marketing claims
+Do not send to analytics/ads:
 
-Forbidden unless genuinely implemented and supportable:
-- `Boost RAM 300%`
-- `Cool CPU`
-- `Your phone is damaged`
-- `Virus detected` without a legitimate antivirus engine
-- fake battery-health percentage
-- fake reclaimable-space totals
-- calling normal user documents `junk` without explanation
+- filenames;
+- paths;
+- file contents;
+- duplicate hashes tied to user files;
+- installed-app inventory;
+- notification content;
+- Vault content.
 
-Preferred claims:
-- `Find files larger than 1 GB`
-- `Review old APK installers`
-- `See which folders use the most storage`
-- `Find exact duplicate files`
-- `Review screenshots older than 90 days`
-- `Moved 2.4 GB to Trash`
-- `Physically freed 620 MB`
+Use aggregate allow-listed analytics only if introduced later.
 
----
+## 16. Production All Files Access declaration package
 
-# 14. Pre-submission restricted-permission package
+Before Play submission prepare:
 
-Before production submission prepare:
+- store listing clearly presenting Cleaner + real File Manager/on-device search;
+- video/demo showing the user-facing file management/search/cleanup workflow;
+- in-app permission disclosure;
+- explanation why MediaStore/SAF alone cannot deliver the core automatic shared-storage experience;
+- privacy policy language;
+- test instructions;
+- current policy review notes.
 
-## All Files Access
-- screen recording/demo showing core file manager + cleaner workflow;
-- store description matching core purpose;
-- written explanation why MediaStore/SAF alone substantially harm the core automatic file-management/search experience;
-- privacy policy explanation;
-- test instructions.
+Approval is not guaranteed and must be treated as a release gate.
 
-## QUERY_ALL_PACKAGES — only if used
-- exact App Manager use case;
-- why narrower visibility is insufficient;
-- proof it is core to the user-facing product;
-- no advertising/analytics use.
-
----
-
-# 15. Pre-release audit
+## 17. Pre-release audit
 
 Before every production release:
+
 - inspect merged manifest;
-- inspect all restricted/special permissions;
-- review current Play policy again;
-- audit dependency-added permissions;
-- audit SDK data collection;
+- re-check target API requirement;
+- re-check restricted permissions;
+- audit transitive SDK permissions/data collection;
 - update Data Safety;
-- verify privacy policy;
-- test ads;
-- test grant/deny/revoke for special access;
+- update privacy policy;
+- test all permission grant/deny/revoke flows;
+- verify Full Mode does not trigger redundant media prompts;
 - verify store claims against actual build;
-- document App Lock/Accessibility go/no-go;
-- verify targetSdk requirement;
-- verify physical-device destructive flows.
+- verify ads;
+- verify destructive flows on physical devices;
+- document `QUERY_ALL_PACKAGES` / Accessibility go-no-go decisions if relevant.
