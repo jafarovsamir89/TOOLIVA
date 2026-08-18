@@ -61,7 +61,7 @@ This is the current highest priority. Do not start new product modules until R0 
 - [x] [P0] Remove Room/KSP/storage-index dependencies/files if no current feature uses them after recovery; do not keep dead architecture “for later”
 - [x] [P0] Automated regression tests/build green
 - [x] [P0] Install fresh debug APK on Xiaomi
-- [ ] [P0] Human manual regression PASS before Phase R1
+- [x] [P0] Human manual regression PASS before Phase R1
 
 ---
 
@@ -72,12 +72,12 @@ Goal: one understandable primary Full Mode flow on Android 11+.
 - [~] [P0] `MANAGE_EXTERNAL_STORAGE` manifest/config exists
 - [~] [P0] All Files Access disclosure/settings flow exists
 - [~] [P0] `Environment.isExternalStorageManager()` state detection exists
-- [ ] [P0] Full Mode: Large Files works without requesting separate Photos/Videos permission
-- [ ] [P0] Full Mode: Screenshot Cleaner works without redundant `READ_MEDIA_IMAGES` request when broad storage access is sufficient
+- [x] [P0] Full Mode: Large Files works without requesting separate Photos/Videos permission
+- [x] [P0] Full Mode: Screenshot Cleaner works without redundant `READ_MEDIA_IMAGES` request when broad storage access is sufficient
 - [ ] [P0] Full Mode: future Downloads/APK/Archives/Documents use the same storage access
-- [ ] [P0] Limited Mode: MediaStore/granular media permission used only when Full Mode is absent and the feature needs it
-- [ ] [P0] Limited Mode coverage explained honestly
-- [ ] [P0] Grant/deny/revoke tested manually on Xiaomi
+- [x] [P0] Limited Mode: MediaStore/granular media permission used only when Full Mode is absent and the feature needs it
+- [x] [P0] Limited Mode coverage explained honestly
+- [x] [P0] Grant/deny/revoke tested manually on Xiaomi
 - [ ] [P0] Draft final in-app All Files disclosure copy
 - [ ] [P0] Draft Google Play All Files Access declaration package/text
 
@@ -128,18 +128,18 @@ Do not add these solely to satisfy architecture style.
 
 ## Large Files
 
-- [~] [P0] Full Mode discovers accessible shared-storage file types — previously Xiaomi PASS, must re-pass after recovery
+- [x] [P0] Full Mode discovers accessible shared-storage file types — human-confirmed on Xiaomi after recovery
 - [~] [P0] categories All/Video/Image/Audio/APK/Archive/Document/Download/Other
 - [~] [P0] thresholds 100 MB / 500 MB / 1 GB
 - [~] [P0] sort size/newest/oldest/name
 - [~] [P0] search name/path
-- [~] [P0] multi-select / Select all
-- [~] [P0] open
+- [x] [P0] multi-select / Select all
+- [x] [P0] open
 - [ ] [P0] share
 - [ ] [P0] details
-- [~] [P0] safe delete/trash
+- [x] [P0] safe delete/trash
 - [x] [P0] Cleanup Receipt model distinguishes Trash vs Physically Freed
-- [ ] [P0] current Xiaomi regression PASS after recovery
+- [x] [P0] current Xiaomi regression PASS after recovery
 - [ ] [P1] Samsung physical test
 - [ ] [P1] Pixel physical test
 
@@ -187,14 +187,14 @@ Do not add these solely to satisfy architecture style.
 
 ## Screenshot Cleaner
 
-- [~] [P0] screenshot detection
-- [~] [P0] 30/90/365 filters
-- [~] [P0] thumbnails
-- [~] [P0] multi-select / Select all
-- [~] [P0] central Trash/delete flow
+- [x] [P0] screenshot detection
+- [x] [P0] 30/90/365 filters
+- [x] [P0] thumbnails
+- [x] [P0] multi-select / Select all
+- [x] [P0] central Trash/delete flow
 - [x] [P0] immediate Cleanup Receipt behavior previously human-verified
-- [ ] [P0] Full Mode permission unification
-- [ ] [P0] re-run synthetic screenshot destructive test after permission rewrite
+- [x] [P0] Full Mode permission unification
+- [x] [P0] re-run synthetic screenshot destructive test after permission rewrite
 
 ## Explainable Junk
 
