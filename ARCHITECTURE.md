@@ -1,20 +1,28 @@
 # Tooliva — Architecture
 
-Revision: 2026-08-16
+Revision: 2026-08-18
 
-## Goals
+Authoritative product context:
+- `docs/PRODUCT_CONSTITUTION.md`
+- `docs/DECISION_LOG.md`
 
-- Cleaner + File Manager share one coherent storage domain
-- Full Storage Mode and Limited Mode are first-class, testable states
-- offline-first
-- progressive/cancellable storage work
-- safe destructive operations with verified receipts
-- scalable local index
-- tolerant of OEM/Android-version differences
-- easy for AI agents to navigate
-- restricted permissions isolated and auditable
+## 1. Architecture goal
 
-## Suggested package structure
+Use the simplest architecture that safely supports the current Tooliva product.
+
+Priorities:
+
+- direct user value;
+- progressive Cleaner results;
+- safe file operations;
+- Full/Limited storage modes;
+- no mandatory whole-device index;
+- offline-first;
+- easy manual verification on real devices;
+- policy/permission isolation;
+- low regression risk.
+
+## 2. Package direction
 
 ```text
 app/
@@ -22,18 +30,15 @@ core/
   common/
   ui/
   designsystem/
-  database/
-  datastore/
-  access/
   storage/
+    access/
     model/
-    index/
     full/
     mediastore/
     saf/
     operations/
     cleanup/
-  packages/
+  database/        # only for features with real persistence needs
   security/
   analytics/
   ads/
@@ -42,326 +47,275 @@ core/
 feature/
   home/
   cleaner/
-    dashboard/
     largefiles/
     downloads/
     installers/
+    archives/
+    documents/
     oldfiles/
     screenshots/
     duplicates/
     cleanupswipe/
     result/
   files/
-    browser/
-    search/
-    storagemap/
   apps/
-  checkup/
   doctor/
+  checkup/
   notifications/
   vault/
   applock/
-  imagetools/
-  pdftools/
-  qr/
-  network/
-  sensors/
+  tools/
 ```
 
-Start package-by-feature in a small number of Gradle modules. Split modules only when ownership/build/test boundaries justify the cost.
+Do not create many Gradle modules before build/test/ownership boundaries justify them.
 
----
-
-# UI architecture
+## 3. UI architecture
 
 - Jetpack Compose + Material 3
 - unidirectional data flow
-- immutable screen state
-- explicit user actions/events
+- immutable UI state
 - ViewModel per coherent flow
-- platform/file operations behind repositories/coordinators
-- no filesystem traversal in Composables
+- business/platform logic outside Composables
+- explicit user actions
+- no hidden heavy scan triggered by navigation unless explicitly approved
+- progressive UI updates when scan results arrive
 
-For long lists, destructive actions may use a fixed bottom action area, matching the current Cleaner UX.
+## 4. Storage access state
 
----
+Central `StorageAccessCoordinator` owns special-access detection/navigation.
 
-# Storage domain
+Modern Android model:
 
-## Core models
+### Full Mode
 
-Suggested concepts:
+`MANAGE_EXTERNAL_STORAGE` granted.
+
+This is the primary Cleaner/File Manager storage mode on Android 11+.
+
+### Limited Mode
+
+Full access denied/not available.
+
+Use MediaStore/SAF and granular permissions only for the feature that needs them.
+
+Critical rule:
+
+If Full Mode is already granted, a Cleaner submodule must not independently force a second broad Photos/Videos permission for the same shared-storage job.
+
+## 5. Core storage models
+
+Example direction:
 
 ```kotlin
-enum class StorageAccessMode {
-    FULL,
-    LIMITED,
-}
+enum class StorageAccessMode { FULL, LIMITED }
 
 data class StorageEntry(
     val ref: StorageRef,
     val name: String,
-    val pathLabel: String?,
-    val kind: StorageKind,
+    val path: String?,
     val sizeBytes: Long,
     val modifiedAtMillis: Long?,
     val mimeType: String?,
     val extension: String?,
+    val category: StorageCategory,
     val isDirectory: Boolean,
     val volumeId: String?,
 )
 ```
 
-`StorageRef` must support provider-specific identities without forcing every feature to depend on a raw filesystem path.
+Use provider-neutral identity where practical.
 
-## Provider interface
+## 6. StorageProvider
+
+Primary abstraction:
 
 ```kotlin
 interface StorageProvider {
     val accessMode: StorageAccessMode
     fun scan(request: StorageScanRequest): Flow<StorageScanEvent>
-    suspend fun search(request: StorageSearchRequest): List<StorageEntry>
-    suspend fun children(directory: StorageRef): List<StorageEntry>
     suspend fun stat(ref: StorageRef): StorageEntry?
 }
 ```
 
-Providers:
-- `FullStorageProvider` — broad accessible shared-storage filesystem
-- `MediaStoreStorageProvider` — Limited Mode/media-optimized flows
-- `SafStorageProvider` — user-mediated file/tree access
+Implementations:
 
-Features consume domain models, not provider-specific cursor/path logic.
+- `FullStorageProvider`
+- `MediaStoreStorageProvider`
+- `SafStorageProvider` only where needed
 
----
+Provider scan requirements:
 
-# Access state
+- IO dispatcher/background work;
+- progressive events;
+- cancellation;
+- no full-tree accumulation before emission;
+- isolate unreadable/disappearing files;
+- avoid protected paths and loop hazards;
+- cheap metadata first.
 
-Central `StorageAccessCoordinator` owns:
-- Full Storage permission/special-access state
-- Media permissions
-- SAF grants
-- current access mode
-- disclosure/settings navigation
-- revoke detection
+## 7. Cleaner pipeline
 
-State example:
-
-```kotlin
-data class StorageAccessState(
-    val mode: StorageAccessMode,
-    val allFilesAccessGranted: Boolean,
-    val mediaAccess: MediaAccessState,
-    val persistedSafGrants: List<SafGrant>,
-)
-```
-
-Do not scatter `Environment.isExternalStorageManager()` checks across feature screens.
-
----
-
-# Full Storage Provider
-
-Responsibilities:
-- enumerate accessible shared-storage roots/volumes
-- traverse files incrementally
-- normalize metadata
-- respect exclusions/protected paths
-- emit progressive scan events
-- support cancellation
-- avoid symlink/loop problems where applicable
-- avoid following paths Tooliva cannot legitimately access
-
-Use bounded IO concurrency. Do not recursively build the whole tree in memory before emitting results.
-
----
-
-# Limited providers
-
-The existing MediaStore scanner remains production code, not throwaway prototype.
-
-Use it for:
-- Limited Mode
-- screenshot/media-specific optimized queries
-- Android Trash requests where appropriate
-
-SAF remains for:
-- user-selected files/folders
-- document operations where provider semantics are required
-- fallback workflows.
-
-The UI must accurately describe limited scan coverage.
-
----
-
-# Local storage index
-
-Room-backed index is recommended for deep scan/search.
-
-Possible entities:
-- `StorageIndexEntryEntity`
-- `ScanSessionEntity`
-- `FileFingerprintEntity`
-- `CleanupReceiptEntity`
-
-Index fields may include local-only:
-- stable provider/ref identity
-- normalized path/name
-- type/category
-- size/date
-- volume
-- last indexed metadata
-
-Privacy rules:
-- index stays local
-- never send names/paths to analytics/ads
-- clear/rebuild when storage access changes materially
-
-## Index pipeline
+Target architecture:
 
 ```text
-StorageProvider
+User taps Scan
       ↓
-ScanCoordinator
+StorageProvider.scan()
       ↓
-Normalizer / Exclusion Rules
+StorageScanEvent.EntryFound
       ↓
-Room Index  ←→  Incremental Change Strategy
+ClassifierPipeline
+  ├─ LargeFileClassifier
+  ├─ DownloadClassifier
+  ├─ ApkClassifier
+  ├─ ArchiveClassifier
+  ├─ DocumentClassifier
+  ├─ OldFileClassifier
+  └─ ExplainableRuleClassifier
       ↓
-Analysis Pipeline
-  ├─ category aggregation
-  ├─ large files
-  ├─ old files
-  ├─ candidate rules
-  └─ duplicate pre-groups
-      ↓
-UI Flows / Search / Storage Map
+Feature/UI state updates progressively
 ```
 
-Do not perform expensive hashing during the initial cheap index pass unless needed.
-
-## Storage Index v1 implementation contract
-
-The first Room index uses three local tables: indexed entries, active access-mode/volume
-scopes, and scan generations. The first run has two ordered generations: a small priority
-snapshot for high-value shared-storage directories, followed by the complete deep generation.
-The priority snapshot is promoted only after its selected roots report successful completion,
-so Large Files can show useful rows while the complete generation is still running. The deep
-generation later replaces that snapshot and performs stale cleanup for each successfully
-completed full root. Cancelled or failed generations therefore cannot replace the last known-
-good scope.
-
-Full and Limited entries are scoped separately by `StorageAccessMode`. If Full Storage Access is
-revoked, Large Files queries use only the Limited scope after a Limited scan; old Full entries
-remain stale informational data and are not used for file actions. Index rows contain metadata
-and local references only—never file contents or thumbnails.
-
-Indexing uses a single cancellable filesystem traversal and bounded Room batches. Unchanged
-metadata (`stable key`, path/ref, size and modified time plus normalized fields) reuses the
-existing row and only advances its generation marker. No hashing or file-content reads are
-performed. A process-scoped `StorageIndexCoordinator` owns the fast/deep sequence so Clean and
-Large Files cannot start parallel walks. Large Files reads the active Room snapshot immediately
-and refreshes as the deep generation enriches it. Feature queries are Room-filtered and bounded
-rather than loading the whole table into Compose.
-
----
-
-# ScanCoordinator
-
-Responsibilities:
-- start/cancel scan
-- report progress/phase
-- aggregate byte/file counts
-- choose provider based on access state
-- persist session metadata
-- isolate errors per path/volume where possible
-
-Suggested events:
-- Started
-- RootDiscovered
-- EntryIndexed
-- CategoryUpdated
-- Progress
-- Warning
-- Completed
-- Canceled
-
-A single unreadable file/folder must not abort the entire scan.
-
----
-
-# Cleanup rule engine
-
-`Junk` must be explainable.
-
-Suggested contract:
-
-```kotlin
-interface CleanupRule {
-    val id: String
-    val risk: CleanupRisk
-    suspend fun evaluate(entry: StorageEntry, context: RuleContext): CleanupCandidate?
-}
-
-data class CleanupCandidate(
-    val entry: StorageEntry,
-    val reason: CleanupReason,
-    val defaultSelected: Boolean,
-    val confidence: CleanupConfidence,
-)
-```
-
-Rules are deterministic/testable.
+A classifier should do the minimum work needed for its result.
 
 Examples:
-- old APK installer
-- old screenshot
-- exact duplicate
-- accessible temp artifact
-- empty accessible folder
 
-Normal documents are not generic junk.
+- Large File: size threshold only
+- APK: extension/MIME + optional safe metadata parsing later
+- Archive: extension/MIME
+- Old File: metadata age + user-defined scope
+- Exact Duplicate: NOT part of ordinary scan; separate candidate/hash pipeline
 
----
+## 8. Rejected index-first pipeline
 
-# Duplicate architecture
-
-Pipeline:
+Do not restore this as primary flow:
 
 ```text
-Index entries
-  ↓ group by size
-Candidate groups
-  ↓ optional cheap metadata
-HashQueue
-  ↓ bounded IO hashing
-Fingerprint cache
-  ↓
-Exact duplicate groups
+filesystem
+ -> full traversal
+ -> Room index generation
+ -> active scope promotion
+ -> Room query
+ -> Large Files UI
 ```
 
-Requirements:
-- cancellable
-- cache-aware
-- file mutation validation before trusting a cached fingerprint
-- no full-file hashing on main thread
-- similar-photo analysis is a separate feature/model
+This architecture was tested on Xiaomi and caused product regressions.
 
----
+The code introduced by `7836ea` and `71f35ca` may be reverted/removed or salvaged only for independent reusable pieces that do not reintroduce the mandatory gateway.
 
-# File operations
+## 9. Persistence policy
 
-Cleaner and File Manager share operation infrastructure.
+Room exists only for concrete persistent-state needs.
 
-Suggested interfaces:
-- `FileOperationCoordinator`
-- `CopyOperation`
-- `MoveOperation`
-- `RenameOperation`
-- `CreateDirectoryOperation`
-- `DeleteCoordinator`
+Good candidates:
 
-## Destructive pipeline
+- duplicate fingerprints;
+- Notification History;
+- saved cleanup receipts/history if product value is chosen;
+- app preferences requiring structured data;
+- a small optional cache after measured evidence.
+
+Bad reason:
+
+> “We may need a full phone index later.”
+
+Do not write every ordinary scan entry to Room by default.
+
+## 10. Large Files
+
+Large Files should consume progressive direct scan results.
+
+Flow:
+
+```text
+LargeFilesViewModel
+ -> choose provider from access state
+ -> provider.scan(minSize=threshold floor)
+ -> append/update matching entries as found
+ -> user filter/sort/search
+```
+
+No mandatory database snapshot.
+
+Opening the screen must not automatically start expensive whole-storage work unless explicit product decision changes this later.
+
+## 11. Cleaner multi-classifier scan
+
+When implementing the main Cleaner scan, prefer one traversal feeding multiple cheap classifiers rather than N independent full traversals.
+
+However, do not build a complex event bus/framework before at least two/three active classifiers need it.
+
+A simple coordinator can own:
+
+- current scan Job;
+- provider;
+- cancellation;
+- classifier list;
+- aggregate counts;
+- progressive category summaries.
+
+No persistence requirement.
+
+## 12. Screenshot Cleaner
+
+Access selection:
+
+```text
+if Full Mode granted
+ -> use Full Mode storage/path discovery suitable for screenshots
+else
+ -> MediaStore Limited Mode
+ -> request granular photo/media permission only if needed
+```
+
+Thumbnail loading may still use platform APIs/FileProvider/content URIs as appropriate.
+
+Deletion uses central cleanup infrastructure.
+
+## 13. Duplicate architecture
+
+Separate from ordinary Cleaner scan:
+
+```text
+cheap candidate discovery
+ -> group by size
+ -> hash only groups with 2+ candidates
+ -> verify exact equality
+ -> persist fingerprint cache only where useful
+ -> duplicate groups UI
+```
+
+Hash work:
+
+- bounded;
+- cancellable;
+- never main thread;
+- cached fingerprint invalidated when size/modified identity changes.
+
+## 14. File operations
+
+Cleaner and File Manager share operation primitives where practical.
+
+Core operations:
+
+- stat/open/share;
+- rename;
+- create folder;
+- copy;
+- move;
+- delete/trash.
+
+Copy/move later require:
+
+- progress;
+- cancel;
+- collision strategy;
+- insufficient-space handling;
+- source verification before destructive move fallback.
+
+## 15. Delete/CleanupCoordinator
+
+The existing central cleanup pipeline is permanent.
 
 ```text
 Selection
@@ -372,180 +326,143 @@ User/system confirmation
   ↓
 Execute
   ↓
-Verify/re-stat/re-index
+Verify
   ↓
-CleanupReceipt
+Cleanup Receipt
+  ↓
+Reconcile current visible results only
 ```
 
-The existing MediaStore cleanup result accounting must be preserved and generalized carefully.
+Do not force a full-device rescan after every cleanup solely to update the current list.
 
-Receipt fields distinguish:
-- requested
-- missing before
-- moved to Trash
-- physically freed
-- unchanged/failed
-- canceled
-- permission revoked
+## 16. Cleanup Receipt model
 
-## Copy/move
+Must distinguish:
 
-Must support:
-- collision policy: ask/skip/rename/replace where safe
-- progress
-- cancel
-- partial result
-- verification before deleting source during move fallback/copy-delete flows
-- low-storage errors
+- requested;
+- missing before;
+- moved to Trash;
+- physically freed;
+- unchanged/failed;
+- canceled;
+- permission revoked.
 
----
+This is a product-level invariant.
 
-# File Manager
+## 17. File Manager
 
-Browser, global search and Cleaner use the same index/provider models.
+Basic browser should be direct:
 
-Do not create a second independent file discovery implementation.
+```text
+current folder/category
+ -> StorageProvider / filesystem operation
+ -> children/results
+ -> UI
+```
 
-Browser state includes:
-- current directory/category
-- children
-- selection
-- sort/filter
-- operation progress
-- access mode
+Do not require a global database index for simple folder browsing.
 
-Global search primarily queries the local index, with refresh/revalidation when opening/actioning an item.
+Global search can initially perform targeted/direct search. If measured performance later justifies a cache/index, design it as optional optimization with explicit decision.
 
----
+## 18. Explainable rule engine
 
-# Storage Map
+Only introduce a shared rule interface when multiple real rules exist.
 
-Storage Map consumes aggregate/index data.
+Possible contract:
 
-Represent folder/category hierarchy as a domain tree independent of visualization.
+```kotlin
+interface CleanupRule {
+    fun evaluate(entry: StorageEntry, context: RuleContext): CleanupCandidate?
+}
+```
 
-UI can render treemap/sunburst-like layout plus an accessible list fallback.
+Candidate contains:
 
-Never make visualization the only way to locate a file.
+- reason;
+- risk/confidence;
+- default-selected policy;
+- source rule.
 
----
+Do not create a large generic rules framework before real rules exist.
 
-# App Manager
+## 19. App Manager
 
-Keep package/application data in a separate domain from files, linked only where needed.
+Separate domain from files.
 
-Interfaces may include:
-- `InstalledAppRepository`
-- `AppUsageRepository`
-- `PackageVisibilityState`
+Start with narrow PackageManager visibility.
 
-Do not add `QUERY_ALL_PACKAGES` until the narrower prototype proves insufficient and docs/approval are updated.
+Only add `QUERY_ALL_PACKAGES` after:
 
-Installed-app inventory stays local.
+- a real core feature gap is demonstrated;
+- policy is rechecked;
+- explicit decision recorded.
 
----
+## 20. Cache cleanup adapter
 
-# Cache cleanup
+Isolate official system action behind a tiny adapter.
 
-Use an isolated system-action adapter around `StorageManager.ACTION_CLEAR_APP_CACHE`.
+Return supported/launched/error/canceled status where observable.
 
-The adapter reports:
-- supported/unsupported
-- permission required
-- launched
-- canceled/failed where observable
+No fake direct-private-cache access abstraction.
 
-Do not pretend this action gives Tooliva direct visibility into all private app caches.
+## 21. Phone Doctor
 
----
+Platform adapters remain small:
 
-# Phone Doctor / Checkup
+- battery;
+- memory;
+- thermal;
+- sensors;
+- network;
+- device facts.
 
-Device information repositories remain separate platform adapters:
-- battery
-- thermal
-- memory
-- sensors
-- network
+`Check My Phone` orchestrates existing module outputs instead of creating a second scanning system.
 
-`Check My Phone` orchestrates already-existing repositories and cleaner insights; it must not reimplement storage scanning.
+## 22. Notification History
 
----
+Room is appropriate here because persistence is the feature itself.
 
-# Notification History
+`NotificationListenerService` should normalize/persist quickly and return.
 
-`NotificationListenerService` performs minimal callback work:
-- normalize
-- persist/enqueue
-- return
+No notification text in analytics/logging.
 
-Retention through local jobs when needed.
+## 23. Analytics/privacy
 
-No notification content in analytics/logging.
-
----
-
-# Vault / App Lock
-
-Vault:
-- Keystore-backed authenticated encryption
-- verify encrypted copy before source deletion
-- isolated encrypted metadata
-
-App Lock:
-- isolated feature flag/subsystem
-- no Accessibility implementation without explicit approval
-- design for possible removal from Play build without affecting Cleaner/File Manager.
-
----
-
-# Ads / billing
-
-Feature packages do not directly depend on ad SDK.
-
-No ad is allowed inside:
-- access disclosure
-- selection→delete flow
-- system confirmation transition
-- Cleanup Receipt
-- Vault/authentication
-
-Entitlements remain central (`FREE`, `PRO_LIFETIME`).
-
----
-
-# Analytics
-
-Allow-list events only.
+Allow-list aggregate events only.
 
 Never include:
-- filename/path
-- extension tied to path/user content when unnecessary
-- notification text
-- file hash/fingerprint
-- installed package inventory
-- Vault/QR content.
 
-Useful aggregate events can include:
-- scan completed
-- access mode
-- duration bucket
-- category opened
-- cleanup completed
-- operation error code
+- filename/path;
+- file content;
+- hashes tied to user content;
+- installed-app inventory;
+- notification text;
+- Vault contents.
 
----
+## 24. Performance discipline
 
-# Dependency rule
+Measure:
 
-Before adding a library check:
-1. why needed;
-2. platform/AndroidX alternative;
-3. permissions/manifests;
-4. collected data;
-5. Data Safety impact;
-6. maintenance/security;
-7. license;
-8. binary-size cost.
+- explicit scan tap -> first useful result;
+- scan duration for targeted feature;
+- memory;
+- ANR/jank;
+- cancellation latency;
+- delete verification latency.
 
-Market competitors are product references, not a reason to import arbitrary cleaner SDKs.
+Only optimize after a real bottleneck is measured.
+
+## 25. Testing boundary
+
+Automated testing verifies deterministic technical behavior.
+
+Human Xiaomi testing verifies:
+
+- perceived responsiveness;
+- permission UX;
+- OEM/system dialogs;
+- scan correctness;
+- navigation;
+- file open/delete behavior.
+
+The agent installs APK and stops for manual checklist before proceeding to the next major slice.
