@@ -1,513 +1,407 @@
 # Tooliva — TODO / Product Roadmap
 
-Market-driven rewrite: 2026-08-16  
-Research source: `docs/MARKET_RESEARCH_2026.md`
+Revision: 2026-08-18  
+Authoritative product source: `docs/PRODUCT_CONSTITUTION.md`
 
 Legend:
-- `[x]` implemented and sufficiently verified for the stated scope
-- `[~]` implemented/partially verified; do not treat as release-complete
+- `[x]` implemented and verified for stated scope
+- `[~]` implemented/partially verified or needs current retest
 - `[ ]` not complete
-- `[P0]` required for current milestone
+- `[!]` rejected/deprecated direction; do not continue
+- `[P0]` current/release-blocking priority
 - `[P1]` important after P0
 - `[P2]` later
 
-## Current product definition
+# Product definition
 
 **Tooliva — Cleaner, File Manager & Device Tools**
 
-Core purposes:
-1. storage cleaning;
-2. file management / on-device file search;
-3. device maintenance.
-
-Do not prioritize unrelated micro-tools until Cleaner + File Manager are strong.
-
----
-
-# Phase 0 — Product / policy foundation
-
-- [x] [P0] Working brand: Tooliva
-- [x] [P0] Create GitHub repository
-- [x] [P0] Add README / agent rules / architecture docs
-- [x] [P0] Add 2026 competitive market research
-- [x] [P0] Confirm minSdk 26
-- [x] [P0] Set compileSdk/targetSdk 36
-- [ ] [P0] Reserve/final-check package id `az.simplesoft.tooliva`
-- [x] [P0] Product decision: Cleaner + File Manager are core purposes
-- [x] [P0] Product decision: `MANAGE_EXTERNAL_STORAGE` approved for implementation/prototype
-- [~] [P0] Write final All Files Access in-app disclosure copy — prototype disclosure is implemented; final product copy still needs review
-- [ ] [P0] Draft Google Play `MANAGE_EXTERNAL_STORAGE` declaration text
-- [ ] [P0] Decide `QUERY_ALL_PACKAGES` only after App Manager implementation proves broad visibility is necessary
-- [ ] [P0] Choose ads SDK later; do not block current storage work
+Core order:
+1. Cleaner
+2. File Manager
+3. Apps / maintenance
+4. Phone Doctor / Checkup
+5. Notification History
+6. later Protect/content/everyday tools
 
 ---
 
-# Phase 1 — Android foundation
+# Phase R0 — RECOVERY FROM INDEX REGRESSION
 
-- [x] [P0] Kotlin + Jetpack Compose project
-- [~] [P0] Gradle setup / wrapper / dependency organization
-- [x] [P0] Package namespace
-- [x] [P0] Material 3
-- [x] [P0] Navigation Compose
-- [x] [P0] Light/dark Tooliva design direction
-- [x] [P0] Unit/UI test foundation
-- [x] [P0] CI build/test workflow
-- [ ] [P1] Introduce version catalog if it improves maintainability without churn
-- [~] [P0] Add Room for storage index / fingerprints / receipts — Storage Index v1 schema and repository added; fingerprints/receipts remain separate future work
-- [ ] [P0] Add DataStore for settings/access state
-- [ ] [P1] Add Hilt when dependency graph justifies it
-- [ ] [P1] Add WorkManager only for justified deferred/index work
-- [ ] [P1] Extract common Tooliva cards/buttons/permission components
+This is the current highest priority. Do not start new product modules until R0 receives human Xiaomi PASS.
 
----
+## Known-good reference
 
-# Phase 2 — Existing UI / Cleaner baseline
+- [x] [P0] Reference baseline identified: `b767aa8`
+- [x] [P0] Xiaomi previously confirmed Full Storage discovery of APK/ZIP/PDF/DOC/PNG/MP4
+- [x] [P0] Xiaomi previously confirmed select/open/delete Large Files flow
+- [x] [P0] Xiaomi previously confirmed immediate Cleanup Result after timing fix
+- [x] [P0] Xiaomi previously confirmed Screenshot Cleaner Trash flow
+- [x] [P0] Xiaomi previously confirmed Home navigation fix
 
-- [x] [P0] Home screen
-- [x] [P0] Storage summary card
-- [x] [P0] Battery/device summary
-- [x] [P0] Module cards
-- [x] [P0] `CHECK MY PHONE` CTA shell
+## Rejected experiment
 
-## Existing scoped-storage cleaner work
+- [!] Mandatory Room Storage Index from `7836ea`
+- [!] Fast/deep index-first Cleaner from `71f35ca`
+- [!] `StorageIndexCard` as consumer-facing Cleaner UI
+- [!] Large Files depending on active Room generation/snapshot
+- [!] automatic heavy scan simply because Large Files/Clean screen opened
 
-- [x] [P0] MediaStore scanning foundation
-- [x] [P0] Progressive scan / cancellation foundation
-- [x] [P0] Centralized cleanup/delete coordinator
-- [x] [P0] Cleanup Result accounting model
-- [x] [P0] Distinguish Trash bytes vs physically freed bytes
-- [~] [P0] Large Files media implementation — useful fallback but not full product scope
-- [~] [P0] Screenshot Cleaner with 30/90/365, thumbnails, multi-select, Select all
-- [~] [P0] Physical-device validation on Xiaomi — manual PASS confirmed for immediate Large Files Cleanup Result, Screenshot Cleaner Trash result, and Home navigation; Storage Index v1 still needs manual validation
+## Recovery implementation
 
-Do **not** delete the existing MediaStore implementation. It becomes Limited Mode/fallback infrastructure.
+- [ ] [P0] Revert/remove mandatory index changes introduced by `7836ea` and `71f35ca` while preserving unrelated good work/docs
+- [ ] [P0] Restore direct progressive `StorageProvider -> StorageScanEvent -> LargeFilesViewModel/UI` flow based on known-good baseline
+- [ ] [P0] Remove Storage Index technical card/status from Clean UI
+- [ ] [P0] Remove automatic heavy Large Files scan on navigation
+- [ ] [P0] Keep explicit user-controlled Scan/Refresh action
+- [ ] [P0] Preserve FullStorageProvider / StorageProvider abstraction
+- [ ] [P0] Preserve centralized cleanup/delete coordinator
+- [ ] [P0] Preserve Cleanup Receipt accounting
+- [ ] [P0] Preserve filters/search/sort/select/open/delete behavior
+- [ ] [P0] Remove Room/KSP/storage-index dependencies/files if no current feature uses them after recovery; do not keep dead architecture “for later”
+- [ ] [P0] Automated regression tests/build green
+- [ ] [P0] Install fresh debug APK on Xiaomi
+- [ ] [P0] Human manual regression PASS before Phase R1
 
 ---
 
-# Phase 3 — Full Storage Mode / storage engine
+# Phase R1 — STORAGE PERMISSION UX
 
-This is now the highest-priority engineering phase.
+Goal: one understandable primary Full Mode flow on Android 11+.
 
-## All Files Access
+- [~] [P0] `MANAGE_EXTERNAL_STORAGE` manifest/config exists
+- [~] [P0] All Files Access disclosure/settings flow exists
+- [~] [P0] `Environment.isExternalStorageManager()` state detection exists
+- [ ] [P0] Full Mode: Large Files works without requesting separate Photos/Videos permission
+- [ ] [P0] Full Mode: Screenshot Cleaner works without redundant `READ_MEDIA_IMAGES` request when broad storage access is sufficient
+- [ ] [P0] Full Mode: future Downloads/APK/Archives/Documents use the same storage access
+- [ ] [P0] Limited Mode: MediaStore/granular media permission used only when Full Mode is absent and the feature needs it
+- [ ] [P0] Limited Mode coverage explained honestly
+- [ ] [P0] Grant/deny/revoke tested manually on Xiaomi
+- [ ] [P0] Draft final in-app All Files disclosure copy
+- [ ] [P0] Draft Google Play All Files Access declaration package/text
 
-- [~] [P0] Add `MANAGE_EXTERNAL_STORAGE` to prototype manifest/config — implemented; production Play review remains
-- [~] [P0] Add `Environment.isExternalStorageManager()` access-state detection — implemented
-- [~] [P0] Add truthful pre-permission disclosure screen — implemented in Clean/Large Files access card
-- [~] [P0] Open correct Special App Access settings flow — implemented; OEM/manual validation pending
-- [~] [P0] Handle grant / deny / revoke cleanly — implemented in state refresh/fallback; physical validation pending
-- [~] [P0] Clearly display `Full Storage Mode` vs `Limited Mode` — implemented
-- [~] [P0] Ensure app remains functional in Limited Mode — existing MediaStore fallback preserved; physical validation pending
-- [x] [P0] Add tests for access-state transitions where possible
-
-## Storage abstraction
-
-- [~] [P0] Introduce `StorageProvider`/domain abstraction — implemented for the first Large Files slice
-- [x] [P0] Keep MediaStore provider as Limited Mode implementation
-- [~] [P0] Implement Full Storage provider for accessible shared storage — implemented; physical scan pending
-- [~] [P0] Normalize file model: path/ref/name/extension/MIME/size/date/category/volume — implemented for Large Files
-- [~] [P0] Exclusion rules for Tooliva temp/internal files — protected shared-storage paths are excluded; index exclusions remain
-- [~] [P0] Protected-path handling; never attempt Android restriction bypasses — implemented and build-verified; device behavior pending
-
-## Index
-
-- [x] [P0] Room-backed storage index — entries, scopes, generations, exported schema
-- [~] [P0] Progressive full-storage indexing — priority Fast Scan promotes useful rows first, then a non-blocking Deep Index continues with real counters; physical UX validation pending
-- [x] [P0] Cancellation — automated connected test confirms canceled generation preserves the last successful index
-- [x] [P0] Bounded concurrency — single cancellable traversal with bounded Room batches; no per-file coroutine fan-out
-- [~] [P0] Handle files disappearing/changing during scan — per-entry failures are isolated and changed metadata is tested; physical revoke/disappearance validation pending
-- [x] [P0] Incremental/reuse strategy so unchanged storage is not fully rescanned every time — metadata reuse and stale cleanup covered by 50k test
-- [x] [P0] Stress test 50k files — connected Room stress test passed on Xiaomi
-- [x] [P0] Fast-first scan coordinator — one process-scoped coordinator prevents parallel walks; priority roots are Download/DCIM/Pictures/Movies/Documents/Music plus shallow top-level coverage
-- [~] [P0] Large Files cache + live enrichment — Room cache opens immediately and refreshes as Fast/Deep generations complete; physical time-to-first-result validation pending
-- [ ] [P1] Stress test 100k+ files
+STOP after R1 until human PASS.
 
 ---
 
-# Phase 4 — Deep Cleaner categories
+# Phase 1 — FOUNDATION THAT ALREADY WORKS
 
-## Cleaner dashboard
+- [x] Kotlin + Jetpack Compose project
+- [x] package namespace `az.simplesoft.tooliva`
+- [x] compileSdk/targetSdk 36
+- [x] minSdk 26
+- [x] Material 3
+- [x] Navigation Compose
+- [x] Tooliva light/dark design direction
+- [x] unit/UI test foundation
+- [x] CI build foundation
+- [x] Home screen baseline
+- [x] storage summary
+- [x] battery/device summary baseline
+- [x] module cards
+- [x] `CHECK MY PHONE` shell
 
-- [~] [P0] Rework Clean screen around one `SCAN STORAGE` flow — usable dashboard remains available during scan; priority result cards and secondary deep-scan status implemented, manual UX validation pending
-- [ ] [P0] Show indexed/used/free bytes
-- [x] [P0] Show Full/Limited access status
-- [~] [P0] Show highest-value cleanup recommendations — real category summary cards for indexed large-file candidates; screenshot-specific aggregation remains separate
-- [~] [P0] Category cards use real item counts + bytes — APK/archive/download/media categories are Room-backed; physical UI validation pending
+Deferred infrastructure:
 
-## Large Files — full scope
+- [ ] [P1] DataStore when real persistent settings need it
+- [ ] [P1] Room only when a real persistent feature needs it (duplicates fingerprints, Notification History, etc.)
+- [ ] [P1] Hilt only when dependency graph complexity justifies it
+- [ ] [P1] WorkManager only when a real deferred job needs it
+- [ ] [P1] common reusable Tooliva components as repetition appears
 
-- [x] [P0] Scan all accessible shared-storage file types in Full Mode — user confirmed APK/ZIP/PDF/media fixtures were found on Xiaomi
-- [~] [P0] Filters: All / Video / Image / Audio / APK / Archive / Document / Download / Other
-- [~] [P0] Thresholds 100 MB / 500 MB / 1 GB — implemented; manual UI verification pending
-- [~] [P0] Sort by size/date/name — implemented; manual UI verification pending
-- [~] [P0] Open/share/details — open implemented; share/details remain
-- [~] [P0] Multi-select / Select all — implemented; manual UI verification pending
-- [~] [P0] Safe delete/trash + Cleanup Receipt — direct Full Mode deletion and existing Limited Trash flow implemented; physical verification pending
-- [~] [P0] Xiaomi physical test with APK + ZIP + PDF + media — user confirmed discovery, selection and deletion; cleanup receipt timing fix awaits retest
-- [ ] [P0] Samsung physical test
-- [ ] [P0] Pixel physical test
+Do not add these solely to satisfy architecture style.
+
+---
+
+# Phase 2 — CLEANER CORE
+
+## Cleaner shell
+
+- [ ] [P0] Clean screen contains only user-facing storage/cleanup concepts
+- [ ] [P0] Storage used/total/free card
+- [ ] [P0] one clear Scan/Analyze action when required
+- [ ] [P0] progressive category/result cards
+- [ ] [P0] no index/database/generation terminology in production UI
+- [ ] [P0] scan can be canceled
+- [ ] [P0] no heavy auto-scan on navigation
+
+## Large Files
+
+- [~] [P0] Full Mode discovers accessible shared-storage file types — previously Xiaomi PASS, must re-pass after recovery
+- [~] [P0] categories All/Video/Image/Audio/APK/Archive/Document/Download/Other
+- [~] [P0] thresholds 100 MB / 500 MB / 1 GB
+- [~] [P0] sort size/newest/oldest/name
+- [~] [P0] search name/path
+- [~] [P0] multi-select / Select all
+- [~] [P0] open
+- [ ] [P0] share
+- [ ] [P0] details
+- [~] [P0] safe delete/trash
+- [x] [P0] Cleanup Receipt model distinguishes Trash vs Physically Freed
+- [ ] [P0] current Xiaomi regression PASS after recovery
+- [ ] [P1] Samsung physical test
+- [ ] [P1] Pixel physical test
 
 ## Downloads
 
-- [ ] [P0] Automatic Downloads analysis in Full Mode
-- [ ] [P0] APK/installers category
-- [ ] [P0] Archives category
-- [ ] [P0] Documents category
-- [ ] [P0] Media category
-- [ ] [P0] Old downloads filter
-- [ ] [P0] Large downloads filter
-- [ ] [P0] Limited Mode SAF fallback with honest UX
+- [ ] [P0] automatic Full Mode Downloads scan
+- [ ] [P0] APK/installers group
+- [ ] [P0] archives group
+- [ ] [P0] documents group
+- [ ] [P0] media group
+- [ ] [P0] large downloads filter
+- [ ] [P0] old downloads 30/90/180/365
+- [ ] [P1] Limited Mode SAF fallback where useful
 
-## APK / installers
+## APK installers
 
-- [ ] [P0] Detect APK files
-- [ ] [P0] Parse safe APK metadata where possible
-- [ ] [P1] Relate APK to installed package when package visibility allows
-- [ ] [P1] Detect duplicate/old APK versions
-- [ ] [P0] Never preselect APK deletion solely because file is old
+- [ ] [P0] detect APK files
+- [ ] [P0] safe app/package/version metadata parsing where possible
+- [ ] [P0] size/date/path/open/share/details/delete
+- [ ] [P0] never preselect solely because old
+- [ ] [P1] relation to installed package only when visibility permits
+- [ ] [P1] duplicate/old-version installer analysis
 
-## Archives / documents / other
+## Archives
 
 - [ ] [P0] ZIP/RAR/7Z classification where identifiable
-- [ ] [P0] PDF/Office/text document classification
-- [ ] [P0] Open/share/details/delete flows
-- [ ] [P0] Never call normal user documents `junk` without explainable rule/user filter
+- [ ] [P0] size/date/path/open/share/details/delete
+- [ ] [P0] Downloads integration
 
-## Old files
+## Documents
 
-- [ ] [P0] Filters 30/90/180/365 days
-- [ ] [P0] Prioritize downloads/APKs/screenshots for cleanup suggestions
-- [ ] [P0] Do not use `unused` language without actual usage evidence
+- [ ] [P0] PDF/Office/text classification
+- [ ] [P0] size/date/path/open/share/details/delete
+- [ ] [P0] normal documents never generic junk
 
-## Explainable junk
+## Old Files
 
-- [ ] [P0] Define deterministic cleanup-candidate rule registry
-- [ ] [P0] Every rule provides user-facing reason
-- [ ] [P0] Ambiguous candidates are not preselected
-- [ ] [P0] No mystery `Junk = X GB` aggregate without drill-down
-
-## Empty folders
-
-- [ ] [P1] Detect writable empty shared-storage folders
-- [ ] [P1] Safe exclusions
-- [ ] [P1] Review before delete
+- [ ] [P0] age filters 30/90/180/365
+- [ ] [P0] prioritize Downloads/APKs/Archives/Screenshots/user-selected scope
+- [ ] [P0] do not label `unused` without actual usage evidence
 
 ---
 
-# Phase 5 — File Manager / on-device search
-
-File Manager is core, not optional polish.
-
-## Browser
-
-- [ ] [P0] Internal/shared storage browser
-- [ ] [P0] SD card / USB volume handling when available
-- [ ] [P0] Breadcrumb/path navigation
-- [ ] [P0] List/grid mode
-- [ ] [P0] Category shortcuts: Downloads/Documents/APKs/Archives/Images/Videos/Audio/Recent/Large
-- [ ] [P0] Sort name/size/date
-- [ ] [P0] File details
-- [ ] [P0] Open
-- [ ] [P0] Share
-- [ ] [P0] Rename
-- [ ] [P0] Copy
-- [ ] [P0] Move
-- [ ] [P0] Delete/trash using central coordinator
-- [ ] [P0] Create folder
-- [ ] [P0] Collision handling
-- [ ] [P0] Long-operation progress + cancel
-
-## Global search
-
-- [ ] [P0] Search by name
-- [ ] [P0] Extension/type filters
-- [ ] [P0] Size filters
-- [ ] [P0] Date filters
-- [ ] [P0] Folder/path filter
-- [ ] [P0] Offline indexed results
-
-## Storage Map
-
-- [ ] [P0] Prototype treemap/sunburst-style disk usage view
-- [ ] [P0] Drill-down folder → child folders/files
-- [ ] [P0] Accessible list alternative
-- [ ] [P1] Open/delete/details from map
-
----
-
-# Phase 6 — Duplicates / smart cleanup
-
-## Exact duplicate files
-
-- [ ] [P0] Size pre-grouping
-- [ ] [P0] Incremental hash worker
-- [ ] [P0] Fingerprint cache in Room
-- [ ] [P0] Exact duplicate groups across accessible file types
-- [ ] [P0] Total recoverable duplicate bytes
-- [ ] [P0] Keep-one helper
-- [ ] [P0] Preview/open/location
-- [ ] [P0] Safe cleanup + Cleanup Receipt
-- [ ] [P0] Cancellation / large-data tests
-
-## Similar photos
-
-- [ ] [P1] Local perceptual similarity prototype
-- [ ] [P1] Similarity groups UI
-- [ ] [P1] Never present similar as identical
+# Phase 3 — SCREENSHOTS / EXPLAINABLE CLEANUP
 
 ## Screenshot Cleaner
 
-- [~] [P0] Existing screenshot detection + filters + thumbnails + selection
-- [ ] [P0] Revalidate through new StorageProvider architecture
-- [ ] [P0] End-to-end destructive test with synthetic screenshots
+- [~] [P0] screenshot detection
+- [~] [P0] 30/90/365 filters
+- [~] [P0] thumbnails
+- [~] [P0] multi-select / Select all
+- [~] [P0] central Trash/delete flow
+- [x] [P0] immediate Cleanup Receipt behavior previously human-verified
+- [ ] [P0] Full Mode permission unification
+- [ ] [P0] re-run synthetic screenshot destructive test after permission rewrite
 
-## Cleanup Swipe
+## Explainable Junk
 
-- [ ] [P0] Swipe keep/delete/skip
-- [ ] [P0] Undo
-- [ ] [P0] Saved review session
-- [ ] [P0] Support screenshots / old downloads / user-selected category
-- [ ] [P0] Final review before changes
-- [ ] [P0] Cleanup Receipt
+- [ ] [P0] implement first real deterministic rule set
+- [ ] [P0] every group exposes `why shown`
+- [ ] [P0] ambiguous candidates not preselected
+- [ ] [P0] no mystery `Junk = X GB` without drill-down
+- [ ] [P0] totals derived only from actual listed candidates
+
+Candidate rules to research/implement one by one:
+
+- [ ] old APK installer candidate
+- [ ] old Downloads candidate
+- [ ] exact duplicate candidate
+- [ ] accessible deterministic temp/residual artifacts
+- [ ] empty writable folders [P1]
 
 ---
 
-# Phase 7 — App Manager / cache maintenance
+# Phase 4 — CACHE / APPS
+
+## Cache cleanup v1
+
+- [ ] [P0] implement official `StorageManager.ACTION_CLEAR_APP_CACHE` flow where supported
+- [ ] [P0] explain system-mediated behavior
+- [ ] [P0] handle supported/unsupported/cancel/error honestly
+- [ ] [P0] no fake per-app private-cache visibility
+- [ ] [P0] Xiaomi manual test
+- [ ] [P2] Accessibility-based automation only after separate explicit approval/policy review
 
 ## App Manager
 
-- [ ] [P0] Define exact PackageManager visibility needs
-- [ ] [P0] Prototype app list without `QUERY_ALL_PACKAGES`
-- [ ] [P0] If incomplete for core UX, document evidence and approve `QUERY_ALL_PACKAGES`
-- [ ] [P0] Prepare separate Play declaration if added
-- [ ] [P0] App label/icon/package
-- [ ] [P0] Install/update date
-- [ ] [P0] System/user app distinction
-- [ ] [P0] Open App Info
-- [ ] [P0] Launch app
-- [ ] [P0] Request uninstall
-- [ ] [P1] App storage size where Android exposes defensible values
-
-## Usage / unused apps
-
-- [ ] [P1] Usage Access disclosure
-- [ ] [P1] `PACKAGE_USAGE_STATS` settings flow
-- [ ] [P1] Last-used / today / 7d / 30d
-- [ ] [P1] Large + rarely used recommendations
-
-## Cache cleanup
-
-- [ ] [P0] Implement `StorageManager.ACTION_CLEAR_APP_CACHE` on API 30+
-- [ ] [P0] Explain system-mediated behavior
-- [ ] [P0] Handle success/cancel/error
-- [ ] [P0] Never claim silent private-cache access
-- [ ] [P2] Accessibility automation only after separate human + Play policy approval
+- [ ] [P0] prototype visible app list without `QUERY_ALL_PACKAGES`
+- [ ] [P0] label/icon/package/install/update date
+- [ ] [P0] user/system distinction where possible
+- [ ] [P0] launch
+- [ ] [P0] App Info
+- [ ] [P0] uninstall request
+- [ ] [P1] defensible storage size where available
+- [ ] [P1] Usage Access + last used / rarely used recommendations
+- [ ] [P1] if narrow visibility is insufficient, document exact gap and re-review `QUERY_ALL_PACKAGES`
 
 ---
 
-# Phase 8 — Phone Doctor / Checkup
+# Phase 5 — FILE MANAGER
+
+File Manager is core functionality.
+
+- [ ] [P0] browse accessible shared storage/volumes
+- [ ] [P0] breadcrumbs/folder navigation
+- [ ] [P0] category shortcuts Downloads/Documents/APKs/Archives/Images/Videos/Audio/Recent/Large
+- [ ] [P0] sort name/size/date
+- [ ] [P0] search by name
+- [ ] [P0] details
+- [ ] [P0] open
+- [ ] [P0] share
+- [ ] [P0] rename
+- [ ] [P0] create folder
+- [ ] [P0] copy
+- [ ] [P0] move
+- [ ] [P0] delete/trash through central coordinator
+- [ ] [P0] collision handling
+- [ ] [P0] long-operation progress/cancel
+
+Do not make basic browser depend on a completed whole-device Room index.
+
+---
+
+# Phase 6 — EXACT DUPLICATES / CLEANUP SWIPE
+
+## Exact duplicates
+
+- [ ] [P0] cheap size pre-grouping
+- [ ] [P0] hash only groups with 2+ candidates
+- [ ] [P0] exact verification
+- [ ] [P0] Room fingerprint cache only here if useful
+- [ ] [P0] file mutation invalidates cached fingerprint
+- [ ] [P0] groups UI
+- [ ] [P0] recoverable bytes
+- [ ] [P0] keep-one helper
+- [ ] [P0] safe cleanup + Receipt
+- [ ] [P0] cancellation
+
+## Cleanup Swipe
+
+- [ ] [P1] keep/delete/skip
+- [ ] [P1] undo
+- [ ] [P1] selected category/session
+- [ ] [P1] final review
+- [ ] [P1] Cleanup Receipt
+
+---
+
+# Phase 7 — STORAGE MAP
+
+- [ ] [P1] folder-size aggregation during explicit analysis
+- [ ] [P1] treemap/sunburst-style prototype
+- [ ] [P1] drill-down
+- [ ] [P1] accessible list alternative
+- [ ] [P1] open/details/delete integration
+
+Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manager usage.
+
+---
+
+# Phase 8 — PHONE DOCTOR / CHECK MY PHONE
 
 ## Phone Doctor
 
-- [ ] [P0] Device/manufacturer/model/Android/security patch
-- [ ] [P0] CPU/ABI facts available through public APIs
-- [ ] [P0] Memory/storage facts
-- [ ] [P0] Battery level/state/source/voltage/temperature
-- [ ] [P1] Battery current/power when exposed
-- [ ] [P0] Thermal state
-- [ ] [P0] Sensor inventory
-- [ ] [P1] Live sensor values
-- [ ] [P1] Network details
-
-## Hardware tests
-
-- [ ] [P1] Display/dead-pixel test
-- [ ] [P1] Touch/multitouch test
-- [ ] [P1] Vibration
-- [ ] [P1] Flashlight
-- [ ] [P1] Speaker
-- [ ] [P1] Microphone
-- [ ] [P1] Proximity
-- [ ] [P1] Accelerometer
-- [ ] [P1] Compass
+- [ ] [P0] device/model/Android/security patch
+- [ ] [P0] CPU/ABI public facts
+- [ ] [P0] RAM/storage facts
+- [ ] [P0] battery level/state/source/voltage/temperature
+- [ ] [P1] current/power where exposed
+- [ ] [P0] thermal state
+- [ ] [P0] sensor inventory
+- [ ] [P1] network details
+- [ ] [P1] guided hardware tests
 
 ## Check My Phone
 
-- [ ] [P0] Orchestrate storage/action-plan scan
-- [ ] [P0] Biggest files/folders insight
-- [ ] [P0] Cleanup categories insight
-- [ ] [P0] Duplicate/screenshot insight
-- [ ] [P0] Battery/thermal facts
-- [ ] [P0] Deep-links into review screens
-- [ ] [P0] No fake health score
-- [ ] [P1] App/notification insights when access enabled
+- [ ] [P0] aggregate existing Cleaner + Doctor insights
+- [ ] [P0] biggest actionable storage categories
+- [ ] [P0] deep-links to exact review screens
+- [ ] [P0] no fake health score
 
 ---
 
-# Phase 9 — Notification History / Protect
+# Phase 9 — NOTIFICATION HISTORY
 
-## Notification History
-
-- [ ] [P0] Prominent disclosure
+- [ ] [P0] prominent disclosure
 - [ ] [P0] Notification Access flow
 - [ ] [P0] `NotificationListenerService`
-- [ ] [P0] Local Room persistence
-- [ ] [P0] Group by app
-- [ ] [P0] Search
-- [ ] [P0] Date/channel filters
-- [ ] [P0] Excluded apps
-- [ ] [P0] Retention 1/7/30/90 days
-- [ ] [P0] Clear history
-- [ ] [P1] Pin/favorite
-- [ ] [P1] Noisy-app insights
-- [ ] [P2] Export
-
-## Private Vault
-
-- [ ] [P1] Threat model
-- [ ] [P1] PIN + biometric
-- [ ] [P1] Android Keystore master key
-- [ ] [P1] Authenticated encrypted import
-- [ ] [P1] Encrypted metadata
-- [ ] [P1] Secure export
-- [ ] [P1] Auto-lock
-- [ ] [P1] Uninstall/data-loss warning
-
-## App Lock
-
-- [ ] [P1] Prototype on Xiaomi/Samsung/Pixel
-- [ ] [P1] Verify Play-policy path
-- [ ] [P1] Foreground-app detection prototype
-- [ ] [P1] PIN/pattern/biometric lock screen
-- [ ] [P1] Random PIN keyboard
-- [ ] [P1] Timeout/relock/reboot tests
-- [ ] [P1] Decide GO / NO-GO
-- [ ] [P2] Intruder selfie if privacy/policy validated
+- [ ] [P0] Room persistence (valid persistence use)
+- [ ] [P0] group/search/filter
+- [ ] [P0] retention controls
+- [ ] [P0] excluded apps
+- [ ] [P0] clear history
+- [ ] [P1] noisy-app insights
 
 ---
 
-# Phase 10 — File/content tools
+# Phase 10 — LATER MODULES
 
-- [ ] [P1] Image compress
-- [ ] [P1] Image resize
-- [ ] [P1] JPEG/PNG/WebP conversion
-- [ ] [P1] Batch image processing
-- [ ] [P1] EXIF viewer
-- [ ] [P1] Remove GPS/private metadata
-- [ ] [P1] Images → PDF
-- [ ] [P1] ZIP
-- [ ] [P1] Unzip + zip-slip protection
-- [ ] [P1] SHA-256/SHA-512/MD5
+## Vault [P1]
 
----
+- threat model
+- PIN/biometric
+- Keystore
+- authenticated encryption
+- secure import/export
+- auto-lock
 
-# Phase 11 — Everyday tools
+## App Lock [P1/P2]
 
-- [ ] [P1] QR/barcode scanner
-- [ ] [P1] QR generator
-- [ ] [P1] Wi-Fi QR
-- [ ] [P1] Network info
-- [ ] [P1] Ping / DNS lookup
-- [ ] [P1] Compass
-- [ ] [P1] Bubble level
-- [ ] [P1] Flashlight
-- [ ] [P2] Magnifier
-- [ ] [P2] Unit converter / password generator / color picker
+- reliability prototype
+- Play-policy decision
+- no Accessibility without explicit approval
 
----
+## Content/everyday tools [P1/P2]
 
-# Phase 12 — Monetization
+- image compress/resize/convert
+- EXIF privacy clean
+- images to PDF
+- QR scanner/generator
+- network tools
+- compass/level/flashlight
 
-Do this after the core utility proves valuable.
-
-- [ ] [P0] Ads abstraction
-- [ ] [P0] Consent flow where required
-- [ ] [P0] Restrained banner/native placements
-- [ ] [P0] Interstitial frequency cap
-- [ ] [P0] Guarantee no ad between destructive selection and Cleanup Receipt
-- [ ] [P0] Google Play Billing
-- [ ] [P0] Pro Lifetime purchase
-- [ ] [P0] Restore purchases
-- [ ] [P0] Paid state never shows ads
-- [ ] [P1] Regional pricing experiment
+Do not prioritize these before Cleaner/File Manager core quality.
 
 ---
 
-# Phase 13 — Privacy / Google Play
+# Phase 11 — MONETIZATION / RELEASE
 
-- [ ] [P0] Privacy policy reflecting full-storage access
-- [ ] [P0] Data Safety inventory
-- [ ] [P0] SDK data audit
-- [ ] [P0] All Files Access declaration
-- [ ] [P0] `QUERY_ALL_PACKAGES` declaration only if ultimately used
-- [ ] [P0] Usage Access disclosure
-- [ ] [P0] Notification Access disclosure
-- [ ] [P0] Verify merged manifest
-- [ ] [P0] Ad declarations
-- [ ] [P0] Content rating / target audience
-- [ ] [P0] Store description accurately promotes File Manager/Storage Search as core functionality
-
----
-
-# Phase 14 — QA matrix
-
-- [ ] [P0] Android 8–10 Limited/legacy behavior
-- [ ] [P0] Android 11
-- [ ] [P0] Android 12
-- [ ] [P0] Android 13
-- [ ] [P0] Android 14
-- [ ] [P0] Android 15
-- [ ] [P0] Android 16
-- [~] [P0] Xiaomi physical-device baseline — latest manual PASS covers Cleaner result timing and Home navigation; broader index/access regression remains
-- [ ] [P0] Samsung physical device
-- [ ] [P0] Pixel physical device
-- [ ] [P1] Oppo/Realme if available
-- [ ] [P0] Full Storage Mode grant/deny/revoke
-- [ ] [P0] 50k-file stress
-- [ ] [P1] 100k-file stress
-- [ ] [P0] Destructive-operation regression suite
-- [ ] [P0] APK/ZIP/PDF/media deletion tests
-- [ ] [P0] Copy/move collision tests
-- [ ] [P0] Low-storage behavior
-- [ ] [P0] Process death during long operations
-- [ ] [P0] No unexpected network upload during scan
+- [ ] choose ad SDK after core UX stabilizes
+- [ ] consent flow
+- [ ] restrained ad placements
+- [ ] no ads in permission/destructive/receipt/sensitive flows
+- [ ] Play Billing
+- [ ] Pro Lifetime / restore
+- [ ] privacy policy final
+- [ ] Data Safety inventory
+- [ ] merged-manifest permission audit
+- [ ] All Files Access declaration package
+- [ ] target audience/content rating
+- [ ] closed test
 
 ---
 
-# Cleaner / File Manager Beta release gate
+# Manual testing process — mandatory
 
-- [ ] Full Storage Mode + Limited fallback
-- [ ] Deep Storage Scan
-- [ ] Large Files across APK/archives/docs/media/other
-- [ ] Downloads analyzer
-- [ ] Screenshot Cleaner verified under final architecture
-- [ ] Exact duplicate files
-- [ ] Cleanup Receipt verified
-- [ ] File Manager browse/search/sort/open/share/rename/copy/move/delete
-- [ ] Storage Map basic
-- [ ] System-mediated Cache Cleanup
-- [ ] All Files Access disclosure + Play declaration draft
-- [ ] Xiaomi/Samsung/Pixel smoke validation
-- [ ] CI green
+For every device-dependent vertical slice:
 
-# Tooliva 1.0 release gate
+1. agent runs automated tests/build;
+2. agent installs fresh debug APK on connected Xiaomi;
+3. agent performs crash smoke-check only;
+4. agent outputs `MANUAL TEST REQUIRED — <feature>`;
+5. human user performs numbered manual tests;
+6. user reports PASS/FAIL;
+7. agent fixes failures;
+8. only human-confirmed device behavior becomes `[x]`;
+9. next major slice begins only after PASS.
 
-Everything in Cleaner/File Manager Beta plus:
+---
 
-- [ ] Cleanup Swipe
-- [ ] App Manager basic
-- [ ] Phone Doctor
-- [ ] Check My Phone action plan
-- [ ] Notification History
-- [ ] Image Compress
-- [ ] EXIF Privacy Clean
-- [ ] Images to PDF
-- [ ] QR Scanner/Generator
-- [ ] Network Info
-- [ ] Compass / Level / Flashlight
-- [ ] Ads implemented respectfully
-- [ ] Pro Lifetime
-- [ ] Privacy/Data Safety complete
-- [ ] Play restricted-permission review complete
-- [ ] Crash-free closed test
+# Immediate next milestone
 
-Vault and App Lock are **not allowed to delay 1.0** if they are not yet production-grade.
+**RECOVERY v1**
+
+`revert index-first experiment -> restore direct Large Files scan -> remove index UI/autoscan -> unify Full Mode permission behavior -> build/install -> human Xiaomi regression test -> STOP`
