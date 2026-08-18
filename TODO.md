@@ -199,7 +199,7 @@ Do not add these solely to satisfy architecture style.
 ## Explainable Junk
 
 - [x] [P0] implement first real deterministic rule set — Old APK installers and Old Downloads only
-- [~] [P0] every group exposes `why shown` — UI implemented; Xiaomi validation pending
+- [x] [P0] every group exposes `why shown` — Xiaomi PASS
 - [x] [P0] ambiguous candidates not preselected
 - [x] [P0] no mystery `Junk = X GB` without drill-down
 - [x] [P0] totals derived only from actual listed candidates
@@ -208,6 +208,7 @@ Candidate rules to research/implement one by one:
 
 - [x] old APK installer candidate — deterministic rule, reason mapping and tests
 - [x] old Downloads candidate — deterministic rule, reason mapping and tests
+- [x] [P0] Explainable Cleanup Xiaomi review/select/delete/Cleanup Receipt test
 - [ ] exact duplicate candidate
 - [ ] accessible deterministic temp/residual artifacts
 - [ ] empty writable folders [P1]
