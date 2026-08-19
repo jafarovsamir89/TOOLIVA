@@ -55,6 +55,7 @@ data class DuplicateAnalysisProgress(
     val candidateFiles: Long = 0L,
     val filesHashed: Long = 0L,
     val bytesHashed: Long = 0L,
+    val filesReusedFromCache: Long = 0L,
     val groupsConfirmed: Int = 0,
 )
 

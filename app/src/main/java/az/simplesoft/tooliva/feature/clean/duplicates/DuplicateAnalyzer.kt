@@ -12,15 +12,20 @@ import kotlinx.coroutines.flow.flowOn
 import java.io.File
 import kotlin.coroutines.coroutineContext
 
-class DuplicateAnalyzer(private val storage: FullStorageProvider) {
+class DuplicateAnalyzer(
+    private val storage: FullStorageProvider,
+    private val cache: DuplicateFingerprintCache? = null,
+) {
     fun analyze(): Flow<DuplicateAnalysisEvent> = flow {
+        cache?.load()
         val startedAt = System.nanoTime()
-        emit(DuplicateAnalysisEvent.Started)
-        val bySize = LinkedHashMap<Long, MutableList<StorageEntry>>()
-        var filesChecked = 0L
+        try {
+            emit(DuplicateAnalysisEvent.Started)
+            val bySize = LinkedHashMap<Long, MutableList<StorageEntry>>()
+            var filesChecked = 0L
 
-        emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(DuplicateAnalysisStage.METADATA)))
-        for (root in storage.storageRoots()) {
+            emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(DuplicateAnalysisStage.METADATA)))
+            for (root in storage.storageRoots()) {
             coroutineContext.ensureActive()
             storage.search(root) { entry ->
                 !entry.isDirectory && entry.sizeBytes > 0L && !isToolivaFile(entry)
@@ -42,51 +47,59 @@ class DuplicateAnalyzer(private val storage: FullStorageProvider) {
                     else -> Unit
                 }
             }
-        }
+            }
 
-        val candidates = bySize.values.filter { it.size > 1 }
-        val candidateFiles = candidates.sumOf { it.size.toLong() }
-        emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(
-            stage = DuplicateAnalysisStage.HASHING,
-            filesChecked = filesChecked,
-            candidateFiles = candidateFiles,
-        )))
+            val candidates = bySize.values.filter { it.size > 1 }
+            val candidateFiles = candidates.sumOf { it.size.toLong() }
+            emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(
+                stage = DuplicateAnalysisStage.HASHING,
+                filesChecked = filesChecked,
+                candidateFiles = candidateFiles,
+            )))
 
-        val byHash = LinkedHashMap<HashKey, MutableList<StorageEntry>>()
-        var filesHashed = 0L
-        var bytesHashed = 0L
-        for (candidateGroup in candidates) {
-            for (entry in candidateGroup) {
+            val byHash = LinkedHashMap<HashKey, MutableList<StorageEntry>>()
+            var filesHashed = 0L
+            var filesReusedFromCache = 0L
+            var bytesHashed = 0L
+            for (candidateGroup in candidates) {
+                for (entry in candidateGroup) {
                 coroutineContext.ensureActive()
-                when (val result = FileHasher.hash(entry)) {
-                    is FileHashResult.Valid -> {
-                        byHash.getOrPut(HashKey(entry.sizeBytes, result.hash)) { mutableListOf() }.add(entry)
-                        bytesHashed += result.bytesRead
+                    val cachedHash = cache?.find(entry)?.takeIf { FileHasher.matchesExpectedMetadata(entry) }
+                    if (cachedHash != null) {
+                        byHash.getOrPut(HashKey(entry.sizeBytes, cachedHash)) { mutableListOf() }.add(entry)
+                        filesReusedFromCache++
+                    } else when (val result = FileHasher.hash(entry)) {
+                        is FileHashResult.Valid -> {
+                            byHash.getOrPut(HashKey(entry.sizeBytes, result.hash)) { mutableListOf() }.add(entry)
+                            bytesHashed += result.bytesRead
+                            cache?.put(entry, result.hash)
+                        }
+                        is FileHashResult.Invalid -> Unit
                     }
-                    is FileHashResult.Invalid -> Unit
-                }
                 filesHashed++
                 emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(
                     stage = DuplicateAnalysisStage.HASHING,
                     filesChecked = filesChecked,
                     candidateFiles = candidateFiles,
                     filesHashed = filesHashed,
-                    bytesHashed = bytesHashed,
-                )))
+                        bytesHashed = bytesHashed,
+                        filesReusedFromCache = filesReusedFromCache,
+                    )))
+                }
             }
-        }
 
-        val confirmed = mutableListOf<DuplicateGroup>()
-        var groupIndex = 0
-        val hashGroups = byHash.entries.filter { it.value.size > 1 }
-        emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(
+            val confirmed = mutableListOf<DuplicateGroup>()
+            var groupIndex = 0
+            val hashGroups = byHash.entries.filter { it.value.size > 1 }
+            emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(
             stage = DuplicateAnalysisStage.VERIFYING,
             filesChecked = filesChecked,
             candidateFiles = candidateFiles,
             filesHashed = filesHashed,
-            bytesHashed = bytesHashed,
-        )))
-        for ((hashKey, entries) in hashGroups) {
+                bytesHashed = bytesHashed,
+                filesReusedFromCache = filesReusedFromCache,
+            )))
+            for ((hashKey, entries) in hashGroups) {
             coroutineContext.ensureActive()
             val reference = File(entries.first().path)
             val verified = entries.drop(1).all { ExactFileVerifier.verify(reference, File(it.path)) }
@@ -100,24 +113,28 @@ class DuplicateAnalyzer(private val storage: FullStorageProvider) {
                 confirmed += group
                 emit(DuplicateAnalysisEvent.GroupConfirmed(group))
             }
-            emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(
+                emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(
                 stage = DuplicateAnalysisStage.VERIFYING,
                 filesChecked = filesChecked,
                 candidateFiles = candidateFiles,
                 filesHashed = filesHashed,
                 bytesHashed = bytesHashed,
-                groupsConfirmed = confirmed.size,
-            )))
-        }
+                    filesReusedFromCache = filesReusedFromCache,
+                    groupsConfirmed = confirmed.size,
+                )))
+            }
 
-        emit(DuplicateAnalysisEvent.Completed(DuplicateAnalysisSummary(
+            emit(DuplicateAnalysisEvent.Completed(DuplicateAnalysisSummary(
             groups = confirmed,
             filesChecked = filesChecked,
             candidateFiles = candidateFiles,
             filesHashed = filesHashed,
             bytesHashed = bytesHashed,
-            durationMillis = (System.nanoTime() - startedAt) / 1_000_000L,
-        )))
+                durationMillis = (System.nanoTime() - startedAt) / 1_000_000L,
+            )))
+        } finally {
+            cache?.save()
+        }
     }.flowOn(Dispatchers.IO)
 
     private fun isToolivaFile(entry: StorageEntry): Boolean {

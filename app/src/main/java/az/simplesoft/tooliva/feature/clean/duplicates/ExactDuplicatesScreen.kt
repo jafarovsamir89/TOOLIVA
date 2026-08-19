@@ -269,7 +269,7 @@ private fun AnalyzeCard(state: ExactDuplicatesUiState, onAnalyze: () -> Unit, on
             }
             if (state.isAnalyzing) {
                 Text("${state.progress.filesChecked} files checked · ${state.progress.candidateFiles} candidates · ${state.progress.groupsConfirmed} groups", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (state.progress.filesHashed > 0) Text("${state.progress.filesHashed} files compared · ${Formatter.formatFileSize(LocalContext.current, state.progress.bytesHashed)} read", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (state.progress.filesHashed > 0 || state.progress.filesReusedFromCache > 0) Text("${state.progress.filesHashed} files compared · ${state.progress.filesReusedFromCache} reused · ${Formatter.formatFileSize(LocalContext.current, state.progress.bytesHashed)} read", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedButton(onClick = onCancel) { Text("Cancel") }
             } else {
                 Button(onClick = onAnalyze) { Text(if (state.stage == DuplicateAnalysisStage.IDLE) "Analyze duplicates" else "Analyze again") }
@@ -284,7 +284,7 @@ private fun SummaryCard(state: ExactDuplicatesUiState) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("${state.groups.size} duplicate groups", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
             Text("${state.identicalFileCount} identical files · ${Formatter.formatFileSize(LocalContext.current, state.potentialRecoverableBytes)} potentially recoverable")
-            Text("${state.progress.filesChecked} files checked · ${state.progress.filesHashed} files compared", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("${state.progress.filesChecked} files checked · ${state.progress.filesHashed} hashed · ${state.progress.filesReusedFromCache} reused", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

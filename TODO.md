@@ -297,15 +297,17 @@ Do not make basic browser depend on a completed whole-device Room index.
 - [x] [P0] SHA-256 streaming hash with bounded sequential IO
 - [x] [P0] exact verification — matching hashes are verified byte by byte
 - [x] [P0] no Room/index/background crawler in v1
+- [x] [P0] measured bounded local fingerprint cache keyed by path/size/modified time — no file contents persisted
 - [x] [P0] file mutation invalidates a hash result
-- [~] [P0] groups UI — implemented; Xiaomi manual validation required
+- [x] [P0] groups UI — Xiaomi manual PASS
 - [x] [P0] recoverable bytes math
 - [x] [P0] keep-one helper and last-copy safety guard
-- [~] [P0] safe cleanup + Cleanup Receipt — central coordinator wired; Xiaomi destructive validation required
+- [x] [P0] safe cleanup + Cleanup Receipt — Xiaomi manual PASS
 - [x] [P0] cancellation for metadata traversal, hashing and verification
-- [~] [P0] filters/search/sort/open/details/show in Files — implemented; Xiaomi manual validation required
-- [~] [P0] previews/type icons — lazy sampled thumbnails/icons; Xiaomi manual validation required
-- [ ] [P0] Human Xiaomi Exact Duplicates v1 PASS
+- [x] [P0] filters/search/sort/open/details/show in Files — Xiaomi manual PASS
+- [x] [P0] previews/type icons — Xiaomi manual PASS
+- [x] [P0] Human Xiaomi Exact Duplicates v1 PASS
+- [~] [P0] repeat-analysis fingerprint cache — implementation complete; Xiaomi retest required
 
 ## Cleanup Swipe
 

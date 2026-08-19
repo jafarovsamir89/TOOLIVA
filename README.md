@@ -111,7 +111,7 @@ Limited Mode never pretends to cover the whole phone.
 - Cleanup Swipe
 - verified Cleanup Receipt
 
-Exact Duplicates v1 is an explicit, local-only analysis: direct metadata traversal groups non-empty regular files by exact size, SHA-256 is calculated only for candidate groups, and hash matches receive streaming byte verification. Hashes are kept only in the current session; no Room index or background crawler is used. Review starts with an empty selection and offers Keep this copy, filters, search, sort, open/details/show-in-Files, and the existing verified cleanup receipt flow. Xiaomi end-to-end validation remains a human-owned TODO item.
+Exact Duplicates v1 is an explicit, local-only analysis: direct metadata traversal groups non-empty regular files by exact size, SHA-256 is calculated only for candidate groups, and hash matches receive streaming byte verification. A bounded private fingerprint cache reuses a hash only when the same path, size and modified time are unchanged; it stores no file contents and is not a whole-device index. Review starts with an empty selection and offers Keep this copy, filters, search, sort, open/details/show-in-Files, and the existing verified cleanup receipt flow. Xiaomi end-to-end validation remains a human-owned TODO item.
 
 ## File Manager V1 target
 

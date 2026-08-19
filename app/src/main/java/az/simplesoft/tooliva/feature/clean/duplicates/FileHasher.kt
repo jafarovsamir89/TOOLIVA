@@ -13,6 +13,12 @@ sealed interface FileHashResult {
 }
 
 object FileHasher {
+    fun matchesExpectedMetadata(entry: StorageEntry): Boolean {
+        val current = snapshot(File(entry.path)) ?: return false
+        return current.size == entry.sizeBytes &&
+            (entry.modifiedAtMillis <= 0L || current.modifiedAt == entry.modifiedAtMillis)
+    }
+
     suspend fun hash(entry: StorageEntry): FileHashResult {
         return hash(File(entry.path), entry.sizeBytes, entry.modifiedAtMillis)
     }

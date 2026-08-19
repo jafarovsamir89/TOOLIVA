@@ -71,7 +71,10 @@ data class ExactDuplicatesUiState(
 class ExactDuplicatesViewModel(application: Application) : AndroidViewModel(application) {
     private val accessCoordinator = StorageAccessCoordinator(application)
     private val storage = FullStorageProvider(application)
-    private val analyzer = DuplicateAnalyzer(storage)
+    private val analyzer = DuplicateAnalyzer(
+        storage = storage,
+        cache = DuplicateFingerprintCache(File(application.noBackupFilesDir, "duplicate-fingerprints-v1.txt")),
+    )
     private val _uiState = MutableStateFlow(ExactDuplicatesUiState(accessState = accessCoordinator.currentState()))
     val uiState = _uiState.asStateFlow()
     private var analysisJob: Job? = null
