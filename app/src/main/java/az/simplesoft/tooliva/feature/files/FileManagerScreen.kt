@@ -101,6 +101,10 @@ fun FileManagerRoute(
     var accessError by remember { mutableStateOf<String?>(null) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshAccess() }
 
+    BackHandler(enabled = state.currentDirectory != null && state.cleanupResult == null) {
+        viewModel.goUp()
+    }
+
     if (state.cleanupResult != null) {
         BackHandler { viewModel.dismissCleanupResult() }
         CleanupResultScreen(result = state.cleanupResult!!, onDone = viewModel::dismissCleanupResult)
