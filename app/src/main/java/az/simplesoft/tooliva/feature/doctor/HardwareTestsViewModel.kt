@@ -16,8 +16,10 @@ import android.media.AudioTrack
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.VibrationEffect
+import android.os.VibrationAttributes
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -39,6 +41,7 @@ data class HardwareTestsUiState(
     val microphoneLevel: Float = 0f,
     val microphoneSignalDetected: Boolean = false,
     val microphonePermissionDenied: Boolean = false,
+    val hapticFeedbackEnabled: Boolean? = null,
     val errorMessage: String? = null,
 ) {
     val supportedCount: Int get() = results.count { it.value != HardwareTestStatus.NOT_SUPPORTED }
@@ -73,7 +76,14 @@ class HardwareTestsViewModel(application: Application) : AndroidViewModel(applic
         if (hardwareCapabilityStatus(appContext, id) == HardwareTestStatus.NOT_SUPPORTED) {
             setStatus(id, HardwareTestStatus.NOT_SUPPORTED)
         }
-        _uiState.update { it.copy(activeTest = id, touchCoverage = if (id == HardwareTestId.TOUCHSCREEN) TouchCoverage() else it.touchCoverage, errorMessage = null) }
+        _uiState.update {
+            it.copy(
+                activeTest = id,
+                touchCoverage = if (id == HardwareTestId.TOUCHSCREEN) TouchCoverage() else it.touchCoverage,
+                hapticFeedbackEnabled = if (id == HardwareTestId.VIBRATION) systemHapticFeedbackEnabled() else null,
+                errorMessage = null,
+            )
+        }
     }
 
     fun closeTest() {
@@ -105,6 +115,12 @@ class HardwareTestsViewModel(application: Application) : AndroidViewModel(applic
     fun resetTouch() = _uiState.update { it.copy(touchCoverage = it.touchCoverage.reset()) }
 
     fun runVibration() {
+        val hapticsEnabled = systemHapticFeedbackEnabled()
+        _uiState.update { it.copy(hapticFeedbackEnabled = hapticsEnabled, errorMessage = null) }
+        if (!hapticsEnabled) {
+            _uiState.update { it.copy(errorMessage = "System touch vibration is disabled. Enable Touch feedback in Android settings, then retry.") }
+            return
+        }
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             appContext.getSystemService(VibratorManager::class.java)?.defaultVibrator
         } else appContext.getSystemService(Vibrator::class.java)
@@ -114,8 +130,23 @@ class HardwareTestsViewModel(application: Application) : AndroidViewModel(applic
         }
         setStatus(HardwareTestId.VIBRATION, HardwareTestStatus.RUNNING)
         runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) vibrator.vibrate(VibrationEffect.createOneShot(260L, VibrationEffect.DEFAULT_AMPLITUDE))
-            else @Suppress("DEPRECATION") vibrator.vibrate(260L)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator.areEffectsSupported(VibrationEffect.EFFECT_HEAVY_CLICK).firstOrNull() != Vibrator.VIBRATION_EFFECT_SUPPORT_NO) {
+                    VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK)
+                } else {
+                    VibrationEffect.createWaveform(longArrayOf(0L, 90L, 60L, 260L, 90L), intArrayOf(0, 180, 0, 255, 0), -1)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val attributes = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        VibrationAttributes.createForUsage(VibrationAttributes.USAGE_HARDWARE_FEEDBACK)
+                    } else {
+                        VibrationAttributes.Builder().setUsage(VibrationAttributes.USAGE_HARDWARE_FEEDBACK).build()
+                    }
+                    vibrator.vibrate(effect, attributes)
+                } else {
+                    vibrator.vibrate(effect)
+                }
+            } else @Suppress("DEPRECATION") vibrator.vibrate(420L)
         }.onFailure { _uiState.update { it.copy(errorMessage = "The vibration test could not start.") } }
     }
 
@@ -244,6 +275,14 @@ class HardwareTestsViewModel(application: Application) : AndroidViewModel(applic
     private fun findTorchCameraId(): String? = runCatching {
         cameraManager?.cameraIdList?.firstOrNull { id -> cameraManager.getCameraCharacteristics(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true }
     }.getOrNull()
+
+    private fun systemHapticFeedbackEnabled(): Boolean = runCatching {
+        Settings.System.getInt(
+            appContext.contentResolver,
+            Settings.System.HAPTIC_FEEDBACK_ENABLED,
+            1,
+        ) == 1
+    }.getOrDefault(true)
 
     override fun onCleared() {
         stopSensor()
