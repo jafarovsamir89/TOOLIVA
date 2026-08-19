@@ -118,6 +118,8 @@ Limited Mode never pretends to cover the whole phone.
 - search
 - sort by name/size/date
 - details/open/share
+
+Current implementation status: the first direct-browser vertical slice is wired from Home → Files. It reads real accessible volumes and direct children without a whole-device index, supports explicit category/search actions, selection, details, rename/create-folder, copy/move/delete operations, collision choices and cancellable progress. The APK/build and unit tests are verified; Xiaomi device end-to-end validation remains a human-owned TODO item.
 - rename
 - create folder
 - copy/move

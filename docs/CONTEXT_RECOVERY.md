@@ -153,7 +153,7 @@ After Recovery + Permission UX manual PASS:
 14. Notification History
 15. later Vault/App Lock/content tools/monetization
 
-The current approved vertical slice is Cache Cleaner v2 + Phone Optimizer. It must preserve the direct Cleaner scanner and wait for human device PASS before the next major module.
+The current approved work slice is Cache Cleaner v2 + Phone Optimizer followed by the File Manager v1 direct-browser implementation. It must preserve the direct Cleaner scanner and wait for human Xiaomi File Manager PASS before the next major module. Do not restore the rejected Storage Index or Accessibility automation.
 
 ## 11. Product invariant
 

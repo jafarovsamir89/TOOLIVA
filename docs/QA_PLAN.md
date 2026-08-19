@@ -293,6 +293,8 @@ Room fingerprint cache is valid here because persistent hashing work has demonst
 
 ## 13. File Manager tests
 
+The current debug build contains the first direct-browser vertical slice. Automated coverage includes name/path validation, directory-first sorting, selected-byte accounting and keep-both collision naming. The connected Xiaomi device still requires the manual checklist below before these P0 items become `[x]` in `TODO.md`.
+
 Navigation:
 
 - volume/root;

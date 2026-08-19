@@ -62,7 +62,7 @@ private val primaryTools = listOf(
     HomeTool("notifications", "Notification history", "Find notifications you dismissed", Icons.Outlined.Notifications),
     HomeTool("doctor", "Phone Doctor", "Battery, thermal, memory & sensors", Icons.Outlined.HealthAndSafety),
     HomeTool("optimizer", "Phone Optimizer", "Real memory metrics & temporary cache", Icons.Outlined.Memory),
-    HomeTool("files", "File tools", "Images, PDF, archives & metadata", Icons.Outlined.Folder),
+    HomeTool("files", "Files", "Browse, search and manage shared storage", Icons.Outlined.Folder),
     HomeTool("qr", "QR & quick tools", "Scanner, network, compass & more", Icons.Outlined.QrCodeScanner),
 )
 

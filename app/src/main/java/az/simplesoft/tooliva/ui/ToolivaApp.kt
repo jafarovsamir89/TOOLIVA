@@ -35,6 +35,7 @@ import az.simplesoft.tooliva.feature.clean.cache.CacheCleanupRoute
 import az.simplesoft.tooliva.feature.clean.screenshots.ScreenshotCleanerRoute
 import az.simplesoft.tooliva.feature.home.HomeRoute
 import az.simplesoft.tooliva.feature.optimizer.PhoneOptimizerRoute
+import az.simplesoft.tooliva.feature.files.FileManagerRoute
 
 private data class TopDestination(
     val route: String,
@@ -123,7 +124,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("more") { ModulePlaceholder("More", "Settings, Pro and additional utilities.") }
             composable("notifications") { ModulePlaceholder("Notification History", "Local notification history module.") }
             composable("doctor") { ModulePlaceholder("Phone Doctor", "Battery, thermal, memory and sensor diagnostics.") }
-            composable("files") { ModulePlaceholder("File Tools", "Image, PDF and metadata utilities.") }
+            composable("files") { FileManagerRoute(onOpenLargeFiles = { navController.navigate("clean/large-files") }) }
             composable("checkup") { ModulePlaceholder("Phone Checkup", "Guided device checkup pipeline.") }
         }
     }

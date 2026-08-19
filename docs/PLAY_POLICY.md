@@ -201,6 +201,8 @@ Expected product capabilities before restricted-permission submission:
 - category views such as Downloads/APK/Archives/Documents/media;
 - storage analysis.
 
+The File Manager v1 implementation keeps the All Files flow explicit: the Files root shows real accessible volumes, direct browsing does not trigger an automatic whole-device scan, and recursive search/category scans are user-started and cancellable. File open/share uses a FileProvider allowlist for public collections; the shared-storage root and app-private files are not exposed.
+
 ## 14. Ads
 
 Rules:

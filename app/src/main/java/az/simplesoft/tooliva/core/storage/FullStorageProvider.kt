@@ -5,11 +5,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.os.storage.StorageManager
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
@@ -19,6 +19,67 @@ class FullStorageProvider(context: Context) : StorageProvider {
     private val appContext = context.applicationContext
 
     override val accessMode: StorageAccessMode = StorageAccessMode.FULL
+
+    fun storageRoots(): List<File> = volumeRoots()
+
+    fun volumeInfos(): List<StorageVolumeInfo> = volumeRoots().mapIndexed { index, root ->
+        val stat = runCatching { android.os.StatFs(root.absolutePath) }.getOrNull()
+        StorageVolumeInfo(
+            id = root.absolutePath,
+            name = if (index == 0) "Internal storage" else root.name.ifBlank { "External storage ${index + 1}" },
+            root = root,
+            totalBytes = stat?.totalBytes ?: 0L,
+            availableBytes = stat?.availableBytes ?: 0L,
+            isPrimary = index == 0,
+        )
+    }
+
+    fun children(directory: File): List<StorageEntry> {
+        require(isAllowedPath(directory)) { "This folder is restricted by Android." }
+        if (!directory.exists() || !directory.isDirectory) return emptyList()
+        return directory.listFiles().orEmpty().mapNotNull { child ->
+            if (isProtectedPath(child.absolutePath) || Files.isSymbolicLink(child.toPath())) return@mapNotNull null
+            entryFor(child, directory.absolutePath)
+        }
+    }
+
+    fun search(directory: File, predicate: (StorageEntry) -> Boolean): Flow<StorageScanEvent> = flow {
+        val stack = ArrayDeque<File>()
+        val seen = HashSet<String>()
+        stack.add(directory)
+        var visited = 0L
+        var matched = 0L
+        var matchedBytes = 0L
+        while (stack.isNotEmpty()) {
+            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+            val current = stack.removeLast()
+            val canonical = runCatching { current.canonicalPath }.getOrNull() ?: continue
+            if (!seen.add(canonical) || !isAllowedPath(current)) continue
+            current.listFiles().orEmpty().forEach { child ->
+                kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                if (isProtectedPath(child.absolutePath) || Files.isSymbolicLink(child.toPath())) return@forEach
+                val entry = entryFor(child, directory.absolutePath) ?: return@forEach
+                if (child.isDirectory) stack.add(child)
+                visited++
+                if (predicate(entry)) {
+                    matched++
+                    matchedBytes += entry.sizeBytes
+                    emit(StorageScanEvent.EntryFound(entry))
+                }
+                if (visited % PROGRESS_INTERVAL == 0L) emit(StorageScanEvent.Progress(visited, matched, matchedBytes))
+            }
+        }
+        emit(StorageScanEvent.Progress(visited, matched, matchedBytes))
+        emit(StorageScanEvent.Completed)
+    }.flowOn(Dispatchers.IO)
+
+    fun isAllowedPath(file: File): Boolean {
+        val canonical = runCatching { file.canonicalFile }.getOrNull() ?: return false
+        return storageRoots().any { root ->
+            val rootCanonical = runCatching { root.canonicalFile }.getOrNull() ?: return@any false
+            (canonical == rootCanonical || canonical.toPath().startsWith(rootCanonical.toPath())) && !isProtectedPath(canonical.path)
+        }
+    }
 
     override fun scan(minBytes: Long, scope: StorageScanScope): Flow<StorageScanEvent> = flow {
         emit(StorageScanEvent.Started)
@@ -64,25 +125,7 @@ class FullStorageProvider(context: Context) : StorageProvider {
                         return@forEach
                     }
 
-                    val attributes = runCatching {
-                        Files.readAttributes(child.toPath(), BasicFileAttributes::class.java)
-                    }.getOrNull()
-                    val category = StorageFileClassifier.classify(
-                        name = child.name,
-                        mimeType = mimeTypeFor(child),
-                        path = path,
-                    )
-                    val entry = StorageEntry(
-                        ref = Uri.fromFile(child),
-                        name = child.name,
-                        path = path,
-                        category = category,
-                        sizeBytes = size,
-                        modifiedAtMillis = attributes?.lastModifiedTime()?.toMillis() ?: child.lastModified(),
-                        mimeType = mimeTypeFor(child),
-                        extension = extensionFor(child),
-                        volumeId = root.absolutePath,
-                    )
+                    val entry = entryFor(child, root.absolutePath) ?: return@forEach
                     matched++
                     matchedBytes += size
                     emit(StorageScanEvent.EntryFound(entry))
@@ -97,7 +140,7 @@ class FullStorageProvider(context: Context) : StorageProvider {
     }.flowOn(Dispatchers.IO)
 
     private fun roots(scope: StorageScanScope): List<File> {
-        val volumes = volumeRoots()
+        val volumes = storageRoots()
         if (scope == StorageScanScope.ALL_STORAGE) return volumes
 
         return volumes
@@ -126,6 +169,23 @@ class FullStorageProvider(context: Context) : StorageProvider {
             normalized.contains("/Android/data/") ||
             normalized.endsWith("/Android/obb") ||
             normalized.contains("/Android/obb/")
+    }
+
+    private fun entryFor(child: File, volumeId: String): StorageEntry? {
+        val attributes = runCatching { Files.readAttributes(child.toPath(), BasicFileAttributes::class.java) }.getOrNull()
+        val mime = if (child.isFile) mimeTypeFor(child) else null
+        return StorageEntry(
+            ref = Uri.fromFile(child),
+            name = child.name,
+            path = child.absolutePath,
+            category = if (child.isDirectory) StorageCategory.OTHER else StorageFileClassifier.classify(child.name, mime, child.absolutePath),
+            sizeBytes = if (child.isFile) runCatching { child.length() }.getOrDefault(0L) else 0L,
+            modifiedAtMillis = attributes?.lastModifiedTime()?.toMillis() ?: child.lastModified(),
+            mimeType = mime,
+            extension = child.extension.lowercase().takeIf { it.isNotBlank() },
+            isDirectory = child.isDirectory,
+            volumeId = volumeId,
+        )
     }
 
     private fun extensionFor(file: File): String? = file.extension.lowercase().takeIf { it.isNotBlank() }

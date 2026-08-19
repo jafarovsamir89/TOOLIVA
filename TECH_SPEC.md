@@ -424,6 +424,8 @@ P0:
 
 File Manager should reuse `StorageProvider` and shared file-operation code where practical.
 
+Implementation note (2026-08-19): File Manager v1 now uses `FullStorageProvider` direct volume/child browsing and explicit cancellable recursive searches. It does not create a Room index or scan the device on entry. File operations use streaming temp-file finalization; same-volume move attempts rename first and only deletes the source after a successful verified copy fallback. `FileProvider` is restricted to public user-facing shared-storage collections rather than exposing the storage root. Xiaomi end-to-end validation remains pending human PASS.
+
 It must not require completion of a whole-device Room index before basic browsing.
 
 # 16. Storage Map — later Cleaner/File Manager differentiator

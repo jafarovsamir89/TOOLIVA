@@ -1,6 +1,7 @@
 package az.simplesoft.tooliva.core.storage
 
 import android.net.Uri
+import java.io.File
 
 enum class StorageAccessMode {
     FULL,
@@ -24,6 +25,15 @@ enum class StorageSortOrder {
     OLDEST,
     NAME,
 }
+
+data class StorageVolumeInfo(
+    val id: String,
+    val name: String,
+    val root: File,
+    val totalBytes: Long,
+    val availableBytes: Long,
+    val isPrimary: Boolean,
+)
 
 data class StorageEntry(
     val ref: Uri,

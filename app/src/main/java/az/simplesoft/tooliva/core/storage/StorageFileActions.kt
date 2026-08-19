@@ -45,6 +45,8 @@ fun Context.tryOpen(entry: StorageEntry): String? = try {
     "No app can open this file."
 } catch (_: IllegalArgumentException) {
     "This file cannot be opened from its current location."
+} catch (_: SecurityException) {
+    "Android blocked access to this file location."
 }
 
 fun Context.tryShare(entry: StorageEntry): String? = try {
@@ -54,4 +56,6 @@ fun Context.tryShare(entry: StorageEntry): String? = try {
     "No app can share this file."
 } catch (_: IllegalArgumentException) {
     "This file cannot be shared from its current location."
+} catch (_: SecurityException) {
+    "Android blocked sharing from this file location."
 }

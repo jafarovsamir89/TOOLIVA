@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="shared_storage" path="." />
+    <!-- Keep sharing limited to user-facing public collections. Never expose the storage root. -->
+    <external-path name="download" path="Download/" />
+    <external-path name="documents" path="Documents/" />
+    <external-path name="pictures" path="Pictures/" />
+    <external-path name="dcim" path="DCIM/" />
+    <external-path name="movies" path="Movies/" />
+    <external-path name="music" path="Music/" />
+    <external-path name="android_media" path="Android/media/" />
 </paths>
