@@ -143,7 +143,7 @@ After Recovery + Permission UX manual PASS:
 4. Documents
 5. Old Files
 6. Explainable Junk rules
-7. Cache Cleaner v2 + selected-app cache automation + Phone Optimizer
+7. Cache Cleaner v2 manual App Info flow + Phone Optimizer
 8. File Manager
 9. Exact Duplicates
 10. Cleanup Swipe

@@ -1,3 +1,0 @@
-<resources>
-    <string name="accessibility_cache_cleaning_description">Clear cache for apps selected by the user through Android App Info settings. Never clear app data or storage.</string>
-</resources>

@@ -403,7 +403,7 @@ Isolate official system action behind a tiny adapter and expose it through Phone
 
 Return supported/launched/error/canceled status where observable.
 
-Cache Cleaner v2 separately uses browser intent discovery, Usage Access and a background `StorageStatsManager` reader. Selected-app automatic cleanup uses a narrowly scoped, ephemeral SharedPreferences session plus a dedicated deterministic AccessibilityService; this is not a generic automation framework.
+Cache Cleaner v2 separately uses browser intent discovery, Usage Access and a background `StorageStatsManager` reader. Cleanup uses direct Android App Info intents and leaves the final Clear cache action to the user; there is no Settings automation/session service in the current build.
 
 No fake direct-private-cache access abstraction and no `QUERY_ALL_PACKAGES`.
 

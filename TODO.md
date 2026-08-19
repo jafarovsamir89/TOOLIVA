@@ -225,7 +225,7 @@ Candidate rules to research/implement one by one:
 - [x] [P0] no fake per-app private-cache visibility or cache amount
 - [x] [P0] Xiaomi manual test — user confirmed the v1 system cache flow works
 
-## Cache Cleaner v2 + selected-app automation
+## Cache Cleaner v2 + manual app-settings cleanup
 
 - [x] [P0] discover installed browsers through intent-based package visibility without `QUERY_ALL_PACKAGES`
 - [x] [P0] include YouTube only when `com.google.android.youtube` is installed
@@ -234,12 +234,10 @@ Candidate rules to research/implement one by one:
 - [x] [P0] show unavailable per-app stats honestly and isolate per-package failures
 - [x] [P0] browser/video grouping, cache totals, largest-first ordering and empty initial selection
 - [x] [P0] select/unselect, Select all, selected total and manual App Info fallback
-- [x] [P0] prominent disclosure and affirmative consent before optional automation
-- [x] [P0] deterministic selected-app Accessibility state machine with exact Clear cache safety guard
-- [x] [P0] no Clear data/storage/erase/manage-storage clicks, gestures, OCR, screenshots or browser-content inspection
-- [x] [P0] finite timeout, stale-session cleanup, failure fallback and measured before/after result math
+- [x] [P0] open Android App Info for each selected app as the safe manual cleanup path
+- [x] [P0] do not automate Android Settings or claim that cache was cleared by Tooliva
+- [x] [P0] remove the failed Xiaomi Accessibility automation experiment from the production path
 - [~] [P0] Xiaomi real browser/YouTube cache measurements and Usage Access flow — manual test required
-- [~] [P0] Xiaomi Accessibility enable, Chrome/YouTube sequence and before/after reduction — manual test required
 
 ## Phone Optimizer / Memory v1
 

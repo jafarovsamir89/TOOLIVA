@@ -105,7 +105,7 @@ Limited Mode never pretends to cover the whole phone.
 - Explainable junk candidates
 - official system-mediated Cache Cleanup
 - Cache Cleaner for installed browsers and YouTube using Android-provided cache statistics
-- optional user-started selected-app cache automation with a manual App Info fallback
+- manual App Info fallback for each selected app; the user controls Clear cache in Android
 - Phone Optimizer with real memory metrics and the system-mediated temporary-cache action
 - Exact Duplicates
 - Cleanup Swipe
@@ -157,7 +157,7 @@ Do not add more layers to rescue that architecture. Recover the direct progressi
 **CACHE CLEANER v2 + PHONE OPTIMIZER / MEMORY v1**
 
 1. Cache Cleaner measures installed browsers and YouTube only after Usage Access;
-2. the user selects apps and chooses manual or explicitly enabled automatic cache cleaning;
+2. the user selects apps and opens Android App Info to clear cache manually;
 3. Phone Optimizer owns the official system-mediated temporary-cache action and real memory readings;
 4. device-dependent automation and Xiaomi regression remain manual-test gates.
 

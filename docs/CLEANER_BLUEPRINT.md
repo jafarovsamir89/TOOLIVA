@@ -416,4 +416,4 @@ Cache Cleaner v2 is a focused app-cache review, not a whole App Manager. It disc
 
 Nothing is selected or cleaned automatically. Unavailable statistics remain unavailable, and totals include only measured cache bytes. Users can select apps, see the exact selected total, refresh, or open App Info for manual Clear cache.
 
-Optional automatic cleaning is limited to the selected packages and starts only after prominent disclosure, affirmative consent and the user's explicit action. Its AccessibilityService may navigate only expected Settings screens and click only a validated Clear cache node; it never clicks Clear data/Storage or reads unrelated app content. The service has a finite timeout and a manual fallback.
+Cleanup is manual and user-controlled. Tooliva opens Android App Info for each selected app; the user reviews the page and presses Clear cache. Tooliva does not automate Settings, inspect browser content or claim a cleanup result that Android has not directly exposed.

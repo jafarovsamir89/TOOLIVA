@@ -398,7 +398,7 @@ Requirements:
 
 Cache Cleaner v2 may use `StorageStatsManager.queryStatsForPackage` after explicit Usage Access to show Android-provided `StorageStats.cacheBytes` for discovered browsers and installed YouTube. It must remain user-started, off the main thread, tolerant of per-package failures, and must show unavailable rather than fake zero values.
 
-The human explicitly approved a narrow selected-app AccessibilityService experiment. It may open App Info, navigate to Storage/cache and click only a validated Clear cache node. It must never click Clear data, Clear storage, Erase data or Manage storage, and must fail safely on ambiguous/OEM-specific screens. It is not approved for unrelated automation, App Lock or RAM killing.
+The selected-app AccessibilityService experiment was removed after Xiaomi validation showed unreliable behavior. Cache Cleaner opens Android App Info manually for the user; it does not automate Settings, press cleanup controls or claim a cleanup result.
 
 # 15. File Manager
 
@@ -477,7 +477,7 @@ Do not add `QUERY_ALL_PACKAGES` until narrower visibility is tested and a real c
 
 # 19. Phone Optimizer / Phone Doctor / Check My Phone
 
-Phone Optimizer owns the existing `StorageManager.ACTION_CLEAR_APP_CACHE` system-mediated action. It also shows real `ActivityManager.MemoryInfo` values: total RAM, available memory, a non-negative used estimate and low-memory pressure. Before/after readings are presented as device readings, never as RAM freed by Tooliva. No process killing, force-stop or fake boost is allowed.
+Phone Optimizer owns the existing `StorageManager.ACTION_CLEAR_APP_CACHE` system-mediated action. It also shows real `ActivityManager.MemoryInfo` values: total RAM, available memory, a non-negative used estimate and low-memory pressure. Before/after readings are presented as device readings, never as RAM freed by Tooliva. No process killing, force-stop, Settings automation or fake boost is allowed.
 
 ## 19.1 Phone Doctor / Check My Phone
 

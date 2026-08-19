@@ -365,10 +365,11 @@ Cache Cleaner v2 automated tests:
 - cache stats measured/zero/unavailable/security/io/package-disappeared cases are isolated;
 - selection starts empty, Select all excludes unavailable values, selected totals are exact;
 - before/after reduction clamps negative values to zero and never fabricates an unavailable result;
-- Accessibility state machine ignores wrong target/settings, clicks only exact Clear cache and fails on Clear data/storage/ambiguous controls;
-- timeout, revoked service, stale session and manual fallback are covered.
+- manual App Info intent opens the selected package;
+- Tooliva does not declare or enable AccessibilityService for this flow;
+- unavailable/zero values remain honest and the user can clear cache directly in Android settings.
 
-Manual Xiaomi cache slice remains human-owned: verify browser/YouTube values, Accessibility disclosure/enablement, selected sequence, Clear cache-only behavior, before/after result and manual fallback.
+Manual Xiaomi cache slice remains human-owned: verify browser/YouTube values, selected totals, App Info opening for each selected app and the user's manual Clear cache action.
 
 ## 16. App Manager tests
 

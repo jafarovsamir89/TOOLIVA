@@ -26,15 +26,6 @@ data class CacheAppEntry(
     val selected: Boolean = false,
 )
 
-data class CacheReduction(
-    val packageName: String,
-    val appLabel: String,
-    val beforeBytes: Long,
-    val afterBytes: Long?,
-) {
-    val reducedBytes: Long = afterBytes?.let { (beforeBytes - it).coerceAtLeast(0L) } ?: 0L
-}
-
 object CacheSelectionRules {
     fun toggle(selected: Set<String>, packageName: String): Set<String> =
         if (packageName in selected) selected - packageName else selected + packageName
@@ -51,5 +42,4 @@ object CacheSelectionRules {
     fun totalMeasuredBytes(entries: List<CacheAppEntry>): Long =
         entries.sumOf { it.cacheBytes ?: 0L }
 
-    fun totalReducedBytes(reductions: List<CacheReduction>): Long = reductions.sumOf { it.reducedBytes }
 }

@@ -181,7 +181,7 @@ The UI must clearly state that coverage is limited.
 ### Other restricted access
 
 - `QUERY_ALL_PACKAGES`: not approved automatically; add only after a real App Manager need is demonstrated and current Play policy is re-reviewed.
-- AccessibilityService: explicitly approved only for the user-started, selected-app cache-cleaning experiment documented in the decision log; never for App Lock, RAM killing, force-stop, ad interaction, background automation or unrelated UI control.
+- AccessibilityService: not used by the current product path. The selected-app cache automation experiment was removed after Xiaomi validation showed it was unreliable; no AccessibilityService is declared in the current build.
 - Usage Access: opt-in only for real local app-cache statistics and later app-usage features, with clear disclosure and revoke handling.
 - Notification Access: only for Notification History after prominent disclosure.
 
@@ -291,7 +291,7 @@ For V1, prefer the official Android system-mediated cache action where supported
 
 Do not claim direct silent access to private cache of every other app.
 
-Accessibility-based cache automation is approved only for a narrow, user-started selected-app experiment. It must remain disabled until the user explicitly enables the service, must operate only in expected Android Settings screens, and must never press Clear data, Clear storage, Erase data or Manage storage. It is not approved for App Lock, RAM killing, force-stop, ad interaction or background actions.
+Cache Cleaner uses a manual Android App Info flow. Tooliva opens the selected app's settings page; the user reviews the page and presses Clear cache. Tooliva does not automate Settings and does not claim that Android cleared the cache until a future explicitly approved, separately validated design exists.
 
 ## 14. Testing ownership
 

@@ -156,7 +156,7 @@ It must distinguish requested, missing, Trash, physically freed, failed, cancele
 
 ---
 
-## D-018 — Selected-app cache automation approval
+## D-018 — Selected-app cache automation experiment (superseded)
 
 **Decision:** the human explicitly approved AccessibilityService for one narrow experiment: cleaning caches of apps selected by the user.
 
@@ -166,7 +166,17 @@ It must distinguish requested, missing, Trash, physically freed, failed, cancele
 
 **Safety:** the service is disabled by default, requires prominent disclosure and affirmative consent, filters to expected Settings packages, has a finite timeout, and fails safely when a target or safe node cannot be confirmed. `isAccessibilityTool` remains false because Tooliva is not an accessibility tool for people with disabilities.
 
-**Release consequence:** Play Console Accessibility declaration, accurate listing disclosure and a demo package/video are required before any production submission. Physical Xiaomi automation remains `[~]` until human PASS.
+**Outcome:** the Xiaomi manual test showed that the automation did not reliably complete the intended flow. The experiment was removed from the current build and is not a product fallback.
+
+---
+
+## D-019 — Manual App Info cache cleanup
+
+**Decision:** Cache Cleaner uses the reliable manual path. It measures browser/YouTube cache sizes, lets the user select apps, and opens each selected app's Android App Info page. The user presses Clear cache themselves.
+
+**Why:** this is understandable, visible on the device and avoids unreliable OEM-specific Accessibility automation. Tooliva does not claim that the cache was cleared or report a reduction unless a future supported verification path is explicitly implemented.
+
+**Consequence:** no AccessibilityService is declared for Cache Cleaner. Any future automation requires a new explicit human decision, policy review and Xiaomi validation.
 
 ---
 

@@ -18,10 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cached
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,9 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,21 +48,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import az.simplesoft.tooliva.core.cache.CacheAppCategory
 import az.simplesoft.tooliva.core.cache.CacheAppEntry
 import az.simplesoft.tooliva.core.cache.CacheMeasurementState
-import az.simplesoft.tooliva.core.cache.CacheReduction
 
 @Composable
 fun CacheCleanupRoute(viewModel: CacheCleanerViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var showDisclosure by remember { mutableStateOf(false) }
     var actionError by remember { mutableStateOf<String?>(null) }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshAccessState() }
-
-    if (state.result != null) {
-        CacheCleanerResultScreen(result = state.result!!, onDone = viewModel::clearResult)
-        return
-    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -141,22 +130,20 @@ fun CacheCleanupRoute(viewModel: CacheCleanerViewModel = viewModel()) {
                     Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("What will be cleaned?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("Only the selected app cache through Android's App Info storage controls. Cookies, passwords, history, downloads, accounts, settings and app data are not selected.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("If automatic cleaning is unavailable, use Open settings on an app and press Clear cache yourself.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                        Text("Select apps here for review, then open their Android settings and press Clear cache yourself. Tooliva never changes app data or storage.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
             item {
                 Button(
                     onClick = {
-                        if (state.accessibilityEnabled) {
-                            val first = state.entries.firstOrNull { it.packageName in state.selectedPackages }
-                            if (viewModel.beginAutomaticCleaning() && first != null) {
-                                runCatching { context.startActivity(viewModel.manualSettingsIntent(first.packageName)) }
-                                    .onFailure { viewModel.markAutomationNotStarted() }
-                            }
-                        } else showDisclosure = true
+                        val first = state.entries.firstOrNull { it.packageName in state.selectedPackages }
+                        if (first != null) {
+                            runCatching { context.startActivity(viewModel.manualSettingsIntent(first.packageName)) }
+                                .onFailure { actionError = "Android could not open settings for ${first.appLabel}." }
+                        }
                     },
-                    enabled = state.selectedBytes > 0L && !state.automationStarted,
+                    enabled = state.selectedBytes > 0L,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                 ) {
                     Icon(Icons.Outlined.Cached, contentDescription = null)
@@ -167,21 +154,6 @@ fun CacheCleanupRoute(viewModel: CacheCleanerViewModel = viewModel()) {
         item { Spacer(Modifier.height(8.dp)) }
     }
 
-    if (showDisclosure) {
-        AlertDialog(
-            onDismissRequest = { showDisclosure = false },
-            title = { Text("Automatic cache cleaning") },
-            text = { Text("To clear the apps you selected, Tooliva can temporarily automate Android's App Info screens. It opens only the selected apps, finds Storage and presses only Clear cache. It does not read browser pages, messages, passwords, account data or advertising content, and it never presses Clear data or Clear storage.") },
-            confirmButton = {
-                Button(onClick = {
-                    showDisclosure = false
-                    runCatching { context.startActivity(viewModel.accessibilitySettingsIntent()) }
-                        .onFailure { actionError = "Android did not provide Accessibility settings." }
-                }) { Text("Open Accessibility settings") }
-            },
-            dismissButton = { TextButton(onClick = { showDisclosure = false }) { Text("Cancel") } },
-        )
-    }
 }
 
 @Composable
@@ -245,32 +217,6 @@ private fun cacheLabel(context: android.content.Context, entry: CacheAppEntry): 
 @Composable
 private fun ErrorCard(message: String) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) { Text(message, modifier = Modifier.padding(16.dp)) }
-}
-
-@Composable
-private fun CacheCleanerResultScreen(result: AppCacheCleanupResult, onDone: () -> Unit) {
-    val context = LocalContext.current
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
-        Text("Cache cleanup result", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
-        Text("${result.processedCount} selected apps processed", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(formatBytes(context, result.reducedBytes), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
-        Text("Measured cache reduction", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (result.reductions.isEmpty()) Text("No completed app measurement was available. Tooliva did not invent a cleaned amount.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        result.reductions.forEach { ReductionRow(it) }
-        if (result.failedPackages.isNotEmpty()) Text("${result.failedPackages.size} app(s) need manual cleanup from App Info.", color = MaterialTheme.colorScheme.error)
-        Spacer(Modifier.weight(1f))
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Done") }
-    }
-}
-
-@Composable
-private fun ReductionRow(reduction: CacheReduction) {
-    val context = LocalContext.current
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(reduction.appLabel, fontWeight = FontWeight.Bold)
-        Text("${formatBytes(context, reduction.beforeBytes)} → ${reduction.afterBytes?.let { formatBytes(context, it) } ?: "unavailable"}")
-    }
 }
 
 private fun formatBytes(context: android.content.Context, bytes: Long): String = Formatter.formatFileSize(context, bytes.coerceAtLeast(0L))
