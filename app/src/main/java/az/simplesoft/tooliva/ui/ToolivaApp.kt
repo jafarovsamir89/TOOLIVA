@@ -37,6 +37,9 @@ import az.simplesoft.tooliva.feature.home.HomeRoute
 import az.simplesoft.tooliva.feature.optimizer.PhoneOptimizerRoute
 import az.simplesoft.tooliva.feature.files.FileManagerRoute
 import az.simplesoft.tooliva.feature.clean.duplicates.ExactDuplicatesRoute
+import az.simplesoft.tooliva.feature.doctor.CheckupRoute
+import az.simplesoft.tooliva.feature.doctor.HardwareTestsRoute
+import az.simplesoft.tooliva.feature.doctor.PhoneDoctorRoute
 
 private data class TopDestination(
     val route: String,
@@ -93,6 +96,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
                             "protect" -> "protect"
                             "notifications" -> "notifications"
                             "doctor" -> "doctor"
+                            "hardware" -> "hardware"
                             "files" -> "files"
                             "qr" -> "tools"
                             "optimizer" -> "optimizer"
@@ -122,9 +126,27 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("tools") { ModulePlaceholder("Tools", "QR, network, compass and quick tools.") }
             composable("more") { ModulePlaceholder("More", "Settings, Pro and additional utilities.") }
             composable("notifications") { ModulePlaceholder("Notification History", "Local notification history module.") }
-            composable("doctor") { ModulePlaceholder("Phone Doctor", "Battery, thermal, memory and sensor diagnostics.") }
+            composable("doctor") {
+                PhoneDoctorRoute(
+                    onBack = { navController.popBackStack() },
+                    onHardwareTests = { navController.navigate("hardware") },
+                    onCheckup = { navController.navigate("checkup") },
+                    onOpenStorageTool = { id ->
+                        if (id == "files") navController.navigate("files") else navController.navigate("clean/$id")
+                    },
+                )
+            }
+            composable("hardware") { HardwareTestsRoute(onBack = { navController.popBackStack() }) }
             composable("files") { FileManagerRoute(onOpenLargeFiles = { navController.navigate("clean/large-files") }) }
-            composable("checkup") { ModulePlaceholder("Phone Checkup", "Guided device checkup pipeline.") }
+            composable("checkup") {
+                CheckupRoute(
+                    onBack = { navController.popBackStack() },
+                    onOpenAction = { id ->
+                        if (id == "optimizer") navController.navigate("optimizer")
+                        else navController.navigate("clean/$id")
+                    },
+                )
+            }
         }
     }
 }

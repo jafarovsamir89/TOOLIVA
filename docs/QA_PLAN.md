@@ -409,6 +409,18 @@ Cross-check against system/ADB where reasonable:
 
 Unsupported values show `Unavailable`, never fabricated values.
 
+Automated Phone Doctor/Hardware Tests coverage also includes:
+
+- official battery status/source/health mappings, unsupported current values and temperature/voltage units;
+- all public thermal statuses plus unknown/unsupported fallback;
+- sensor grouping, duplicate inventory handling and live-value cleanup;
+- touch-grid deduplication/boundaries, Far → Near → Far proximity sequence and microphone RMS signal detection;
+- hardware result state transitions, reset and local-only persistence;
+- Check My Phone attention items for only low memory, non-normal thermal, Android battery warnings and user-reported hardware failures;
+- a lightweight-checkup guard: no duplicate analyzer, recursive storage scan, hashing or thumbnail work is invoked.
+
+Manual physical validation remains human-owned: display, touch, vibration, flashlight, speaker, microphone, proximity, accelerometer, gyroscope/compass where present, permission denial, Back gesture and Home navigation.
+
 Phone Optimizer tests additionally cover:
 
 - real total/available memory, non-negative used estimate and Normal/High pressure mapping;

@@ -165,6 +165,14 @@ The official system-mediated Phone Optimizer action still does not expose a per-
 
 Do not display fake per-app reclaimable cache values if Android does not expose defensible figures.
 
+# 8.1. Phone Doctor and Hardware Tests
+
+Phone Doctor uses local public Android APIs for device/build facts, memory, filesystem storage facts, battery, thermal status, display metrics and sensor inventory. It does not collect serial numbers, IMEI, Android ID or other unique hardware identifiers. Sensor events are read only while a live-value detail or sensor test is visible and listeners are unregistered on exit.
+
+The microphone permission is requested only when the user starts the Hardware Tests microphone test. AudioRecord is active only for that test, calculates a live level in memory, creates no recording file, performs no speech recognition/transcription and sends no audio to a server. Hardware test results are local and contain only test ID, status and timestamp.
+
+The flashlight test uses the public CameraManager torch path without adding camera permission. The speaker test generates a short neutral tone locally. No hardware test runs automatically in the background.
+
 ---
 
 # 9. Operational analytics

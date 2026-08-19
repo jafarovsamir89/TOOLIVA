@@ -497,8 +497,14 @@ Show real platform facts:
 - battery level/state/source/voltage/temperature/current where exposed;
 - thermal state;
 - sensors;
-- network facts;
+- display facts;
 - guided hardware tests.
+
+Phone Doctor reads public local Android APIs only. Unavailable values are shown as unavailable. Battery health is the Android-reported health constant when exposed, never a computed percentage. Sensor listeners exist only while live values or a sensor test is visible and are unregistered when leaving the screen.
+
+Hardware Tests are explicit, user-started checks. Physical results are never auto-passed: display and touch require user confirmation; vibration, flashlight, speaker and microphone have explicit controls; missing hardware is `Not supported`; microphone audio is an in-memory live level only and is not saved or uploaded.
+
+Check My Phone is a lightweight aggregator. `Run checkup` collects quick public facts and known local hardware-test results. It does not run duplicate hashing, recursive scans, thumbnail generation or a startup/background index. It provides links to existing Cleaner/File Manager modules instead.
 
 `CHECK MY PHONE` becomes an action plan composed from existing modules, not a fake health score.
 

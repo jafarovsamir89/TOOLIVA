@@ -203,6 +203,10 @@ Expected product capabilities before restricted-permission submission:
 
 The File Manager v1 implementation keeps the All Files flow explicit: the Files root shows real accessible volumes, direct browsing does not trigger an automatic whole-device scan, and recursive search/category scans are user-started and cancellable. File open/share uses a FileProvider allowlist for public collections; the shared-storage root and app-private files are not exposed.
 
+## 14.1 Phone Doctor and Hardware Tests permissions
+
+The build adds `RECORD_AUDIO` only for the explicit, user-started Hardware Tests microphone check. The in-app disclosure states that Tooliva reads a live input level temporarily; audio is not saved, transcribed or uploaded. The build adds `VIBRATE` for the short user-started vibration check. No camera, location, contacts, phone, SMS, Bluetooth, Accessibility, Notification Access or Usage Access permission is added for this slice.
+
 ## 14. Ads
 
 Rules:

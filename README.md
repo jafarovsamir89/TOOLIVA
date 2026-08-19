@@ -107,6 +107,9 @@ Limited Mode never pretends to cover the whole phone.
 - Cache Cleaner for installed browsers and YouTube using Android-provided cache statistics
 - manual App Info fallback for each selected app; the user controls Clear cache in Android
 - Phone Optimizer with real memory metrics and the system-mediated temporary-cache action
+- Phone Doctor v1 with factual device, memory, storage, battery, thermal, display and sensor data
+- Hardware Tests v1 with user-confirmed display, touch, vibration, flashlight, speaker, microphone and sensor checks
+- Check My Phone v1 as a lightweight factual dashboard with explicit review links and no health score
 - Exact Duplicates
 - Cleanup Swipe
 - verified Cleanup Receipt
@@ -254,7 +257,7 @@ Do not copy proprietary code/assets/layouts.
 - real Full Mode Cleaner beyond gallery
 - real File Manager
 - local-first privacy
-- truthful Phone Doctor later
+- truthful Phone Doctor, Hardware Tests and Check My Phone
 - restrained monetization
 
 ## Repository documents

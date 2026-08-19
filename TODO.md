@@ -307,7 +307,7 @@ Do not make basic browser depend on a completed whole-device Room index.
 - [x] [P0] filters/search/sort/open/details/show in Files — Xiaomi manual PASS
 - [x] [P0] previews/type icons — Xiaomi manual PASS
 - [x] [P0] Human Xiaomi Exact Duplicates v1 PASS
-- [~] [P0] repeat-analysis fingerprint cache — implementation complete; Xiaomi retest required
+- [x] [P0] repeat-analysis fingerprint cache — Xiaomi manual PASS
 
 ## Cleanup Swipe
 
@@ -336,22 +336,25 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 ## Phone Doctor
 
 - [ ] [P0] Phone Optimizer Xiaomi manual regression PASS
-- [ ] [P0] device/model/Android/security patch
-- [ ] [P0] CPU/ABI public facts
-- [ ] [P0] RAM/storage facts
-- [ ] [P0] battery level/state/source/voltage/temperature
-- [ ] [P1] current/power where exposed
-- [ ] [P0] thermal state
-- [ ] [P0] sensor inventory
+- [x] [P0] device/model/Android/security patch
+- [x] [P0] CPU/ABI public facts
+- [x] [P0] RAM/storage facts
+- [x] [P0] battery level/state/source/voltage/temperature
+- [x] [P1] current/power where exposed
+- [x] [P0] thermal state
+- [x] [P0] display facts
+- [x] [P0] sensor inventory and live values
 - [ ] [P1] network details
-- [ ] [P1] guided hardware tests
+- [x] [P0] guided hardware tests: display, touch, vibration, flashlight, speaker, microphone and sensors
+- [~] [P0] Xiaomi physical Phone Doctor and hardware-tests PASS — manual test required
 
 ## Check My Phone
 
-- [ ] [P0] aggregate existing Cleaner + Doctor insights
-- [ ] [P0] biggest actionable storage categories
-- [ ] [P0] deep-links to exact review screens
-- [ ] [P0] no fake health score
+- [x] [P0] aggregate existing Cleaner + Doctor insights
+- [x] [P0] biggest actionable storage categories as explicit review links
+- [x] [P0] deep-links to exact review screens
+- [x] [P0] no fake health score
+- [~] [P0] Xiaomi Check My Phone flow and Back navigation PASS — manual test required
 
 ---
 
