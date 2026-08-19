@@ -58,6 +58,7 @@ feature/
     cleanupswipe/
     result/
   files/
+  appmanager/
   apps/
   doctor/
   checkup/
@@ -387,9 +388,9 @@ Do not create a large generic rules framework before real rules exist.
 
 ## 19. App Manager
 
-Separate domain from files.
+Separate domain from files. `core/appmanager` owns the visible `PackageManager` inventory, Usage Access/`UsageStatsManager` and off-main-thread `StorageStatsManager` adapters. `feature/appmanager` owns immutable Compose state, progressive enrichment, selection and the sequential Android uninstall request queue.
 
-Start with narrow PackageManager visibility.
+The list renders basic metadata first; storage and usage are progressively enriched with one storage query at a time. Icons are loaded by package name in the UI with the platform default fallback. App details actions use Android intents rather than private Settings automation.
 
 Only add `QUERY_ALL_PACKAGES` after:
 

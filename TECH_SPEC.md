@@ -468,20 +468,15 @@ Trash bytes are not physically freed bytes.
 
 # 18. App Manager
 
-After Cleaner/File Manager core.
+App Manager v1 is a fast, user-started review screen for the apps Android makes visible to the package manager. It renders the basic inventory before enrichment and never performs a whole-device storage scan.
 
-Target:
+The inventory shows the label, icon, package name, version, install/update dates, enabled/launchable state and a flag-based user/system classification. Search matches label or package name. Filters are All/User/System/Rarely used; rarely-used review supports 30/90/180 days and only uses a real Android `lastTimeUsed` timestamp. Missing usage is unknown, not “old”. Sorts include name, install/update date, storage and usage, with unavailable values kept at the end.
 
-- label/icon/package;
-- install/update dates;
-- user/system distinction;
-- launch;
-- App Info;
-- request uninstall;
-- defensible storage size when Android exposes it;
-- usage/rarely-used recommendations only after explicit Usage Access.
+Storage enrichment uses `StorageStatsManager` off the main thread only after Usage Access. The screen labels `appBytes`, `dataBytes` (which includes cache) and `cacheBytes` (a subset of data), and reports total only as App + Data. It never adds cache a second time or replaces an unavailable value with zero. Usage enrichment uses `UsageStatsManager` and remains local; the app content is never read.
 
-Do not add `QUERY_ALL_PACKAGES` until narrower visibility is tested and a real core product gap is documented/approved.
+Details provides Open, Android App info and, for removable user apps only, the normal Android uninstall confirmation. System apps and Tooliva itself are not offered as normal uninstall candidates. Bulk review requests each uninstall through Android sequentially; canceling one leaves it installed and the list refreshes after the queue completes.
+
+The first implementation deliberately uses narrower package visibility and does not add `QUERY_ALL_PACKAGES`. A Xiaomi comparison of visible apps versus Android Settings is a separate human measurement gate. Only a documented core gap plus explicit human approval can change that decision.
 
 # 19. Phone Optimizer / Phone Doctor / Check My Phone
 

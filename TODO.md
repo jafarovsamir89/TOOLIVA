@@ -249,15 +249,19 @@ Candidate rules to research/implement one by one:
 
 ## App Manager
 
-- [ ] [P0] prototype visible app list without `QUERY_ALL_PACKAGES`
-- [ ] [P0] label/icon/package/install/update date
-- [ ] [P0] user/system distinction where possible
-- [ ] [P0] launch
-- [ ] [P0] App Info
-- [ ] [P0] uninstall request
-- [ ] [P1] defensible storage size where available
-- [ ] [P1] Usage Access + last used / rarely used recommendations
+- [~] [P0] prototype visible app list without `QUERY_ALL_PACKAGES` — implemented; Xiaomi manual visibility check required
+- [~] [P0] label/icon/package/install/update date — implemented; Xiaomi UI check required
+- [~] [P0] user/system distinction where possible — implemented; Xiaomi UI check required
+- [~] [P0] launch — Android intent implemented; Xiaomi manual check required
+- [~] [P0] App Info — Android intent implemented; Xiaomi manual check required
+- [~] [P0] uninstall request — sequential Android-mediated flow implemented; disposable-app manual check required
+- [~] [P1] defensible storage size where available — App + Data semantics implemented; Usage Access/device check required
+- [~] [P1] Usage Access + last used / rarely used recommendations — deny/grant/revoke logic implemented; Xiaomi manual check required
+- [x] [P1] App Manager rules, progressive enrichment and uninstall queue unit tests
+- [x] [P1] App Manager documentation and QA checklist
+- [ ] [P1] Xiaomi package visibility measurement and exact gap report
 - [ ] [P1] if narrow visibility is insufficient, document exact gap and re-review `QUERY_ALL_PACKAGES`
+- [ ] [P1] Evaluate `QUERY_ALL_PACKAGES` only after Xiaomi package visibility measurement and explicit human approval
 
 ---
 
@@ -335,7 +339,7 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 
 ## Phone Doctor
 
-- [ ] [P0] Phone Optimizer Xiaomi manual regression PASS
+- [x] [P0] Phone Optimizer Xiaomi manual regression PASS
 - [x] [P0] device/model/Android/security patch
 - [x] [P0] CPU/ABI public facts
 - [x] [P0] RAM/storage facts
@@ -346,7 +350,7 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 - [x] [P0] sensor inventory and live values
 - [ ] [P1] network details
 - [x] [P0] guided hardware tests: display, touch, vibration, flashlight, speaker, microphone and sensors
-- [~] [P0] Xiaomi physical Phone Doctor and hardware-tests PASS — manual test required
+- [x] [P0] Xiaomi physical Phone Doctor and Hardware Tests PASS
 
 ## Check My Phone
 
@@ -354,7 +358,7 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 - [x] [P0] biggest actionable storage categories as explicit review links
 - [x] [P0] deep-links to exact review screens
 - [x] [P0] no fake health score
-- [~] [P0] Xiaomi Check My Phone flow and Back navigation PASS — manual test required
+- [x] [P0] Xiaomi Check My Phone flow and Back navigation PASS
 
 ---
 

@@ -148,6 +148,9 @@ Rules:
 - `QUERY_ALL_PACKAGES` only if separately approved/declared;
 - Usage Access is optional/user-enabled;
 - usage summaries remain local.
+- App Manager reads package metadata, Android-provided usage timestamps and Android-provided storage counters only; it does not open, index or upload app-private content.
+- The visible inventory is intentionally scoped by Android package visibility and is disclosed as potentially incomplete.
+- Uninstall is always an Android user/system-mediated action; Tooliva does not silently remove apps, force-stop them or clear their data.
 
 Uninstall always goes through user/system-mediated Android behavior.
 

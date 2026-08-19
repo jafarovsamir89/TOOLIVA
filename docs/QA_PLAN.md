@@ -379,10 +379,23 @@ Manual Xiaomi cache slice remains human-owned: verify browser/YouTube values, se
 
 ## 16. App Manager tests
 
-Before broad package visibility:
+Automated coverage includes:
 
-- test actual visible apps;
-- record which core user behavior is missing.
+- label fallback, label/package search and user/system filtering;
+- exact 30/90/180-day boundaries and exclusion of unknown last-used values from rarely-used review;
+- App + Data total semantics without adding cache twice;
+- selection excludes system apps and Tooliva.
+
+Manual Xiaomi coverage is required before marking the App Manager slice complete:
+
+- open App Manager from Home without an automatic heavy scan;
+- confirm the first list appears before storage/usage enrichment finishes;
+- compare visible total and missing core apps against Android Settings, recording exact package gaps;
+- search label/package, All/User/System filters, Rarely used at 30/90/180 and each sort;
+- deny/grant/revoke Usage Access and verify the basic list remains useful while usage/storage states change honestly;
+- open details, verify icon/metadata/storage semantics, launch Open and Android App info;
+- request uninstall for a disposable user app, cancel the Android confirmation, then complete it and verify refresh;
+- select/unselect, Select all removable and sequential bulk uninstall; Tooliva and system apps must not be removable candidates.
 
 Only if `QUERY_ALL_PACKAGES` is later explicitly approved:
 

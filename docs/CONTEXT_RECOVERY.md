@@ -153,7 +153,7 @@ After Recovery + Permission UX manual PASS:
 14. Notification History
 15. later Vault/App Lock/content tools/monetization
 
-The current approved work slice includes Cache Cleaner v2 + Phone Optimizer, File Manager v1, Exact Duplicates v1 with its measured fingerprint cache, and the Phone Doctor + Hardware Tests + Check My Phone v1 vertical slice. Human Xiaomi validation has passed for the duplicate flow and the repeat-analysis fingerprint cache. Phone Doctor and physical hardware behavior remain human-owned manual gates. Do not restore the rejected Storage Index or Accessibility automation. The duplicate cache is not a Room index or background crawler; Check My Phone is not a background analyzer.
+The current approved work slice includes App Manager v1, Cache Cleaner v2 + Phone Optimizer, File Manager v1, Exact Duplicates v1 with its measured fingerprint cache, and the Phone Doctor + Hardware Tests + Check My Phone v1 vertical slice. App Manager uses narrow package visibility and optional Usage Access; Xiaomi package-gap measurement and physical App Manager validation remain human-owned gates. Human Xiaomi validation has passed for the duplicate flow and the repeat-analysis fingerprint cache. Phone Doctor and physical hardware behavior remain human-owned manual gates. Do not restore the rejected Storage Index or Accessibility automation. The duplicate cache is not a Room index or background crawler; Check My Phone is not a background analyzer.
 
 ## 11. Product invariant
 

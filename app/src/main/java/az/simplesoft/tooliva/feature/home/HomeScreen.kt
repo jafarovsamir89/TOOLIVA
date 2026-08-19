@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BatteryChargingFull
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.outlined.Folder
@@ -64,6 +65,7 @@ private val primaryTools = listOf(
     HomeTool("doctor", "Phone Doctor", "Battery, thermal, memory & sensors", Icons.Outlined.HealthAndSafety),
     HomeTool("hardware", "Hardware Tests", "Display, touch, sound, vibration & sensors", Icons.Outlined.Build),
     HomeTool("optimizer", "Phone Optimizer", "Real memory metrics & temporary cache", Icons.Outlined.Memory),
+    HomeTool("app-manager", "App Manager", "Review, open and uninstall apps", Icons.Outlined.Apps),
     HomeTool("files", "Files", "Browse, search and manage shared storage", Icons.Outlined.Folder),
     HomeTool("qr", "QR & quick tools", "Scanner, network, compass & more", Icons.Outlined.QrCodeScanner),
 )

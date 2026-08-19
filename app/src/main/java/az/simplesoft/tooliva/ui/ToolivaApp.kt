@@ -40,6 +40,7 @@ import az.simplesoft.tooliva.feature.clean.duplicates.ExactDuplicatesRoute
 import az.simplesoft.tooliva.feature.doctor.CheckupRoute
 import az.simplesoft.tooliva.feature.doctor.HardwareTestsRoute
 import az.simplesoft.tooliva.feature.doctor.PhoneDoctorRoute
+import az.simplesoft.tooliva.feature.appmanager.AppManagerRoute
 
 private data class TopDestination(
     val route: String,
@@ -100,6 +101,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
                             "files" -> "files"
                             "qr" -> "tools"
                             "optimizer" -> "optimizer"
+                            "app-manager" -> "app-manager"
                             else -> "tools"
                         }
                         navController.navigate(route)
@@ -114,6 +116,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("clean/recommendations") { CleanupRecommendationsRoute() }
             composable("clean/cache") { CacheCleanupRoute() }
             composable("optimizer") { PhoneOptimizerRoute() }
+            composable("app-manager") { AppManagerRoute(onBack = { navController.popBackStack() }) }
             composable("clean/screenshots") { ScreenshotCleanerRoute() }
             composable("clean/duplicates") { ExactDuplicatesRoute() }
             composable("clean/old-videos") {

@@ -102,6 +102,7 @@ Tooliva decision:
 
 - not pre-approved;
 - first prototype App Manager with narrower PackageManager visibility;
+- App Manager v1 remains within that narrower visibility; it does not declare `QUERY_ALL_PACKAGES`. It offers local app review and user-mediated uninstall, while Usage Access is requested only for the visible last-used/rarely-used and Android storage-statistics features.
 - document exactly which core behavior is missing;
 - re-check current policy;
 - obtain explicit human approval;

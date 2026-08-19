@@ -110,6 +110,7 @@ Limited Mode never pretends to cover the whole phone.
 - Phone Doctor v1 with factual device, memory, storage, battery, thermal, display and sensor data
 - Hardware Tests v1 with user-confirmed display, touch, vibration, flashlight, speaker, microphone and sensor checks
 - Check My Phone v1 as a lightweight factual dashboard with explicit review links and no health score
+- App Manager v1 with a fast visible-app inventory, search/filter/sort, honest Android storage/usage enrichment, app details, Open/App info and system-mediated uninstall
 - Exact Duplicates
 - Cleanup Swipe
 - verified Cleanup Receipt
@@ -161,12 +162,13 @@ Do not add more layers to rescue that architecture. Recover the direct progressi
 
 ## Current milestone
 
-**CACHE CLEANER v2 + PHONE OPTIMIZER / MEMORY v1**
+**APP MANAGER v1 + CACHE CLEANER v2 + PHONE OPTIMIZER / MEMORY v1**
 
 1. Cache Cleaner measures installed browsers and YouTube only after Usage Access;
 2. the user selects apps and opens Android App Info to clear cache manually;
 3. Phone Optimizer owns the official system-mediated temporary-cache action and real memory readings;
 4. device-dependent automation and Xiaomi regression remain manual-test gates.
+5. App Manager uses the visible `PackageManager` inventory only; it does not declare `QUERY_ALL_PACKAGES`. Usage Access is optional and enables last-used, rarely-used and Android-provided storage statistics.
 
 See `TODO.md` for exact tasks.
 
