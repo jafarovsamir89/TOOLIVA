@@ -36,6 +36,7 @@ import az.simplesoft.tooliva.feature.clean.screenshots.ScreenshotCleanerRoute
 import az.simplesoft.tooliva.feature.home.HomeRoute
 import az.simplesoft.tooliva.feature.optimizer.PhoneOptimizerRoute
 import az.simplesoft.tooliva.feature.files.FileManagerRoute
+import az.simplesoft.tooliva.feature.clean.duplicates.ExactDuplicatesRoute
 
 private data class TopDestination(
     val route: String,
@@ -110,9 +111,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("clean/cache") { CacheCleanupRoute() }
             composable("optimizer") { PhoneOptimizerRoute() }
             composable("clean/screenshots") { ScreenshotCleanerRoute() }
-            composable("clean/duplicates") {
-                ModulePlaceholder("Exact duplicates", "Exact hash-based duplicate detection will live here.")
-            }
+            composable("clean/duplicates") { ExactDuplicatesRoute() }
             composable("clean/old-videos") {
                 ModulePlaceholder("Old videos", "Review large and old videos without fake junk claims.")
             }

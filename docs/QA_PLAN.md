@@ -295,6 +295,10 @@ Room fingerprint cache is valid here because persistent hashing work has demonst
 
 The current debug build contains the first direct-browser vertical slice. Automated coverage includes name/path validation, directory-first sorting, selected-byte accounting and keep-both collision naming. The connected Xiaomi device still requires the manual checklist below before these P0 items become `[x]` in `TODO.md`.
 
+Exact Duplicates automated coverage includes unique-size/zero-byte/directory pre-group exclusion, equal-size candidate grouping, SHA-256 equality/inequality, streaming synthetic files, mutation rejection, byte verification, recoverable-byte math, Keep-one selection and last-copy protection. The analyzer is explicit and in-memory only; no Room/index persistence is part of v1.
+
+Manual Exact Duplicates validation on Xiaomi must use disposable files only: confirm Analyze is explicit, progress/cancel works, equal-size different-content files are not reported, exact copies are grouped, potential recoverable bytes are correct, filters/search/sort/previews/actions work, initial selection is empty, Keep this copy leaves one survivor, delete shows Cleanup Receipt, results reconcile without an automatic rescan, and revoked Full Storage Access is handled without a crash. Do not mark the device TODO item `[x]` until the human reports PASS.
+
 Navigation:
 
 - volume/root;

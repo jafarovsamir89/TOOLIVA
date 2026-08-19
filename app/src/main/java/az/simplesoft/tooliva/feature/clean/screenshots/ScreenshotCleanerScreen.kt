@@ -3,9 +3,7 @@ package az.simplesoft.tooliva.feature.clean.screenshots
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Build
-import android.util.Size
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -66,6 +64,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import az.simplesoft.tooliva.core.media.MediaStoreDeleteCoordinator
+import az.simplesoft.tooliva.core.media.MediaThumbnailLoader
 import az.simplesoft.tooliva.core.media.ScreenshotMediaFile
 import az.simplesoft.tooliva.core.media.hasScreenshotPermission
 import az.simplesoft.tooliva.core.media.requiredScreenshotPermission
@@ -395,7 +394,7 @@ private fun ScreenshotCard(
 private fun MediaThumbnail(uri: android.net.Uri, description: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val bitmap by produceState<Bitmap?>(initialValue = null, key1 = uri) {
-        value = withContext(Dispatchers.IO) { loadThumbnail(context, uri) }
+        value = withContext(Dispatchers.IO) { MediaThumbnailLoader.load(context, uri) }
     }
     if (bitmap == null) {
         Box(modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
@@ -409,43 +408,4 @@ private fun MediaThumbnail(uri: android.net.Uri, description: String, modifier: 
             contentScale = ContentScale.Crop,
         )
     }
-}
-
-private fun loadThumbnail(context: Context, uri: android.net.Uri): Bitmap? = runCatching {
-    val resolver = context.contentResolver
-    if (uri.scheme == "file") {
-        resolver.openInputStream(uri)?.use { input ->
-            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeStream(input, null, bounds)
-            val sample = calculateSample(bounds.outWidth, bounds.outHeight, 480)
-            resolver.openInputStream(uri)?.use { secondInput ->
-                BitmapFactory.decodeStream(
-                    secondInput,
-                    null,
-                    BitmapFactory.Options().apply { inSampleSize = sample },
-                )
-            }
-        }
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        resolver.loadThumbnail(uri, Size(480, 480), null)
-    } else {
-        resolver.openInputStream(uri)?.use { input ->
-            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeStream(input, null, bounds)
-            val sample = calculateSample(bounds.outWidth, bounds.outHeight, 480)
-            resolver.openInputStream(uri)?.use { secondInput ->
-                BitmapFactory.decodeStream(
-                    secondInput,
-                    null,
-                    BitmapFactory.Options().apply { inSampleSize = sample },
-                )
-            }
-        }
-    }
-}.getOrNull()
-
-private fun calculateSample(width: Int, height: Int, target: Int): Int {
-    var sample = 1
-    while (width / sample > target || height / sample > target) sample *= 2
-    return sample
 }

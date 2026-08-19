@@ -265,22 +265,24 @@ Candidate rules to research/implement one by one:
 
 File Manager is core functionality.
 
-- [~] [P0] browse accessible shared storage/volumes — direct roots/children implemented; Xiaomi manual PASS required
-- [~] [P0] breadcrumbs/folder navigation — direct up navigation implemented; Xiaomi manual PASS required
-- [~] [P0] category shortcuts Downloads/Documents/APKs/Archives/Images/Videos/Audio/Recent/Large — explicit scans/routes implemented; Xiaomi manual PASS required
-- [~] [P0] sort name/size/date — folders grouped first; unit-tested; Xiaomi manual PASS required
-- [~] [P0] search by name — current-folder filter + explicit cancellable recursive search; Xiaomi manual PASS required
-- [~] [P0] details — readable/writable/type/MIME/size/path; Xiaomi manual PASS required
-- [~] [P0] open — safe FileProvider public-directory paths; Xiaomi manual PASS required
-- [~] [P0] share — safe FileProvider public-directory paths; Xiaomi manual PASS required
-- [~] [P0] rename — validation/collision/path boundary checks; Xiaomi manual PASS required
-- [~] [P0] create folder — validation/collision/path boundary checks; Xiaomi manual PASS required
-- [~] [P0] copy — streaming temp-file finalization and progress/cancel; Xiaomi manual PASS required
-- [~] [P0] move — rename fast path and verified copy/delete fallback; Xiaomi manual PASS required
-- [~] [P0] delete/trash through central coordinator — file delete reuses MediaStoreDeleteCoordinator; Xiaomi manual PASS required
-- [~] [P0] collision handling — Skip/Keep both/Replace choice; unit-tested keep-both naming; Xiaomi manual PASS required
-- [~] [P0] long-operation progress/cancel — explicit operation dialog; Xiaomi manual PASS required
-- [ ] [P0] Human Xiaomi File Manager v1 end-to-end PASS
+- [x] [P0] browse accessible shared storage/volumes — Xiaomi manual PASS
+- [x] [P0] breadcrumbs/folder navigation — Xiaomi manual PASS
+- [x] [P0] category shortcuts Downloads/Documents/APKs/Archives/Images/Videos/Audio/Recent/Large — Xiaomi manual PASS
+- [x] [P0] sort name/size/date — Xiaomi manual PASS
+- [x] [P0] search by name — Xiaomi manual PASS
+- [x] [P0] details — Xiaomi manual PASS
+- [x] [P0] open — Xiaomi manual PASS
+- [x] [P0] share — Xiaomi manual PASS
+- [x] [P0] rename — Xiaomi manual PASS
+- [x] [P0] create folder — Xiaomi manual PASS
+- [x] [P0] copy — Xiaomi manual PASS
+- [x] [P0] move — Xiaomi manual PASS
+- [x] [P0] delete/trash through central coordinator — Xiaomi manual PASS
+- [x] [P0] collision handling — Xiaomi manual PASS
+- [x] [P0] long-operation progress/cancel — Xiaomi manual PASS
+- [x] [P0] Human Xiaomi File Manager v1 end-to-end PASS
+
+Samsung/Pixel/SD/USB volume coverage remains unverified.
 
 Do not make basic browser depend on a completed whole-device Room index.
 
@@ -290,16 +292,20 @@ Do not make basic browser depend on a completed whole-device Room index.
 
 ## Exact duplicates
 
-- [ ] [P0] cheap size pre-grouping
-- [ ] [P0] hash only groups with 2+ candidates
-- [ ] [P0] exact verification
-- [ ] [P0] Room fingerprint cache only here if useful
-- [ ] [P0] file mutation invalidates cached fingerprint
-- [ ] [P0] groups UI
-- [ ] [P0] recoverable bytes
-- [ ] [P0] keep-one helper
-- [ ] [P0] safe cleanup + Receipt
-- [ ] [P0] cancellation
+- [x] [P0] cheap size pre-grouping — non-empty regular files only
+- [x] [P0] hash only groups with 2+ candidates — unique sizes never reach the hasher
+- [x] [P0] SHA-256 streaming hash with bounded sequential IO
+- [x] [P0] exact verification — matching hashes are verified byte by byte
+- [x] [P0] no Room/index/background crawler in v1
+- [x] [P0] file mutation invalidates a hash result
+- [~] [P0] groups UI — implemented; Xiaomi manual validation required
+- [x] [P0] recoverable bytes math
+- [x] [P0] keep-one helper and last-copy safety guard
+- [~] [P0] safe cleanup + Cleanup Receipt — central coordinator wired; Xiaomi destructive validation required
+- [x] [P0] cancellation for metadata traversal, hashing and verification
+- [~] [P0] filters/search/sort/open/details/show in Files — implemented; Xiaomi manual validation required
+- [~] [P0] previews/type icons — lazy sampled thumbnails/icons; Xiaomi manual validation required
+- [ ] [P0] Human Xiaomi Exact Duplicates v1 PASS
 
 ## Cleanup Swipe
 

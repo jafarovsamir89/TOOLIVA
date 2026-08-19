@@ -426,6 +426,12 @@ File Manager should reuse `StorageProvider` and shared file-operation code where
 
 Implementation note (2026-08-19): File Manager v1 now uses `FullStorageProvider` direct volume/child browsing and explicit cancellable recursive searches. It does not create a Room index or scan the device on entry. File operations use streaming temp-file finalization; same-volume move attempts rename first and only deletes the source after a successful verified copy fallback. `FileProvider` is restricted to public user-facing shared-storage collections rather than exposing the storage root. Xiaomi end-to-end validation remains pending human PASS.
 
+## 15.1 Exact Duplicates v1 implementation
+
+Exact Duplicates is an explicit user-started operation only. It traverses accessible shared storage directly, ignores directories, zero-byte files, protected paths and Tooliva internal/temp files, groups regular files by exact byte size, hashes only groups with at least two files using sequential streaming SHA-256, and verifies hash matches byte by byte. Hashes exist only in the current analysis session; Room, WorkManager, background crawlers and startup hashing are deliberately excluded until a real Xiaomi performance measurement justifies a separate optimization slice.
+
+The result model separates potential recoverable bytes from the user's selected bytes. Selection starts empty, Keep this copy selects only the other copies, and normal duplicate cleanup refuses to remove the last current copy in a group. Selected files are revalidated for existence, size and modification time before the existing central delete coordinator and Cleanup Receipt are used.
+
 It must not require completion of a whole-device Room index before basic browsing.
 
 # 16. Storage Map — later Cleaner/File Manager differentiator

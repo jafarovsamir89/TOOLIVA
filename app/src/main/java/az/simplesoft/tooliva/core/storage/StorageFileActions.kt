@@ -27,6 +27,15 @@ object StorageFileActions {
         context.startActivity(Intent.createChooser(intent, "Share file"))
     }
 
+    fun openParent(context: Context, entry: StorageEntry) {
+        val parent = File(entry.path).parentFile ?: throw IllegalArgumentException("No parent folder")
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(shareableUri(context, Uri.fromFile(parent)), "resource/folder")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(intent)
+    }
+
     fun shareableUri(context: Context, uri: Uri): Uri = if (uri.scheme == "file") {
         FileProvider.getUriForFile(
             context,
@@ -58,4 +67,15 @@ fun Context.tryShare(entry: StorageEntry): String? = try {
     "This file cannot be shared from its current location."
 } catch (_: SecurityException) {
     "Android blocked sharing from this file location."
+}
+
+fun Context.tryOpenParent(entry: StorageEntry): String? = try {
+    StorageFileActions.openParent(this, entry)
+    null
+} catch (_: ActivityNotFoundException) {
+    "No file manager can open this folder."
+} catch (_: IllegalArgumentException) {
+    "This folder cannot be opened from its current location."
+} catch (_: SecurityException) {
+    "Android blocked access to this folder location."
 }
