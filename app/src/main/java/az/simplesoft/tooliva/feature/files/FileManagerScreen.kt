@@ -101,7 +101,11 @@ fun FileManagerRoute(
     var accessError by remember { mutableStateOf<String?>(null) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshAccess() }
 
-    BackHandler(enabled = state.currentDirectory != null && state.cleanupResult == null) {
+    BackHandler(
+        enabled = state.currentDirectory != null &&
+            state.currentDirectory?.absolutePath != state.currentVolume?.root?.absolutePath &&
+            state.cleanupResult == null,
+    ) {
         viewModel.goUp()
     }
 
