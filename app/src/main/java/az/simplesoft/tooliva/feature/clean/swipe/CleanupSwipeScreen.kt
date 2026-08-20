@@ -3,14 +3,20 @@
 package az.simplesoft.tooliva.feature.clean.swipe
 
 import android.content.ActivityNotFoundException
+import android.graphics.Bitmap
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +31,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
@@ -46,11 +53,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,9 +69,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import az.simplesoft.tooliva.core.media.MediaThumbnailLoader
 import az.simplesoft.tooliva.core.storage.StorageAccessMode
 import az.simplesoft.tooliva.core.storage.StorageEntry
 import az.simplesoft.tooliva.feature.clean.result.CleanupResultScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 @Composable
@@ -277,7 +291,10 @@ private fun CategoryPicker(state: CleanupSwipeSnapshot, onLoad: (CleanupSwipeCat
 
 @Composable
 private fun SortBar(sort: CleanupSwipeSort, onSort: (CleanupSwipeSort) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         CleanupSwipeSort.entries.forEach { option -> FilterChip(selected = sort == option, onClick = { onSort(option) }, label = { Text(option.title) }) }
     }
 }
@@ -320,6 +337,9 @@ private fun SwipeCard(entry: StorageEntry, category: CleanupSwipeCategory?, cont
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (entry.category == az.simplesoft.tooliva.core.storage.StorageCategory.IMAGE) {
+                SwipePreview(entry, context)
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Description, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(38.dp))
                 Column(Modifier.weight(1f).padding(start = 12.dp)) { Text(entry.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text(category?.title ?: "File", color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -327,12 +347,53 @@ private fun SwipeCard(entry: StorageEntry, category: CleanupSwipeCategory?, cont
             }
             Text(Formatter.formatFileSize(context, entry.sizeBytes), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
             Text(entry.path, maxLines = 2, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { onDecide(SwipeDecision.SKIP) }, modifier = Modifier.weight(1f)) { Text("Skip") }
-                OutlinedButton(onClick = { onDecide(SwipeDecision.KEEP) }, modifier = Modifier.weight(1f)) { Text("Keep") }
-                Button(onClick = { onDecide(SwipeDecision.DELETE) }, modifier = Modifier.weight(1f)) { Icon(Icons.Outlined.DeleteOutline, null); Text("Delete") }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedButton(
+                    onClick = { onDecide(SwipeDecision.SKIP) },
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                ) { Text("Skip", maxLines = 1, softWrap = false) }
+                OutlinedButton(
+                    onClick = { onDecide(SwipeDecision.KEEP) },
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                ) { Text("Keep", maxLines = 1, softWrap = false) }
+                Button(
+                    onClick = { onDecide(SwipeDecision.DELETE) },
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                ) {
+                    Icon(Icons.Outlined.DeleteOutline, null, modifier = Modifier.size(18.dp))
+                    Text("Delete", modifier = Modifier.padding(start = 3.dp), maxLines = 1, softWrap = false)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun SwipePreview(entry: StorageEntry, context: android.content.Context) {
+    val bitmap by produceState<Bitmap?>(initialValue = null, key1 = entry.path) {
+        value = withContext(Dispatchers.IO) { MediaThumbnailLoader.load(context, entry.ref) }
+    }
+    if (bitmap == null) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1.6f)
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Outlined.PhotoLibrary, contentDescription = "Preview unavailable", modifier = Modifier.size(42.dp))
+        }
+    } else {
+        Image(
+            bitmap = bitmap!!.asImageBitmap(),
+            contentDescription = entry.name,
+            modifier = Modifier.fillMaxWidth().aspectRatio(1.6f).clip(RoundedCornerShape(18.dp)),
+            contentScale = ContentScale.Crop,
+        )
     }
 }
 
