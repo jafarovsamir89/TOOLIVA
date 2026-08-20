@@ -19,6 +19,8 @@ import az.simplesoft.tooliva.core.storage.StorageProvider
 import az.simplesoft.tooliva.core.storage.StorageScanEvent
 import az.simplesoft.tooliva.core.storage.StorageScanScope
 import az.simplesoft.tooliva.core.storage.StorageSortOrder
+import az.simplesoft.tooliva.feature.clean.CleanerBucket
+import az.simplesoft.tooliva.feature.clean.CleanerSessionStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -142,6 +144,14 @@ class DownloadsAnalyzerViewModel(application: Application) : AndroidViewModel(ap
     val uiState = _uiState.asStateFlow()
     private var scanJob: Job? = null
     private var nextDeleteRequestId = 0L
+
+    init {
+        val seeded = CleanerSessionStore.latest?.let { snapshot ->
+            (snapshot.entriesFor(CleanerBucket.DOWNLOADS) + snapshot.entriesFor(CleanerBucket.APK_INSTALLERS) + snapshot.entriesFor(CleanerBucket.ARCHIVES) + snapshot.entriesFor(CleanerBucket.DOCUMENTS) + snapshot.entriesFor(CleanerBucket.IMAGES) + snapshot.entriesFor(CleanerBucket.VIDEOS) + snapshot.entriesFor(CleanerBucket.AUDIO))
+                .distinctBy { it.ref.toString() }
+        }.orEmpty()
+        if (seeded.isNotEmpty()) _uiState.update { it.copy(hasAnalyzed = true, files = seeded, nowMillis = System.currentTimeMillis()) }
+    }
 
     fun refreshAccess() {
         val latest = accessCoordinator.currentState()
