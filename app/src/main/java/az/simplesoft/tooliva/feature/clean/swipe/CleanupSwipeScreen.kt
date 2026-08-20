@@ -391,8 +391,12 @@ private fun SwipePreview(entry: StorageEntry, context: android.content.Context) 
         Image(
             bitmap = bitmap!!.asImageBitmap(),
             contentDescription = entry.name,
-            modifier = Modifier.fillMaxWidth().aspectRatio(1.6f).clip(RoundedCornerShape(18.dp)),
-            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1.6f)
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentScale = ContentScale.Fit,
         )
     }
 }
