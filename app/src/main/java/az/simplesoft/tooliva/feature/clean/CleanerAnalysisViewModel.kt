@@ -2,6 +2,7 @@ package az.simplesoft.tooliva.feature.clean
 
 import android.app.Application
 import android.os.Build
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import az.simplesoft.tooliva.core.storage.FullStorageProvider
@@ -51,6 +52,14 @@ class CleanerAnalysisViewModel(application: Application) : AndroidViewModel(appl
         scanJob?.cancel()
         scanJob = viewModelScope.launch {
             val accumulator = CleanerAnalysisAccumulator(System.currentTimeMillis())
+            var lastUiPublishAt = 0L
+            fun publishProgressIfDue(force: Boolean = false) {
+                val now = SystemClock.uptimeMillis()
+                if (force || now - lastUiPublishAt >= UI_UPDATE_INTERVAL_MS) {
+                    lastUiPublishAt = now
+                    publish(accumulator.progressSnapshot())
+                }
+            }
             _uiState.update { it.copy(status = CleanerAnalysisStatus.ANALYZING, snapshot = CleanerAnalysisSnapshot(), errorMessage = null) }
             try {
                 provider().scan(0L).collect { event ->
@@ -58,16 +67,16 @@ class CleanerAnalysisViewModel(application: Application) : AndroidViewModel(appl
                         StorageScanEvent.Started -> Unit
                         is StorageScanEvent.EntryFound -> {
                             accumulator.addFile(event.entry)
-                            publish(accumulator.snapshot())
+                            publishProgressIfDue()
                         }
                         is StorageScanEvent.DirectoryVisited -> {
                             accumulator.addDirectory(event.path, event.isEmpty)
-                            publish(accumulator.snapshot())
+                            publishProgressIfDue()
                         }
-                        is StorageScanEvent.Progress -> publish(accumulator.snapshot())
+                        is StorageScanEvent.Progress -> publishProgressIfDue()
                         is StorageScanEvent.Warning -> {
                             accumulator.warning()
-                            publish(accumulator.snapshot())
+                            publishProgressIfDue()
                         }
                         StorageScanEvent.Completed -> Unit
                     }
@@ -105,5 +114,9 @@ class CleanerAnalysisViewModel(application: Application) : AndroidViewModel(appl
         FullStorageProvider(getApplication())
     } else {
         MediaStoreStorageProvider(getApplication())
+    }
+
+    private companion object {
+        const val UI_UPDATE_INTERVAL_MS = 250L
     }
 }

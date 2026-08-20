@@ -54,6 +54,8 @@ internal class CleanerAnalysisAccumulator(
     private val oldDays: Int = 180,
 ) {
     private val entries = linkedMapOf<CleanerBucket, LinkedHashMap<String, StorageEntry>>()
+    private val counts = linkedMapOf<CleanerBucket, Int>()
+    private val bytesByBucket = linkedMapOf<CleanerBucket, Long>()
     var filesChecked: Long = 0L
         private set
     var foldersChecked: Long = 0L
@@ -91,12 +93,22 @@ internal class CleanerAnalysisAccumulator(
 
     fun snapshot(cancelled: Boolean = false): CleanerAnalysisSnapshot {
         val copied = entries.mapValues { (_, values) -> values.values.toList() }
+        return buildSnapshot(copied, cancelled)
+    }
+
+    /** Lightweight snapshot for progress updates; it never copies the candidate lists. */
+    fun progressSnapshot(): CleanerAnalysisSnapshot = buildSnapshot(emptyMap(), false)
+
+    private fun buildSnapshot(
+        snapshotEntries: Map<CleanerBucket, List<StorageEntry>>,
+        cancelled: Boolean,
+    ): CleanerAnalysisSnapshot {
         return CleanerAnalysisSnapshot(
             summaries = CleanerBucket.entries.mapNotNull { bucket ->
-                val values = copied[bucket].orEmpty()
-                if (values.isEmpty()) null else CleanerBucketSummary(bucket, values.size, values.sumOf { it.sizeBytes })
+                val count = counts[bucket] ?: 0
+                if (count == 0) null else CleanerBucketSummary(bucket, count, bytesByBucket[bucket] ?: 0L)
             }.sortedBy { it.bucket.priority },
-            entries = copied,
+            entries = snapshotEntries,
             filesChecked = filesChecked,
             foldersChecked = foldersChecked,
             bytesChecked = bytesChecked,
@@ -106,7 +118,11 @@ internal class CleanerAnalysisAccumulator(
     }
 
     private fun add(bucket: CleanerBucket, entry: StorageEntry) {
-        entries.getOrPut(bucket) { linkedMapOf() }.putIfAbsent(entry.ref.toString(), entry)
+        val bucketEntries = entries.getOrPut(bucket) { linkedMapOf() }
+        if (bucketEntries.putIfAbsent(entry.ref.toString(), entry) == null) {
+            counts[bucket] = (counts[bucket] ?: 0) + 1
+            bytesByBucket[bucket] = (bytesByBucket[bucket] ?: 0L) + entry.sizeBytes.coerceAtLeast(0L)
+        }
     }
 
     private fun bucketsFor(entry: StorageEntry): Set<CleanerBucket> = CleanerAnalysisRules.bucketsFor(
