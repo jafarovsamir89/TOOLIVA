@@ -47,6 +47,8 @@ import az.simplesoft.tooliva.feature.appmanager.AppManagerRoute
 import az.simplesoft.tooliva.feature.notifications.NotificationHistoryRoute
 import az.simplesoft.tooliva.feature.storage.StorageMapRoute
 import az.simplesoft.tooliva.feature.clean.swipe.CleanupSwipeRoute
+import az.simplesoft.tooliva.feature.clean.oldfiles.OldFilesRoute
+import az.simplesoft.tooliva.feature.clean.emptyfolders.EmptyFoldersRoute
 
 private data class TopDestination(
     val route: String,
@@ -118,7 +120,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("clean") {
                 CleanRoute(onOpenTool = { navController.navigate("clean/$it") })
             }
-            composable("clean/large-files") { LargeFilesRoute() }
+            composable("clean/large-files") { LargeFilesRoute(onOpenInFiles = { path -> navController.navigate("files?path=${Uri.encode(path)}") }) }
             composable("clean/downloads") { DownloadsAnalyzerRoute() }
             composable("clean/recommendations") { CleanupRecommendationsRoute() }
             composable("clean/cache") { CacheCleanupRoute() }
@@ -126,9 +128,8 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("app-manager") { AppManagerRoute(onBack = { navController.popBackStack() }) }
             composable("clean/screenshots") { ScreenshotCleanerRoute() }
             composable("clean/duplicates") { ExactDuplicatesRoute() }
-            composable("clean/old-videos") {
-                ModulePlaceholder("Old videos", "Review large and old videos without fake junk claims.")
-            }
+            composable("clean/old-files") { OldFilesRoute() }
+            composable("clean/empty-folders") { EmptyFoldersRoute() }
             composable("protect") { ModulePlaceholder("Protect", "App Lock, Vault and privacy tools.") }
             composable("tools") { ModulePlaceholder("Tools", "QR, network, compass and quick tools.") }
             composable("more") { ModulePlaceholder("More", "Settings, Pro and additional utilities.") }

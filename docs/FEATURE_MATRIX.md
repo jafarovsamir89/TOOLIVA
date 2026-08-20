@@ -7,12 +7,14 @@ Revision: 2026-08-18
 | Full Storage Mode | P0 | `MANAGE_EXTERNAL_STORAGE` | Cleaner Recovery/Beta |
 | Limited Storage fallback | P0 | MediaStore / SAF | Cleaner Beta |
 | Direct progressive Cleaner scan | P0 | `StorageProvider` + Flow | Cleaner Recovery |
+| Cleaner 2.0 Action Plan | P0 | one explicit direct traversal + in-memory summaries | Cleaner Beta |
 | Storage overview | P0 | filesystem/volume APIs | Cleaner Beta |
 | Large Files — all accessible types | P0 | Full Mode; Limited fallback | Cleaner Recovery/Beta |
 | Downloads analyzer | P0 | Full Mode / SAF fallback | Cleaner Beta |
 | APK/installers analyzer | P0 | filesystem + safe PackageManager parsing | Cleaner Beta |
 | Archives/Documents categories | P0 | filesystem metadata | Cleaner Beta |
 | Old files | P0 | filesystem metadata | Cleaner Beta |
+| Empty folders | P1 | safe empty-folder enumeration + revalidation | Cleaner Beta |
 | Screenshot Cleaner | P0 | Full Mode first; MediaStore Limited fallback | Cleaner Beta |
 | Explainable junk candidates | P0 | deterministic rules | Cleaner Beta |
 | System cache cleanup entry | P0 | `ACTION_CLEAR_APP_CACHE` + required access | Cleaner Beta |

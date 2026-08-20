@@ -6,6 +6,7 @@ import az.simplesoft.tooliva.core.storage.StorageEntry
 enum class CleanupReasonId {
     OLD_APK_INSTALLER,
     OLD_DOWNLOAD,
+    RESIDUAL_TEMP,
 }
 
 data class CleanupReason(
@@ -24,6 +25,16 @@ object CleanupRecommendationRules {
     const val DAY_MILLIS = 24L * 60L * 60L * 1000L
 
     fun candidateFor(entry: StorageEntry, thresholdDays: Int, nowMillis: Long): CleanupCandidate? {
+        if (isResidualCandidate(entry, nowMillis)) {
+            return CleanupCandidate(
+                entry = entry,
+                reason = CleanupReason(
+                    id = CleanupReasonId.RESIDUAL_TEMP,
+                    title = "Old temporary download",
+                    explanation = "A .tmp/.part/.partial/.download fragment in Downloads is at least 7 days old. Review it before removal.",
+                ),
+            )
+        }
         if (!isKnownOld(entry.modifiedAtMillis, thresholdDays, nowMillis)) return null
 
         return if (entry.category == StorageCategory.APK && isDownloadPath(entry.path)) {
@@ -59,4 +70,14 @@ object CleanupRecommendationRules {
         .replace('\\', '/')
         .split('/')
         .any { it.equals("Download", ignoreCase = true) || it.equals("Downloads", ignoreCase = true) }
+
+    fun isResidualCandidate(entry: StorageEntry, nowMillis: Long): Boolean =
+        !entry.isDirectory && isDownloadPath(entry.path) && entry.modifiedAtMillis > 0L &&
+            nowMillis - entry.modifiedAtMillis >= 7L * DAY_MILLIS &&
+            entry.extension?.lowercase() in setOf("tmp", "temp", "part", "partial", "download")
+
+    fun isResidualCandidate(path: String, extension: String?, modifiedAtMillis: Long, isDirectory: Boolean, nowMillis: Long): Boolean =
+        !isDirectory && isDownloadPath(path) && modifiedAtMillis > 0L &&
+            nowMillis - modifiedAtMillis >= 7L * DAY_MILLIS &&
+            extension?.lowercase() in setOf("tmp", "temp", "part", "partial", "download")
 }

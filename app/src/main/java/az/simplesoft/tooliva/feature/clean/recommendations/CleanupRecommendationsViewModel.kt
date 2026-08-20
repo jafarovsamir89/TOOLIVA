@@ -103,6 +103,7 @@ data class CleanupRecommendationsUiState(
 private fun CleanupReasonId.title(): String = when (this) {
     CleanupReasonId.OLD_APK_INSTALLER -> "Old APK installers"
     CleanupReasonId.OLD_DOWNLOAD -> "Old Downloads"
+    CleanupReasonId.RESIDUAL_TEMP -> "Temporary download fragments"
 }
 
 internal class CleanupCandidateAccumulator {
@@ -260,6 +261,7 @@ class CleanupRecommendationsViewModel(application: Application) : AndroidViewMod
                     accumulator.add(event.entry, thresholdDays, nowMillis)
                     _uiState.update { it.copy(entries = entries.toList(), candidates = accumulator.snapshot()) }
                 }
+                is StorageScanEvent.DirectoryVisited -> Unit
                 is StorageScanEvent.Progress -> _uiState.update { it.copy(visitedFiles = event.visitedFiles) }
                 is StorageScanEvent.Warning -> Unit
                 StorageScanEvent.Completed -> Unit

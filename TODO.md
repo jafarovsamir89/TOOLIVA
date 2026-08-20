@@ -1,6 +1,6 @@
 # Tooliva — TODO / Product Roadmap
 
-Revision: 2026-08-19
+Revision: 2026-08-20
 Authoritative product source: `docs/PRODUCT_CONSTITUTION.md`
 
 Legend:
@@ -118,13 +118,14 @@ Do not add these solely to satisfy architecture style.
 
 ## Cleaner shell
 
-- [ ] [P0] Clean screen contains only user-facing storage/cleanup concepts
-- [ ] [P0] Storage used/total/free card
-- [ ] [P0] one clear Scan/Analyze action when required
-- [ ] [P0] progressive category/result cards
-- [ ] [P0] no index/database/generation terminology in production UI
-- [ ] [P0] scan can be canceled
-- [ ] [P0] no heavy auto-scan on navigation
+- [x] [P0] Clean screen contains only user-facing storage/cleanup concepts
+- [x] [P0] Storage used/total/free card
+- [x] [P0] one clear Scan/Analyze action when required
+- [x] [P0] progressive category/result cards
+- [x] [P0] no index/database/generation terminology in production UI
+- [x] [P0] scan can be canceled
+- [x] [P0] no heavy auto-scan on navigation
+- [ ] [P0] Human Xiaomi Cleaner One Scan / Action Plan PASS
 
 ## Large Files
 
@@ -135,8 +136,10 @@ Do not add these solely to satisfy architecture style.
 - [~] [P0] search name/path
 - [x] [P0] multi-select / Select all
 - [x] [P0] open
-- [ ] [P0] share
-- [ ] [P0] details
+- [x] [P0] share single and multiple selected files through content:// / FileProvider
+- [x] [P0] details
+- [x] [P0] show selected file parent in Files
+- [x] [P0] largest-first label and safe type icons/actions
 - [x] [P0] safe delete/trash
 - [x] [P0] Cleanup Receipt model distinguishes Trash vs Physically Freed
 - [x] [P0] current Xiaomi regression PASS after recovery
@@ -178,8 +181,11 @@ Do not add these solely to satisfy architecture style.
 ## Old Files
 
 - [x] [P0] age filters 30/90/180/365 — Downloads implementation human-verified
-- [ ] [P0] prioritize Downloads/APKs/Archives/Screenshots/user-selected scope
+- [x] [P0] prioritize Downloads/APKs/Archives/Screenshots scopes
+- [ ] [P1] user-selected folder scope
 - [ ] [P0] do not label `unused` without actual usage evidence
+- [x] [P0] reasons, search, sort, empty initial selection and central verified cleanup result
+- [ ] [P0] Human Xiaomi Old Files PASS
 
 ---
 
@@ -210,8 +216,15 @@ Candidate rules to research/implement one by one:
 - [x] old Downloads candidate — deterministic rule, reason mapping and tests
 - [x] [P0] Explainable Cleanup Xiaomi review/select/delete/Cleanup Receipt test
 - [ ] exact duplicate candidate
-- [ ] accessible deterministic temp/residual artifacts
-- [ ] empty writable folders [P1]
+- [x] [P0] accessible deterministic temp/residual artifacts — old fragments in Downloads only
+- [x] [P1] safe empty writable-folder candidate scan, revalidation and verified result
+- [ ] [P1] Human Xiaomi Empty Folders PASS
+
+## Cleaner 2.0 manual gates
+
+- [ ] [P0] Human Xiaomi Large Files v2 PASS (share/details/show in Files/scan regression)
+- [ ] [P0] Human Xiaomi Screenshot Cleaner regression PASS after shared Action Plan integration
+- [ ] [P0] Samsung/Pixel/SD/USB validation — not claimed by Xiaomi testing
 
 ---
 
@@ -324,7 +337,7 @@ Do not make basic browser depend on a completed whole-device Room index.
 - [x] [P1] central file operation + verified Cleanup Receipt integration
 - [x] [P1] missing-file/permission-revoked safe fallback and no automatic deletion
 - [x] [P1] unit/instrumented rule coverage
-- [ ] [P1] Human Xiaomi Cleanup Swipe v1 PASS
+- [x] [P1] Human Xiaomi Cleanup Swipe v1 PASS
 
 ---
 
@@ -336,7 +349,7 @@ Do not make basic browser depend on a completed whole-device Room index.
 - [x] [P1] accessible list alternative
 - [x] [P1] open/details/delete integration through existing file operations and Cleanup Receipt
 - [x] [P1] synthetic Storage Map aggregator tests
-- [ ] [P1] Human Xiaomi Storage Map v1 PASS
+- [x] [P1] Human Xiaomi Storage Map v1 PASS
 
 Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manager usage.
 
@@ -383,7 +396,7 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 - [x] [P0] revoke handling preserves existing history and stops new capture
 - [x] [P0] backup exclusion for notification database/preferences
 - [x] [P0] extraction/deduplication/retention/DAO tests
-- [ ] [P0] Human Xiaomi Notification History v1 PASS
+- [x] [P0] Human Xiaomi Notification History v1 PASS
 - [ ] [P1] noisy-app insights
 
 ---

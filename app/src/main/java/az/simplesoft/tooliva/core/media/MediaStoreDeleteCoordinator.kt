@@ -142,7 +142,7 @@ class MediaStoreDeleteCoordinator(context: Context) {
     private fun query(uri: Uri, includeTrashed: Boolean): MediaEntryState {
         if (uri.scheme == "file") {
             val file = File(uri.path.orEmpty())
-            return if (file.exists() && file.isFile) {
+            return if (file.exists() && (file.isFile || file.isDirectory)) {
                 MediaEntryState(exists = true, sizeBytes = file.length(), isTrashed = false)
             } else {
                 MediaEntryState.absent()

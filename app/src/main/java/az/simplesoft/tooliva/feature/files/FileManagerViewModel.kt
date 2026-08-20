@@ -130,6 +130,7 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
                 .collectLatest { event ->
                     when (event) {
                         is StorageScanEvent.EntryFound -> _uiState.value = _uiState.value.copy(entries = _uiState.value.entries + event.entry)
+                        is StorageScanEvent.DirectoryVisited -> Unit
                         is StorageScanEvent.Progress -> _uiState.value = _uiState.value.copy(progressVisited = event.visitedFiles, progressMatches = event.matchedFiles)
                         is StorageScanEvent.Warning -> Unit
                         StorageScanEvent.Started -> Unit
@@ -154,6 +155,7 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
                 storage.search(root) { entry -> matchesShortcut(entry, shortcut) }.collectLatest { event ->
                     when (event) {
                         is StorageScanEvent.EntryFound -> _uiState.value = _uiState.value.copy(entries = _uiState.value.entries + event.entry)
+                        is StorageScanEvent.DirectoryVisited -> Unit
                         is StorageScanEvent.Progress -> _uiState.value = _uiState.value.copy(progressVisited = event.visitedFiles, progressMatches = event.matchedFiles)
                         else -> Unit
                     }

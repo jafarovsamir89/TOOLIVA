@@ -18,6 +18,8 @@ import az.simplesoft.tooliva.core.storage.StorageAccessState
 import az.simplesoft.tooliva.core.storage.StorageCategory
 import az.simplesoft.tooliva.core.storage.StorageProvider
 import az.simplesoft.tooliva.core.storage.StorageScanEvent
+import az.simplesoft.tooliva.feature.clean.CleanerBucket
+import az.simplesoft.tooliva.feature.clean.CleanerSessionStore
 import az.simplesoft.tooliva.core.storage.StorageSortOrder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -90,6 +92,11 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
     private var scanJob: Job? = null
     private var nextDeleteRequestId = 0L
 
+    init {
+        val seeded = CleanerSessionStore.latest?.entriesFor(CleanerBucket.LARGE_FILES).orEmpty()
+        if (seeded.isNotEmpty()) updateScannedFiles(seeded.map { it.toLargeMediaFile() })
+    }
+
     fun refreshAccess() {
         val latest = accessCoordinator.currentState()
         _uiState.update { state ->
@@ -111,6 +118,7 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
                             val entry = event.entry
                             _uiState.update { it.copy(files = accumulator.add(entry.toLargeMediaFile())) }
                         }
+                        is StorageScanEvent.DirectoryVisited -> Unit
                         is StorageScanEvent.Progress -> {
                             _uiState.update { it.copy(visitedFiles = event.visitedFiles) }
                         }

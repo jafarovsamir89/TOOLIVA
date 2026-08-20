@@ -47,6 +47,7 @@ class CleanupSwipeRepository(context: Context) {
                 when (event) {
                     StorageScanEvent.Started -> Unit
                     is StorageScanEvent.EntryFound -> if (matches(category, event.entry)) emit(CleanupSwipeLoadEvent.Entry(event.entry))
+                    is StorageScanEvent.DirectoryVisited -> Unit
                     is StorageScanEvent.Progress -> emit(CleanupSwipeLoadEvent.Progress(event.visitedFiles))
                     is StorageScanEvent.Warning -> emit(CleanupSwipeLoadEvent.Warning(event.path))
                     StorageScanEvent.Completed -> Unit

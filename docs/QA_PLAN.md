@@ -84,6 +84,8 @@ Every storage refactor must preserve these user-validated behaviors from the `b7
 13. Full Mode does not ask for redundant broad media permission for the same Cleaner purpose after permission unification is implemented.
 14. Opening Clean/Large Files does not start a heavy scan that makes the app feel frozen.
 
+Cleaner 2.0 automated coverage must also verify: one-scan category aggregation, real progressive counters and cancellation; old-file boundaries at 29/30/89/90/179/180/364/365 days; safe empty-folder exclusions and non-recursive revalidation; residual positive/negative location, age and extension rules; and Large Files single/multiple share intents, details, parent path and missing/unsupported URI handling. Manual Xiaomi validation must use disposable files and confirm Action Plan routing, Old Files, Empty Folders and Large Files v2 without deleting personal data.
+
 A refactor that fails this suite is not accepted even if automated architecture tests pass.
 
 ## 5. Storage permission matrix

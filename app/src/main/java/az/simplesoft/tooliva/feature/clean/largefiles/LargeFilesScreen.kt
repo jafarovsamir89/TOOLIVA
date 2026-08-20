@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Build
 import android.text.format.Formatter
+import androidx.compose.foundation.Image
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -36,6 +38,8 @@ import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -62,7 +66,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -73,6 +79,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
 import az.simplesoft.tooliva.core.media.LargeMediaFile
+import az.simplesoft.tooliva.core.media.MediaThumbnailLoader
 import az.simplesoft.tooliva.core.media.MediaStoreDeleteCoordinator
 import az.simplesoft.tooliva.core.media.hasRequiredMediaPermissions
 import az.simplesoft.tooliva.core.media.requiredMediaPermissions
@@ -80,11 +87,16 @@ import az.simplesoft.tooliva.core.storage.StorageAccessCoordinator
 import az.simplesoft.tooliva.core.storage.StorageAccessMode
 import az.simplesoft.tooliva.core.storage.StorageCategory
 import az.simplesoft.tooliva.core.storage.StorageSortOrder
+import az.simplesoft.tooliva.core.storage.StorageEntry
+import az.simplesoft.tooliva.core.storage.tryShare
+import az.simplesoft.tooliva.core.storage.StorageFileActions
 import az.simplesoft.tooliva.feature.clean.result.CleanupResultScreen
 import az.simplesoft.tooliva.feature.clean.StorageAccessCard
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
-fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
+fun LargeFilesRoute(onOpenInFiles: (String) -> Unit = {}, viewModel: LargeFilesViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val accessCoordinator = remember(context) { StorageAccessCoordinator(context) }
@@ -92,6 +104,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
     var accessActionError by remember { mutableStateOf<String?>(null) }
+    var detailsFile by remember { mutableStateOf<LargeMediaFile?>(null) }
     val deleteCoordinator = remember(context) { MediaStoreDeleteCoordinator(context) }
     val fullMode = state.accessState.mode == StorageAccessMode.FULL
     val directDelete = fullMode
@@ -156,6 +169,22 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                 ) { Text(if (directDelete) "Delete" else "Continue") }
             },
             dismissButton = { TextButton(onClick = { showDeleteConfirmation = false }) { Text("Cancel") } },
+        )
+    }
+
+    detailsFile?.let { file ->
+        AlertDialog(
+            onDismissRequest = { detailsFile = null },
+            title = { Text("File details") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(file.displayName, fontWeight = FontWeight.Bold)
+                    Text("Type: ${file.mimeType ?: file.category.name}")
+                    Text("Size: ${Formatter.formatFileSize(context, file.sizeBytes)}")
+                    Text("Path: ${file.path ?: "Unavailable"}")
+                }
+            },
+            confirmButton = { TextButton(onClick = { detailsFile = null }) { Text("Done") } },
         )
     }
 
@@ -337,7 +366,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                     }
                 }
 
-                items(state.visibleFiles, key = { it.uri.toString() }) { file -> LargeFileCard(file, state.selectedUris, viewModel) }
+                items(state.visibleFiles, key = { it.uri.toString() }) { file -> LargeFileCard(file, state.selectedUris, viewModel, onOpenInFiles, { detailsFile = file }) }
             }
         }
 
@@ -347,20 +376,17 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
             ) {
-                Button(
-                    onClick = {
+                Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { shareSelected(context, state.selectedFiles, viewModel) }, enabled = !state.isPreparingDelete, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Outlined.Share, contentDescription = null)
+                        Text("Share", modifier = Modifier.padding(start = 6.dp))
+                    }
+                    Button(onClick = {
                         if (directDelete || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) showDeleteConfirmation = true
                         else viewModel.requestDelete(deleteCoordinator, directDelete = false)
-                    },
-                    enabled = !state.isPreparingDelete,
-                    modifier = Modifier.fillMaxWidth().padding(12.dp),
-                ) {
-                    if (state.isPreparingDelete) {
-                        CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp), strokeWidth = 2.dp)
-                        Text("Preparing cleanup…")
-                    } else {
-                        Icon(Icons.Outlined.Delete, contentDescription = null)
-                        Text("${if (directDelete) "Delete" else "Move"} ${state.selectedFiles.size} · ${Formatter.formatFileSize(context, state.selectedBytes)}", modifier = Modifier.padding(start = 8.dp))
+                    }, enabled = !state.isPreparingDelete, modifier = Modifier.weight(1.6f)) {
+                        if (state.isPreparingDelete) { CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp), strokeWidth = 2.dp); Text("Preparing…") }
+                        else { Icon(Icons.Outlined.Delete, contentDescription = null); Text("${if (directDelete) "Delete" else "Move"} ${state.selectedFiles.size} · ${Formatter.formatFileSize(context, state.selectedBytes)}", modifier = Modifier.padding(start = 6.dp)) }
                     }
                 }
             }
@@ -368,7 +394,7 @@ fun LargeFilesRoute(viewModel: LargeFilesViewModel = viewModel()) {
     }
 }
 @Composable
-private fun LargeFileCard(file: LargeMediaFile, selectedUris: Set<String>, viewModel: LargeFilesViewModel) {
+private fun LargeFileCard(file: LargeMediaFile, selectedUris: Set<String>, viewModel: LargeFilesViewModel, onOpenInFiles: (String) -> Unit, onDetails: () -> Unit) {
     val context = LocalContext.current
     val selected = file.uri.toString() in selectedUris
     Card(
@@ -382,13 +408,17 @@ private fun LargeFileCard(file: LargeMediaFile, selectedUris: Set<String>, viewM
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(checked = selected, onCheckedChange = { viewModel.toggleSelection(file.uri.toString()) })
-            Icon(categoryIcon(file.category), contentDescription = null)
+            LargeFileVisual(file)
             Column(modifier = Modifier.weight(1f)) {
                 Text(file.displayName, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 Text(categoryLabel(file.category), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                 Text(file.path ?: file.mimeType ?: "Accessible file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
             Text(Formatter.formatFileSize(context, file.sizeBytes), fontWeight = FontWeight.Bold)
+            IconButton(onClick = { context.tryShare(file.asStorageEntry())?.let(viewModel::showError) }) {
+                Icon(Icons.Outlined.Share, contentDescription = "Share ${file.displayName}")
+            }
+            IconButton(onClick = onDetails) { Icon(Icons.Outlined.Info, contentDescription = "Details for ${file.displayName}") }
             IconButton(onClick = {
                 val openUri = if (file.uri.scheme == "file") {
                     FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(file.uri.path.orEmpty()))
@@ -405,9 +435,27 @@ private fun LargeFileCard(file: LargeMediaFile, selectedUris: Set<String>, viewM
                     viewModel.showError("This file cannot be opened from its current location.")
                 }
             }) { Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Open ${file.displayName}") }
+            IconButton(onClick = { file.path?.let { onOpenInFiles(File(it).parent ?: it) } }) {
+                Icon(Icons.Outlined.FolderOpen, contentDescription = "Show ${file.displayName} in Files")
+            }
         }
     }
     HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
+}
+
+@Composable
+private fun LargeFileVisual(file: LargeMediaFile) {
+    val context = LocalContext.current
+    val bitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(initialValue = null, key1 = file.uri.toString()) {
+        if (file.category == StorageCategory.IMAGE || file.category == StorageCategory.VIDEO) {
+            value = withContext(Dispatchers.IO) { MediaThumbnailLoader.load(context, file.uri) }
+        }
+    }
+    if (bitmap != null) {
+        Image(bitmap = bitmap!!.asImageBitmap(), contentDescription = file.displayName, modifier = Modifier.size(52.dp), contentScale = ContentScale.Crop)
+    } else {
+        Icon(categoryIcon(file.category), contentDescription = null, modifier = Modifier.padding(4.dp))
+    }
 }
 
 private data class ThresholdOption(val label: String, val bytes: Long)
@@ -443,10 +491,37 @@ private fun categoryLabel(category: StorageCategory): String = when (category) {
 }
 
 private fun sortLabel(order: StorageSortOrder): String = when (order) {
-    StorageSortOrder.SIZE -> "Size"
+    StorageSortOrder.SIZE -> "Largest first"
     StorageSortOrder.NEWEST -> "Newest"
     StorageSortOrder.OLDEST -> "Oldest"
     StorageSortOrder.NAME -> "Name"
+}
+
+private fun LargeMediaFile.asStorageEntry() = StorageEntry(
+    ref = uri,
+    name = displayName,
+    path = path ?: uri.toString(),
+    category = category,
+    sizeBytes = sizeBytes,
+    modifiedAtMillis = modifiedEpochSeconds * 1_000L,
+    mimeType = mimeType,
+    extension = displayName.substringAfterLast('.', "").lowercase().takeIf { it.isNotBlank() },
+)
+
+private fun shareSelected(context: android.content.Context, files: List<LargeMediaFile>, viewModel: LargeFilesViewModel) {
+    try {
+        val uris = files.map { StorageFileActions.shareableUri(context, it.uri) }
+        val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = "*/*"
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share selected files"))
+    } catch (_: ActivityNotFoundException) {
+        viewModel.showError("No app can share the selected files.")
+    } catch (_: IllegalArgumentException) {
+        viewModel.showError("Some selected files cannot be shared from their current location.")
+    }
 }
 
 private fun categoryIcon(category: StorageCategory): ImageVector = when (category) {

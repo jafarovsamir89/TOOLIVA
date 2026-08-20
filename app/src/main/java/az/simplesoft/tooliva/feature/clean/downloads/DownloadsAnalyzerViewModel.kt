@@ -183,6 +183,7 @@ class DownloadsAnalyzerViewModel(application: Application) : AndroidViewModel(ap
                             accumulator.add(event.entry)
                             _uiState.update { it.copy(files = accumulator.snapshot()) }
                         }
+                        is StorageScanEvent.DirectoryVisited -> Unit
                         is StorageScanEvent.Progress -> _uiState.update { it.copy(visitedFiles = event.visitedFiles) }
                         is StorageScanEvent.Warning -> Unit
                         StorageScanEvent.Completed -> Unit

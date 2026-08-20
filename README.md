@@ -168,13 +168,11 @@ Do not add more layers to rescue that architecture. Recover the direct progressi
 
 ## Current milestone
 
-**APP MANAGER v1 + CACHE CLEANER v2 + PHONE OPTIMIZER / MEMORY v1**
+**Cleaner 2.0 — one explicit scan, explainable Action Plan, Old Files, Empty Folders and Large Files v2**
 
-1. Cache Cleaner measures installed browsers and YouTube only after Usage Access;
-2. the user selects apps and opens Android App Info to clear cache manually;
-3. Phone Optimizer owns the official system-mediated temporary-cache action and real memory readings;
-4. device-dependent automation and Xiaomi regression remain manual-test gates.
-5. App Manager uses the visible `PackageManager` inventory only; it does not declare `QUERY_ALL_PACKAGES`. Usage Access is optional and enables last-used, rarely-used and Android-provided storage statistics.
+Clean starts only when the user taps Analyze storage. One direct progressive traversal feeds review-only category cards with real counts and bytes. It does not create a whole-device index, read file contents, hash files, generate all thumbnails or delete anything automatically. Old Files uses conservative age/location scopes; residual candidates are limited to old temporary fragments in Downloads; Empty Folders revalidates emptiness immediately before non-recursive deletion. Large Files adds single/multiple sharing, details and parent-folder navigation through safe URIs.
+
+The physical Xiaomi PASS for these new flows remains a human-owned TODO gate. Samsung, Pixel, SD-card and USB behavior is not claimed from Xiaomi testing.
 
 See `TODO.md` for exact tasks.
 

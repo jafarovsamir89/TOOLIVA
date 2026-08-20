@@ -40,6 +40,7 @@ class DuplicateAnalyzer(
                             filesChecked = filesChecked,
                         )))
                     }
+                    is StorageScanEvent.DirectoryVisited -> Unit
                     is StorageScanEvent.Progress -> emit(DuplicateAnalysisEvent.Progress(DuplicateAnalysisProgress(
                         stage = DuplicateAnalysisStage.METADATA,
                         filesChecked = filesChecked,

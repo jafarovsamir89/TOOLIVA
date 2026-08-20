@@ -1,9 +1,17 @@
 # Tooliva — Decision Log
 
 Status: AUTHORITATIVE  
-Revision: 2026-08-19
+Revision: 2026-08-20
 
 This file records decisions that must survive context loss, agent changes, long pauses, and future refactors.
+
+## D-022 — Cleaner 2.0 is one explicit review scan
+
+**Decision:** Clean exposes one user-started direct traversal. It progressively builds an in-memory Action Plan from cheap metadata and routes each category into an existing review screen. The scan is cancellable and reports real files, folders and bytes checked.
+
+**Consequence:** no mandatory Room index, generation gate, background crawler, per-file database writes, hashes, full-content reads or automatic deletion. Review categories may overlap because the same real file can be large, a download and an archive; totals are labeled reviewable rather than reclaimable.
+
+Old Files uses only conservative age/location scopes. Residual candidates require an old temporary-fragment extension and a Downloads path. Empty folders are revalidated and removed non-recursively; a folder that becomes non-empty is skipped.
 
 ## D-001 — Product identity
 

@@ -584,19 +584,9 @@ Manual by human user:
 
 After device-dependent implementation the agent must stop and provide `MANUAL TEST REQUIRED` checklist before new major work.
 
-# 24. Current recovery milestone
+# 24. Cleaner 2.0 current milestone
 
-Before new Cleaner categories:
-
-1. remove/revert the mandatory Storage Index experiment introduced by `7836ea` and `71f35ca` without losing unrelated good work;
-2. restore the direct progressive scan behavior represented by `b767aa8`;
-3. remove technical index UI from Clean;
-4. stop automatic heavy scan on Large Files navigation;
-5. make Full Mode the single primary storage permission path for Cleaner submodules on Android 11+;
-6. make Screenshot Cleaner use Full Mode when granted instead of immediately requiring separate media permission;
-7. build/install;
-8. human Xiaomi regression test;
-9. only after PASS proceed to Downloads/APK/Archives/Documents/Old Files/Cache.
+The recovery decisions above are implemented. Cleaner 2.0 now uses one explicit direct progressive scan from Clean to a review-only Action Plan. It reuses existing Large Files, Downloads, Screenshot and Cleanup Receipt flows, and adds conservative Old Files, Empty Folders and residual candidate rules. No Room index, WorkManager crawler, content reads or automatic destructive operation is introduced. The remaining gate is human Xiaomi validation of the new connected flow; no Samsung/Pixel/SD/USB claim is made.
 
 # 25. Release principles
 

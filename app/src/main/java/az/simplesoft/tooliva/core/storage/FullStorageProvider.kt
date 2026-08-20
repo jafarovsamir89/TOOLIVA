@@ -105,6 +105,7 @@ class FullStorageProvider(context: Context) : StorageProvider {
                     emit(StorageScanEvent.Warning(canonicalDirectory))
                     continue
                 }
+                emit(StorageScanEvent.DirectoryVisited(canonicalDirectory, children.isEmpty()))
 
                 children.forEach { child ->
                     coroutineContext.ensureActive()
