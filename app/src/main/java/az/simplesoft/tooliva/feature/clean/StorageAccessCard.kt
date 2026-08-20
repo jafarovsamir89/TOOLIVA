@@ -3,7 +3,9 @@ package az.simplesoft.tooliva.feature.clean
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.simplesoft.tooliva.ui.theme.ToolivaIconTile
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
+import az.simplesoft.tooliva.ui.theme.ToolivaSpacing
 
 @Composable
 fun StorageAccessCard(
@@ -22,15 +27,14 @@ fun StorageAccessCard(
     onEnableFull: () -> Unit,
 ) {
     Card(
-        shape = RoundedCornerShape(22.dp),
+        shape = ToolivaShapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                if (fullMode) "Full Storage Mode" else "Limited Mode",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
+        Column(modifier = Modifier.padding(ToolivaSpacing.xl)) {
+            androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(ToolivaSpacing.md), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                ToolivaIconTile(Icons.Outlined.Lock)
+                Text(if (fullMode) "Full Storage Mode" else "Limited Mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
             Text(
                 if (fullMode) {
                     "Tooliva can scan accessible shared-storage files, including APKs, archives and documents. Android protected app data remains unavailable."
@@ -38,17 +42,16 @@ fun StorageAccessCard(
                     "Tooliva is using MediaStore fallback. Results may be limited to media until Full Storage Access is enabled."
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = ToolivaSpacing.sm),
             )
             if (!fullMode && supported) {
-                OutlinedButton(onClick = onEnableFull, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                OutlinedButton(onClick = onEnableFull, modifier = Modifier.fillMaxWidth().padding(top = ToolivaSpacing.md)) {
                     Text("Enable Full Storage Access")
                 }
             }
             errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = ToolivaSpacing.sm))
             }
         }
     }
 }
-

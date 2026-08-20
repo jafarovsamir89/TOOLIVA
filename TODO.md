@@ -231,16 +231,16 @@ Candidate rules to research/implement one by one:
 
 # Phase UI/UX 2.0 — PRODUCT SHELL
 
-- [~] [P0] Design System 2.0 tokens, dark/light palette and typography
-- [ ] [P0] Motion and tactile interaction system
-- [ ] [P0] Home 2.0 dashboard and responsive 2-column tool grid
-- [ ] [P0] meaningful bottom navigation: Home/Clean/Files/Tools/More
-- [ ] [P0] real Tools hub using implemented modules only
-- [ ] [P0] real More/Settings screen
-- [ ] [P0] persisted System/Dark/Light appearance preference
+- [x] [P0] Design System 2.0 tokens, dark/light palette and typography
+- [~] [P0] Motion and tactile interaction system — shared card press feedback; screen/state transitions remain
+- [x] [P0] Home 2.0 dashboard and responsive 2-column tool grid
+- [x] [P0] meaningful bottom navigation: Home/Clean/Files/Tools/More
+- [x] [P0] real Tools hub using implemented modules only
+- [x] [P0] real More/Settings screen
+- [x] [P0] persisted System/Dark/Light appearance preference
 - [ ] [P1] language preference infrastructure and shell resources (EN/RU/AZ/TR)
 - [ ] [P0] core screen visual migration: Clean, Large Files, Files, Duplicates, Cleanup Swipe, Storage Map, App Manager, Phone Doctor, Checkup, Notification History
-- [ ] [P1] launcher icon/splash and system-bar audit
+- [x] [P1] launcher icon/splash and system-bar audit
 - [ ] [P0] Human Xiaomi UI/UX 2.0 PASS
 
 ---
