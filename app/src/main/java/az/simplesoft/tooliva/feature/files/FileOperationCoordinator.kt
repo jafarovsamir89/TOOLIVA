@@ -3,6 +3,8 @@ package az.simplesoft.tooliva.feature.files
 import android.content.Context
 import android.net.Uri
 import az.simplesoft.tooliva.core.media.CleanupFile
+import az.simplesoft.tooliva.core.media.CleanupResult
+import az.simplesoft.tooliva.core.media.CleanupResultStatus
 import az.simplesoft.tooliva.core.media.MediaStoreDeleteCoordinator
 import az.simplesoft.tooliva.core.storage.StorageEntry
 import kotlinx.coroutines.Dispatchers
@@ -58,31 +60,67 @@ class FileOperationCoordinator(context: Context) {
                 val directorySources = request.sources.filter { it.isDirectory }
                 val prepared = deleteCoordinator.prepare(fileSources.map { CleanupFile(Uri.fromFile(it), it.length()) })
                 val fileResult = deleteCoordinator.deleteImmediatelyAndVerify(prepared)
-                var directoryCount = 0
+                var directoryItemCount = 0
+                var directoryRequestedItemCount = 0
+                var directoryRequestedBytes = 0L
                 var directoryBytes = 0L
+                var directoryFailedBytes = 0L
                 var directoryFailures = 0
                 directorySources.forEach { directory ->
                     val before = flatten(directory).filter(File::isFile)
                     val bytes = before.sumOf(File::length)
+                    directoryRequestedItemCount += before.size + 1
+                    directoryRequestedBytes += bytes
                     if (directory.deleteRecursively()) {
-                        directoryCount += before.size
+                        directoryItemCount += before.size + 1
                         directoryBytes += bytes
                     } else {
                         directoryFailures++
+                        directoryFailedBytes += bytes
                     }
+                }
+                val directoryResult = if (directorySources.isEmpty()) {
+                    fileResult
+                } else {
+                    val removedCount = fileResult.removedFromActiveCount + directoryItemCount
+                    val removedBytes = fileResult.removedFromActiveBytes + directoryBytes
+                    val failedCount = fileResult.failedCount + directoryFailures
+                    CleanupResult(
+                        status = when {
+                            failedCount > 0 || fileResult.missingBeforeCount > 0 -> CleanupResultStatus.PARTIAL
+                            removedCount == 0 -> CleanupResultStatus.NO_CHANGE
+                            else -> CleanupResultStatus.COMPLETED
+                        },
+                        requestedCount = fileResult.requestedCount + directoryRequestedItemCount,
+                        requestedBytes = fileResult.requestedBytes + directoryRequestedBytes,
+                        removedFromActiveCount = removedCount,
+                        removedFromActiveBytes = removedBytes,
+                        trashedCount = fileResult.trashedCount,
+                        trashedBytes = fileResult.trashedBytes,
+                        freedCount = fileResult.freedCount + directoryItemCount,
+                        freedBytes = fileResult.freedBytes + directoryBytes,
+                        missingBeforeCount = fileResult.missingBeforeCount,
+                        missingBeforeBytes = fileResult.missingBeforeBytes,
+                        failedCount = failedCount,
+                        failedBytes = fileResult.failedBytes + directoryFailedBytes,
+                        unchangedCount = failedCount,
+                        unchangedBytes = fileResult.failedBytes + directoryFailedBytes,
+                        note = "Folder contents were removed permanently in Full Storage Mode.",
+                        itemLabel = "items",
+                    )
                 }
                 emit(
                     FileOperationEvent.Finished(
                         FileOperationResult(
                             kind = request.kind,
-                            completedItems = fileResult.removedFromActiveCount + directoryCount,
+                            completedItems = fileResult.removedFromActiveCount + directoryItemCount,
                             completedBytes = fileResult.removedFromActiveBytes + directoryBytes,
                             failedItems = fileResult.failedCount + fileResult.missingBeforeCount + directoryFailures,
                             errors = buildList {
                                 if (fileResult.missingBeforeCount > 0) add("Some items disappeared before deletion.")
                                 if (fileResult.failedCount > 0 || directoryFailures > 0) add("Some items could not be deleted.")
                             },
-                            cleanupResult = if (directorySources.isEmpty()) fileResult else null,
+                            cleanupResult = directoryResult,
                         ),
                     ),
                 )

@@ -70,7 +70,7 @@ fun CleanupResultScreen(
                         Icon(status.icon, contentDescription = null, tint = status.color)
                         Column(modifier = Modifier.padding(start = 12.dp)) {
                             Text(
-                                "${result.removedFromActiveCount} files",
+                                "${result.removedFromActiveCount} ${result.itemLabel}",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Black,
                             )

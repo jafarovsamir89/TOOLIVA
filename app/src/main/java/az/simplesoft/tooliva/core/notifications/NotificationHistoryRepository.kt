@@ -17,9 +17,16 @@ class NotificationHistoryRepository(context: Context) {
     private val preferences = NotificationHistoryPreferences(appContext)
 
     fun isAccessGranted(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
-        val manager = appContext.getSystemService(NotificationManager::class.java) ?: return false
-        return manager.isNotificationListenerAccessGranted(ComponentName(appContext, ToolivaNotificationListenerService::class.java))
+        val component = ComponentName(appContext, ToolivaNotificationListenerService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            val manager = appContext.getSystemService(NotificationManager::class.java) ?: return false
+            return manager.isNotificationListenerAccessGranted(component)
+        }
+        return Settings.Secure.getString(appContext.contentResolver, "enabled_notification_listeners")
+            .orEmpty()
+            .split(':')
+            .mapNotNull(ComponentName::unflattenFromString)
+            .contains(component)
     }
 
     fun accessIntent(): Intent {

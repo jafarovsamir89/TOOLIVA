@@ -121,6 +121,12 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
                 CleanRoute(onOpenTool = { navController.navigate("clean/$it") })
             }
             composable("clean/large-files") { LargeFilesRoute(onOpenInFiles = { path -> navController.navigate("files?path=${Uri.encode(path)}") }) }
+            composable("clean/large-files?category={category}", arguments = listOf(navArgument("category") { type = NavType.StringType; nullable = true; defaultValue = null })) { entry ->
+                LargeFilesRoute(
+                    initialCategory = entry.arguments?.getString("category"),
+                    onOpenInFiles = { path -> navController.navigate("files?path=${Uri.encode(path)}") },
+                )
+            }
             composable("clean/downloads") { DownloadsAnalyzerRoute() }
             composable("clean/recommendations") { CleanupRecommendationsRoute() }
             composable("clean/cache") { CacheCleanupRoute() }

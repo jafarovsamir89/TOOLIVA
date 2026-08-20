@@ -136,12 +136,8 @@ class HardwareTestsViewModel(application: Application) : AndroidViewModel(applic
                 } else {
                     VibrationEffect.createWaveform(longArrayOf(0L, 90L, 60L, 260L, 90L), intArrayOf(0, 180, 0, 255, 0), -1)
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val attributes = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        VibrationAttributes.createForUsage(VibrationAttributes.USAGE_HARDWARE_FEEDBACK)
-                    } else {
-                        VibrationAttributes.Builder().setUsage(VibrationAttributes.USAGE_HARDWARE_FEEDBACK).build()
-                    }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val attributes = VibrationAttributes.createForUsage(VibrationAttributes.USAGE_HARDWARE_FEEDBACK)
                     vibrator.vibrate(effect, attributes)
                 } else {
                     vibrator.vibrate(effect)

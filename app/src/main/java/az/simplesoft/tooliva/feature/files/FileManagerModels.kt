@@ -15,7 +15,7 @@ enum class FileManagerShortcut(val title: String) {
     IMAGES("Images"),
     VIDEOS("Videos"),
     AUDIO("Audio"),
-    RECENT("Recent"),
+    RECENT("Modified 30 days"),
     LARGE("Large files"),
 }
 

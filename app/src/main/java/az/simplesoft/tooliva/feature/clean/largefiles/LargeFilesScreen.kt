@@ -97,7 +97,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun LargeFilesRoute(onOpenInFiles: (String) -> Unit = {}, viewModel: LargeFilesViewModel = viewModel()) {
+fun LargeFilesRoute(onOpenInFiles: (String) -> Unit = {}, initialCategory: String? = null, viewModel: LargeFilesViewModel = viewModel()) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val accessCoordinator = remember(context) { StorageAccessCoordinator(context) }
@@ -109,6 +109,10 @@ fun LargeFilesRoute(onOpenInFiles: (String) -> Unit = {}, viewModel: LargeFilesV
     val deleteCoordinator = remember(context) { MediaStoreDeleteCoordinator(context) }
     val fullMode = state.accessState.mode == StorageAccessMode.FULL
     val directDelete = fullMode
+
+    LaunchedEffect(initialCategory) {
+        initialCategory?.let { value -> runCatching { StorageCategory.valueOf(value) }.getOrNull()?.let(viewModel::setCategory) }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),

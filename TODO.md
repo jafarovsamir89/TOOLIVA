@@ -243,6 +243,16 @@ Candidate rules to research/implement one by one:
 - [x] [P1] launcher icon/splash and system-bar audit
 - [ ] [P0] Human Xiaomi UI/UX 2.0 PASS
 
+# Phase AUDIT HARDENING — deep product/code review
+
+- [x] [P0] Throttle Large Files, Downloads, Screenshots and recommendation scan UI updates to keep large libraries responsive
+- [x] [P0] Throttle File Manager recursive/category search result publication and preserve cancellation
+- [x] [P0] Keep Cleaner Action Plan media counts aligned with the actual Large Files review route and category filter
+- [x] [P0] Show File Manager folder deletion through the shared Cleanup Result screen with verified item/byte totals
+- [x] [P0] Resolve minSdk 26 lint/runtime API guards for App Manager, vibration, notification access, storage volumes and system theme resources
+- [x] [P1] Rename File Manager's modified-time shortcut so it does not claim true access history
+- [~] [P1] Android 14 Selected Photos Access handling remains device/OEM manual validation work; limited mode continues to show only media Android exposes
+
 ---
 
 # Phase 4 — CACHE / APPS

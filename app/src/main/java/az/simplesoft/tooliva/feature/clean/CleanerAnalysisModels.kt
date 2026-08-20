@@ -17,9 +17,9 @@ enum class CleanerBucket(
     APK_INSTALLERS("APK installers", "APK files are installers; removing one does not uninstall its app.", 2, "downloads"),
     ARCHIVES("Archives", "ZIP and similar archives are shown for review only.", 3, "downloads"),
     DOCUMENTS("Documents", "Documents are personal files and are never treated as junk.", 4, "downloads"),
-    IMAGES("Images", "Images are personal files and are never treated as junk.", 5, "screenshots"),
-    VIDEOS("Videos", "Videos are personal files and are never treated as junk.", 6, "large-files"),
-    AUDIO("Audio", "Audio is shown as reviewable storage.", 7, "large-files"),
+    IMAGES("Large images", "Large images are personal files and are never treated as junk.", 5, "large-files?category=IMAGE"),
+    VIDEOS("Large videos", "Large videos are personal files and are never treated as junk.", 6, "large-files?category=VIDEO"),
+    AUDIO("Large audio", "Audio is shown only when it is a large reviewable file.", 7, "large-files?category=AUDIO"),
     SCREENSHOTS("Screenshots", "Screenshot candidates are identified from MediaStore names and locations.", 8, "screenshots"),
     OLD_FILES("Old files", "Conservative age and location rules; nothing is selected automatically.", 9, "old-files"),
     EMPTY_FOLDERS("Empty folders", "Only currently empty, safe, accessible folders are listed.", 10, "empty-folders"),
@@ -164,9 +164,9 @@ object CleanerAnalysisRules {
             StorageCategory.APK -> add(CleanerBucket.APK_INSTALLERS)
             StorageCategory.ARCHIVE -> add(CleanerBucket.ARCHIVES)
             StorageCategory.DOCUMENT -> add(CleanerBucket.DOCUMENTS)
-            StorageCategory.IMAGE -> add(CleanerBucket.IMAGES)
-            StorageCategory.VIDEO -> add(CleanerBucket.VIDEOS)
-            StorageCategory.AUDIO -> add(CleanerBucket.AUDIO)
+            StorageCategory.IMAGE -> if (sizeBytes >= CleanerAnalysisAccumulator.LARGE_FILE_BYTES) add(CleanerBucket.IMAGES)
+            StorageCategory.VIDEO -> if (sizeBytes >= CleanerAnalysisAccumulator.LARGE_FILE_BYTES) add(CleanerBucket.VIDEOS)
+            StorageCategory.AUDIO -> if (sizeBytes >= CleanerAnalysisAccumulator.LARGE_FILE_BYTES) add(CleanerBucket.AUDIO)
             else -> Unit
         }
         if (category == StorageCategory.IMAGE && ScreenshotClassifier.isScreenshotCandidate(name, path, null)) {

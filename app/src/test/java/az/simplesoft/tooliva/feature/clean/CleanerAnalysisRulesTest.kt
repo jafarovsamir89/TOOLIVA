@@ -26,6 +26,36 @@ class CleanerAnalysisRulesTest {
     }
 
     @Test
+    fun mediaActionPlanBucketsMatchTheLargeFilesReviewScreen() {
+        val smallVideo = CleanerAnalysisRules.bucketsFor(
+            "/storage/emulated/0/DCIM/Camera/clip.mp4",
+            "clip.mp4",
+            StorageCategory.VIDEO,
+            99L * 1024L * 1024L,
+            "mp4",
+            now,
+            false,
+            now,
+            180,
+        )
+        val largeVideo = CleanerAnalysisRules.bucketsFor(
+            "/storage/emulated/0/DCIM/Camera/movie.mp4",
+            "movie.mp4",
+            StorageCategory.VIDEO,
+            101L * 1024L * 1024L,
+            "mp4",
+            now,
+            false,
+            now,
+            180,
+        )
+
+        assertFalse(CleanerBucket.VIDEOS in smallVideo)
+        assertTrue(CleanerBucket.VIDEOS in largeVideo)
+        assertEquals("large-files?category=VIDEO", CleanerBucket.VIDEOS.route)
+    }
+
+    @Test
     fun residualRuleRequiresDownloadLocationKnownAgeAndApprovedExtension() {
         assertTrue(CleanerAnalysisRules.isResidualCandidate("/storage/emulated/0/Download/video.part", "part", now - 8L * 86_400_000L, false, now))
         assertFalse(CleanerAnalysisRules.isResidualCandidate("/storage/emulated/0/Documents/video.part", "part", now - 8L * 86_400_000L, false, now))

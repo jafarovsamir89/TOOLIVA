@@ -2,6 +2,7 @@ package az.simplesoft.tooliva.feature.clean.screenshots
 
 import android.app.Application
 import android.os.Build
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import az.simplesoft.tooliva.core.media.CleanupFile
@@ -58,10 +59,18 @@ class ScreenshotCleanerViewModel(application: Application) : AndroidViewModel(ap
         scanJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val files = mutableListOf<ScreenshotMediaFile>()
+            var lastUiPublishAt = 0L
+            fun publishProgress(force: Boolean = false) {
+                val now = SystemClock.uptimeMillis()
+                if (force || now - lastUiPublishAt >= UI_UPDATE_INTERVAL_MS) {
+                    lastUiPublishAt = now
+                    _uiState.update { it.copy(files = files.toList()) }
+                }
+            }
             try {
                 repository.scan(ageDays, fullStorageAccess = isFullStorageMode()).collect { file ->
                     files += file
-                    _uiState.update { it.copy(files = files.toList()) }
+                    publishProgress()
                 }
                 updateScannedFiles(files)
             } catch (cancellation: CancellationException) {
@@ -251,4 +260,8 @@ class ScreenshotCleanerViewModel(application: Application) : AndroidViewModel(ap
     }
 
     private fun isFullStorageMode(): Boolean = accessCoordinator.currentState().mode == StorageAccessMode.FULL
+
+    private companion object {
+        const val UI_UPDATE_INTERVAL_MS = 250L
+    }
 }

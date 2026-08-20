@@ -49,6 +49,7 @@ data class CleanupResult(
     val unchangedCount: Int,
     val unchangedBytes: Long,
     val note: String? = null,
+    val itemLabel: String = "files",
 ) {
     companion object {
         fun canceled(prepared: PreparedCleanupDeletion): CleanupResult = CleanupResult(

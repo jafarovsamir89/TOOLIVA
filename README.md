@@ -170,7 +170,7 @@ Do not add more layers to rescue that architecture. Recover the direct progressi
 
 **Tooliva UI/UX 2.0 — Product Shell and Design System**
 
-Cleaner 2.0 is human-confirmed responsive on Xiaomi after `6d5fccc`. This slice adds a dark-first Tooliva design system, responsive Home dashboard, real Home/Clean/Files/Tools/More navigation, a real Tools hub, appearance persistence and Settings access-status surfaces. Stable Cleaner/File Manager/device logic remains behind the presentation layer; Vault, App Lock, QR, PDF tools, ads, billing and fake Pro features are not exposed.
+Cleaner 2.0 is human-confirmed responsive on Xiaomi after `6d5fccc`. This slice adds a dark-first Tooliva design system, responsive Home dashboard, real Home/Clean/Files/Tools/More navigation, a real Tools hub, appearance persistence and Settings access-status surfaces. The audit hardening pass also throttles scan/search UI publication for large libraries, aligns Action Plan categories with their review screens, and routes File Manager folder deletion through the shared Cleanup Result. Stable Cleaner/File Manager/device logic remains behind the presentation layer; Vault, App Lock, QR, PDF tools, ads, billing and fake Pro features are not exposed.
 
 See `TODO.md` for exact tasks.
 

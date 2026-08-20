@@ -2,6 +2,7 @@ package az.simplesoft.tooliva.feature.clean.largefiles
 
 import android.app.Application
 import android.os.Build
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import az.simplesoft.tooliva.core.media.CleanupFile
@@ -111,16 +112,27 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
             _uiState.update { it.copy(isLoading = true, errorMessage = null, files = emptyList(), visitedFiles = 0L) }
             try {
                 val accumulator = LargeFilesScanAccumulator()
+                var lastUiPublishAt = 0L
+                var visitedFiles = 0L
+                fun publishProgress(force: Boolean = false) {
+                    val now = SystemClock.uptimeMillis()
+                    if (force || now - lastUiPublishAt >= UI_UPDATE_INTERVAL_MS) {
+                        lastUiPublishAt = now
+                        _uiState.update { it.copy(files = accumulator.snapshot(), visitedFiles = visitedFiles) }
+                    }
+                }
                 provider().scan(LargeFilesUiState.MIN_LARGE_FILE_BYTES).collect { event ->
                     when (event) {
                         StorageScanEvent.Started -> Unit
                         is StorageScanEvent.EntryFound -> {
                             val entry = event.entry
-                            _uiState.update { it.copy(files = accumulator.add(entry.toLargeMediaFile())) }
+                            accumulator.add(entry.toLargeMediaFile())
+                            publishProgress()
                         }
                         is StorageScanEvent.DirectoryVisited -> Unit
                         is StorageScanEvent.Progress -> {
-                            _uiState.update { it.copy(visitedFiles = event.visitedFiles) }
+                            visitedFiles = event.visitedFiles
+                            publishProgress()
                         }
                         is StorageScanEvent.Warning -> Unit
                         StorageScanEvent.Completed -> Unit
@@ -336,6 +348,10 @@ class LargeFilesViewModel(application: Application) : AndroidViewModel(applicati
         category = category,
         path = path,
     )
+
+    private companion object {
+        const val UI_UPDATE_INTERVAL_MS = 250L
+    }
 }
 
 internal class LargeFilesScanAccumulator {

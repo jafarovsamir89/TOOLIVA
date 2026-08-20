@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Process
+import android.os.Build
 import android.os.storage.StorageManager
 import android.provider.Settings
 import az.simplesoft.tooliva.core.cache.UsageAccessChecker
@@ -37,7 +38,9 @@ class AppManagerRepository(context: Context) {
                     packageName = packageName,
                     label = label,
                     versionName = packageInfo?.versionName,
-                    versionCode = packageInfo?.longVersionCode,
+                    versionCode = packageInfo?.let {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) it.longVersionCode else it.versionCode.toLong()
+                    },
                     firstInstallTime = packageInfo?.firstInstallTime ?: 0L,
                     lastUpdateTime = packageInfo?.lastUpdateTime ?: 0L,
                     isSystem = info.flags and (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0,

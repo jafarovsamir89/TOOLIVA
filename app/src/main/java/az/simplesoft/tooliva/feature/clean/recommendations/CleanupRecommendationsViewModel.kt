@@ -2,6 +2,7 @@ package az.simplesoft.tooliva.feature.clean.recommendations
 
 import android.app.Application
 import android.os.Build
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import az.simplesoft.tooliva.core.cleanup.CleanupCandidate
@@ -253,16 +254,28 @@ class CleanupRecommendationsViewModel(application: Application) : AndroidViewMod
     private suspend fun collectRecommendations(thresholdDays: Int, nowMillis: Long) {
         val entries = mutableListOf<StorageEntry>()
         val accumulator = CleanupCandidateAccumulator()
+        var lastUiPublishAt = 0L
+        var visitedFiles = 0L
+        fun publishProgress(force: Boolean = false) {
+            val now = SystemClock.uptimeMillis()
+            if (force || now - lastUiPublishAt >= UI_UPDATE_INTERVAL_MS) {
+                lastUiPublishAt = now
+                _uiState.update { it.copy(entries = entries.toList(), candidates = accumulator.snapshot(), visitedFiles = visitedFiles) }
+            }
+        }
         FullStorageProvider(getApplication()).scan(0L, StorageScanScope.DOWNLOADS).collect { event ->
             when (event) {
                 StorageScanEvent.Started -> Unit
                 is StorageScanEvent.EntryFound -> {
                     entries += event.entry
                     accumulator.add(event.entry, thresholdDays, nowMillis)
-                    _uiState.update { it.copy(entries = entries.toList(), candidates = accumulator.snapshot()) }
+                    publishProgress()
                 }
                 is StorageScanEvent.DirectoryVisited -> Unit
-                is StorageScanEvent.Progress -> _uiState.update { it.copy(visitedFiles = event.visitedFiles) }
+                is StorageScanEvent.Progress -> {
+                    visitedFiles = event.visitedFiles
+                    publishProgress()
+                }
                 is StorageScanEvent.Warning -> Unit
                 StorageScanEvent.Completed -> Unit
             }
@@ -285,6 +298,10 @@ class CleanupRecommendationsViewModel(application: Application) : AndroidViewMod
                 _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "Cleanup finished, but recommendations could not be refreshed.") }
             }
         }
+    }
+
+    private companion object {
+        const val UI_UPDATE_INTERVAL_MS = 250L
     }
 
     private fun updateScanned(entries: List<StorageEntry>, candidates: List<CleanupCandidate>) {

@@ -53,7 +53,7 @@ class PhoneDoctorProvider(private val context: Context) {
         }
         add("Internal storage", Environment.getDataDirectory().absolutePath, false)
         val manager = appContext.getSystemService(StorageManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             manager?.storageVolumes.orEmpty()
                 .filter { it.isRemovable || !it.isPrimary }
                 .forEach { volume -> add(if (volume.isRemovable) "Removable storage" else "External storage", volume.directory?.absolutePath, volume.isRemovable) }

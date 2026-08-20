@@ -2,6 +2,7 @@ package az.simplesoft.tooliva.feature.clean.downloads
 
 import android.app.Application
 import android.os.Build
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import az.simplesoft.tooliva.core.media.CleanupFile
@@ -186,15 +187,27 @@ class DownloadsAnalyzerViewModel(application: Application) : AndroidViewModel(ap
             }
             try {
                 val accumulator = DownloadsScanAccumulator()
+                var lastUiPublishAt = 0L
+                var visitedFiles = 0L
+                fun publishProgress(force: Boolean = false) {
+                    val now = SystemClock.uptimeMillis()
+                    if (force || now - lastUiPublishAt >= UI_UPDATE_INTERVAL_MS) {
+                        lastUiPublishAt = now
+                        _uiState.update { it.copy(files = accumulator.snapshot(), visitedFiles = visitedFiles) }
+                    }
+                }
                 provider().scan(0L, StorageScanScope.DOWNLOADS).collect { event ->
                     when (event) {
                         StorageScanEvent.Started -> Unit
                         is StorageScanEvent.EntryFound -> {
                             accumulator.add(event.entry)
-                            _uiState.update { it.copy(files = accumulator.snapshot()) }
+                            publishProgress()
                         }
                         is StorageScanEvent.DirectoryVisited -> Unit
-                        is StorageScanEvent.Progress -> _uiState.update { it.copy(visitedFiles = event.visitedFiles) }
+                        is StorageScanEvent.Progress -> {
+                            visitedFiles = event.visitedFiles
+                            publishProgress()
+                        }
                         is StorageScanEvent.Warning -> Unit
                         StorageScanEvent.Completed -> Unit
                     }
@@ -328,5 +341,9 @@ class DownloadsAnalyzerViewModel(application: Application) : AndroidViewModel(ap
                 selectedRefs = it.selectedRefs.intersect(ids),
             )
         }
+    }
+
+    private companion object {
+        const val UI_UPDATE_INTERVAL_MS = 250L
     }
 }

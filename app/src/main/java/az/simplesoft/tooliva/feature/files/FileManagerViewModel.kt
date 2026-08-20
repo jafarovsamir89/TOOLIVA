@@ -1,6 +1,7 @@
 package az.simplesoft.tooliva.feature.files
 
 import android.app.Application
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import az.simplesoft.tooliva.core.media.CleanupResult
@@ -124,19 +125,42 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
         val directory = _uiState.value.currentDirectory ?: return
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
+            val found = mutableListOf<StorageEntry>()
+            var visitedFiles = 0L
+            var matchedFiles = 0L
+            var lastUiPublishAt = 0L
+            fun publishProgress(force: Boolean = false) {
+                val now = SystemClock.uptimeMillis()
+                if (force || now - lastUiPublishAt >= SEARCH_UI_UPDATE_INTERVAL_MS) {
+                    lastUiPublishAt = now
+                    _uiState.value = _uiState.value.copy(
+                        entries = found.toList(),
+                        progressVisited = visitedFiles,
+                        progressMatches = matchedFiles,
+                    )
+                }
+            }
             _uiState.value = _uiState.value.copy(isSearching = true, recursiveSearch = true, progressVisited = 0, progressMatches = 0, error = null, selectedPaths = emptySet(), entries = emptyList())
             val query = _uiState.value.searchQuery.trim()
             storage.search(directory) { entry -> query.isBlank() || entry.name.contains(query, ignoreCase = true) }
                 .collectLatest { event ->
                     when (event) {
-                        is StorageScanEvent.EntryFound -> _uiState.value = _uiState.value.copy(entries = _uiState.value.entries + event.entry)
+                        is StorageScanEvent.EntryFound -> {
+                            found += event.entry
+                            publishProgress()
+                        }
                         is StorageScanEvent.DirectoryVisited -> Unit
-                        is StorageScanEvent.Progress -> _uiState.value = _uiState.value.copy(progressVisited = event.visitedFiles, progressMatches = event.matchedFiles)
+                        is StorageScanEvent.Progress -> {
+                            visitedFiles = event.visitedFiles
+                            matchedFiles = event.matchedFiles
+                            publishProgress()
+                        }
                         is StorageScanEvent.Warning -> Unit
                         StorageScanEvent.Started -> Unit
-                        StorageScanEvent.Completed -> _uiState.value = _uiState.value.copy(isSearching = false)
+                        StorageScanEvent.Completed -> publishProgress(force = true)
                     }
                 }
+            publishProgress(force = true)
             _uiState.value = _uiState.value.copy(isSearching = false)
         }
     }
@@ -150,17 +174,40 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
         }
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
+            val found = mutableListOf<StorageEntry>()
+            var visitedFiles = 0L
+            var matchedFiles = 0L
+            var lastUiPublishAt = 0L
+            fun publishProgress(force: Boolean = false) {
+                val now = SystemClock.uptimeMillis()
+                if (force || now - lastUiPublishAt >= SEARCH_UI_UPDATE_INTERVAL_MS) {
+                    lastUiPublishAt = now
+                    _uiState.value = _uiState.value.copy(
+                        entries = found.toList(),
+                        progressVisited = visitedFiles,
+                        progressMatches = matchedFiles,
+                    )
+                }
+            }
             _uiState.value = _uiState.value.copy(isSearching = true, recursiveSearch = true, entries = emptyList(), selectedPaths = emptySet(), error = null)
             roots.forEach { root ->
                 storage.search(root) { entry -> matchesShortcut(entry, shortcut) }.collectLatest { event ->
                     when (event) {
-                        is StorageScanEvent.EntryFound -> _uiState.value = _uiState.value.copy(entries = _uiState.value.entries + event.entry)
+                        is StorageScanEvent.EntryFound -> {
+                            found += event.entry
+                            publishProgress()
+                        }
                         is StorageScanEvent.DirectoryVisited -> Unit
-                        is StorageScanEvent.Progress -> _uiState.value = _uiState.value.copy(progressVisited = event.visitedFiles, progressMatches = event.matchedFiles)
+                        is StorageScanEvent.Progress -> {
+                            visitedFiles = event.visitedFiles
+                            matchedFiles = event.matchedFiles
+                            publishProgress()
+                        }
                         else -> Unit
                     }
                 }
             }
+            publishProgress(force = true)
             _uiState.value = _uiState.value.copy(isSearching = false)
         }
     }
@@ -260,5 +307,9 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
         FileManagerShortcut.AUDIO -> entry.category == StorageCategory.AUDIO
         FileManagerShortcut.RECENT -> entry.modifiedAtMillis >= System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
         FileManagerShortcut.LARGE -> false
+    }
+
+    private companion object {
+        const val SEARCH_UI_UPDATE_INTERVAL_MS = 250L
     }
 }
