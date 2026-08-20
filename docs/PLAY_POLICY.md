@@ -1,6 +1,6 @@
 # Tooliva — Google Play / Android Policy Notes
 
-Revision: 2026-08-18
+Revision: 2026-08-19
 
 This is an engineering/product checklist, not legal advice.
 
@@ -149,6 +149,10 @@ Requirements:
 - retention/exclusion controls;
 - no notification content in analytics/ads;
 - deny/revoke handling.
+
+The v1 implementation uses the platform `NotificationListenerService` only for the user-visible Notification History feature. It does not read notifications for ad targeting, app inventory, automation or background optimization. Existing history remains local and is excluded from Android backup. The feature must remain opt-in and must not imply that notifications received before access can be recovered.
+
+Before Play release, re-check the current Notification Listener and sensitive-permission requirements, the in-app disclosure wording, Data Safety answers and whether the feature qualifies under the then-current permitted use policy.
 
 ## 11. File deletion / Trash
 

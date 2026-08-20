@@ -58,7 +58,7 @@ This is the current highest priority. Do not start new product modules until R0 
 - [x] [P0] Preserve centralized cleanup/delete coordinator
 - [x] [P0] Preserve Cleanup Receipt accounting
 - [x] [P0] Preserve filters/search/sort/select/open/delete behavior
-- [x] [P0] Remove Room/KSP/storage-index dependencies/files if no current feature uses them after recovery; do not keep dead architecture “for later”
+- [x] [P0] Keep Room/KSP out of the Cleaner/storage-index path; the only active Room feature is Notification History, a valid persistence use
 - [x] [P0] Automated regression tests/build green
 - [x] [P0] Install fresh debug APK on Xiaomi
 - [x] [P0] Human manual regression PASS before Phase R1
@@ -105,7 +105,7 @@ STOP after R1 until human PASS.
 Deferred infrastructure:
 
 - [ ] [P1] DataStore when real persistent settings need it
-- [ ] [P1] Room only when a real persistent feature needs it (duplicates fingerprints, Notification History, etc.)
+- [x] [P1] Room only when a real persistent feature needs it — Notification History is the first active persistent feature
 - [ ] [P1] Hilt only when dependency graph complexity justifies it
 - [ ] [P1] WorkManager only when a real deferred job needs it
 - [ ] [P1] common reusable Tooliva components as repetition appears
@@ -249,14 +249,15 @@ Candidate rules to research/implement one by one:
 
 ## App Manager
 
-- [~] [P0] prototype visible app list without `QUERY_ALL_PACKAGES` — implemented; Xiaomi manual visibility check required
-- [~] [P0] label/icon/package/install/update date — implemented; Xiaomi UI check required
-- [~] [P0] user/system distinction where possible — implemented; Xiaomi UI check required
-- [~] [P0] launch — Android intent implemented; Xiaomi manual check required
-- [~] [P0] App Info — Android intent implemented; Xiaomi manual check required
-- [~] [P0] uninstall request — sequential Android-mediated flow implemented; disposable-app manual check required
-- [~] [P1] defensible storage size where available — App + Data semantics implemented; Usage Access/device check required
-- [~] [P1] Usage Access + last used / rarely used recommendations — deny/grant/revoke logic implemented; Xiaomi manual check required
+- [x] [P0] prototype visible app list without `QUERY_ALL_PACKAGES` — Xiaomi PASS
+- [x] [P0] label/icon/package/install/update date — Xiaomi PASS
+- [x] [P0] user/system distinction where possible — Xiaomi PASS
+- [x] [P0] launch — Xiaomi PASS
+- [x] [P0] App Info — Xiaomi PASS
+- [x] [P0] uninstall request — Xiaomi PASS
+- [x] [P1] defensible storage size where available — Xiaomi PASS
+- [x] [P1] Usage Access + last used / rarely used recommendations — Xiaomi PASS
+- [x] [P0] Human Xiaomi App Manager v1 PASS
 - [x] [P1] App Manager rules, progressive enrichment and uninstall queue unit tests
 - [x] [P1] App Manager documentation and QA checklist
 - [ ] [P1] Xiaomi package visibility measurement and exact gap report
@@ -315,21 +316,27 @@ Do not make basic browser depend on a completed whole-device Room index.
 
 ## Cleanup Swipe
 
-- [ ] [P1] keep/delete/skip
-- [ ] [P1] undo
-- [ ] [P1] selected category/session
-- [ ] [P1] final review
-- [ ] [P1] Cleanup Receipt
+- [x] [P1] explicit category picker and user-started scan
+- [x] [P1] keep/delete/skip buttons and horizontal Keep/Delete gestures
+- [x] [P1] undo
+- [x] [P1] selected category/session held in memory only
+- [x] [P1] selected bytes/count and final review/unselect
+- [x] [P1] central file operation + verified Cleanup Receipt integration
+- [x] [P1] missing-file/permission-revoked safe fallback and no automatic deletion
+- [x] [P1] unit/instrumented rule coverage
+- [ ] [P1] Human Xiaomi Cleanup Swipe v1 PASS
 
 ---
 
 # Phase 7 — STORAGE MAP
 
-- [ ] [P1] folder-size aggregation during explicit analysis
-- [ ] [P1] treemap/sunburst-style prototype
-- [ ] [P1] drill-down
-- [ ] [P1] accessible list alternative
-- [ ] [P1] open/details/delete integration
+- [x] [P1] folder-size aggregation during explicit, cancellable analysis
+- [x] [P1] treemap-style prototype using real aggregated bytes
+- [x] [P1] drill-down, parent navigation and system Back handling
+- [x] [P1] accessible list alternative
+- [x] [P1] open/details/delete integration through existing file operations and Cleanup Receipt
+- [x] [P1] synthetic Storage Map aggregator tests
+- [ ] [P1] Human Xiaomi Storage Map v1 PASS
 
 Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manager usage.
 
@@ -364,14 +371,19 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 
 # Phase 9 — NOTIFICATION HISTORY
 
-- [ ] [P0] prominent disclosure
-- [ ] [P0] Notification Access flow
-- [ ] [P0] `NotificationListenerService`
-- [ ] [P0] Room persistence (valid persistence use)
-- [ ] [P0] group/search/filter
-- [ ] [P0] retention controls
-- [ ] [P0] excluded apps
-- [ ] [P0] clear history
+- [x] [P0] prominent disclosure
+- [x] [P0] API-aware Notification Access detail/settings fallback flow
+- [x] [P0] `NotificationListenerService` with off-main persistence and own-package/ongoing filters
+- [x] [P0] Room persistence (valid persistence use; notification content only)
+- [x] [P0] active-key deduplication/update and removed-state tracking
+- [x] [P0] local search, All/Today/7 days/30 days/Pinned and app filters
+- [x] [P0] retention controls with pinned-row preservation
+- [x] [P0] excluded apps with keep/delete-existing choice
+- [x] [P0] pause/include-ongoing settings, per-entry pin/delete/details, clear all
+- [x] [P0] revoke handling preserves existing history and stops new capture
+- [x] [P0] backup exclusion for notification database/preferences
+- [x] [P0] extraction/deduplication/retention/DAO tests
+- [ ] [P0] Human Xiaomi Notification History v1 PASS
 - [ ] [P1] noisy-app insights
 
 ---

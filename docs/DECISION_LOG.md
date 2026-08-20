@@ -1,7 +1,7 @@
 # Tooliva — Decision Log
 
 Status: AUTHORITATIVE  
-Revision: 2026-08-18
+Revision: 2026-08-19
 
 This file records decisions that must survive context loss, agent changes, long pauses, and future refactors.
 
@@ -238,3 +238,17 @@ A new abstraction/database/service/worker must answer a concrete current need. `
 Then fix the permission model so Full Mode does not redundantly request media access for the same Cleaner purpose.
 
 Only after manual Xiaomi PASS should development continue to the next Cleaner categories.
+
+---
+
+## D-021 — Three explicit v1 tools after recovery
+
+**Decision:** Notification History, Storage Map and Cleanup Swipe may be implemented as separate vertical slices in one development batch without changing the direct Cleaner architecture.
+
+**Notification History:** Room is permitted only for the persistent notification-history feature. The listener stores normalized local rows, not raw Android objects, and excludes its database/preferences from backup.
+
+**Storage Map:** direct, explicit, cancellable folder aggregation is the source of truth. It is not a prerequisite for Cleaner/File Manager and does not become a whole-device index.
+
+**Cleanup Swipe:** the review session is in memory and destructive work is deferred until final confirmation. It reuses existing scanners, file operations and Cleanup Receipt.
+
+**Consequence:** no new permissions, WorkManager, global storage index, background crawler, ad SDK, Vault, App Lock or unrelated module is introduced by this batch.

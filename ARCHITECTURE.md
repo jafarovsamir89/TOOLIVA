@@ -423,13 +423,17 @@ Platform adapters remain small:
 
 ## 22. Notification History
 
-Room is appropriate here because persistence is the feature itself.
+Room is appropriate here because persistence is the feature itself, not because the Cleaner needs an index. `NotificationListenerService` performs only safe extraction on callback, then persists on a serialized IO scope. The repository owns access detection, API-aware settings intents, active-key deduplication, retention and exclusion rules. UI observes DAO flows and never touches raw notification objects.
 
-`NotificationListenerService` should normalize/persist quickly and return.
+Only normalized local notification rows are stored. Raw extras/images/PendingIntents are discarded, Tooliva's package and ongoing rows are filtered according to settings, and backup rules exclude the database/preferences. Access revoke leaves existing rows visible but stops new capture.
 
-No notification text in analytics/logging.
+## 23. Storage Map and Cleanup Swipe
 
-## 23. Analytics/privacy
+Storage Map is a direct explicit `FullStorageProvider` aggregation that retains folder totals rather than file records. It is cancellable, progressive and independent of Room/WorkManager. Its UI has map and accessible list representations with drill-down and explicit file actions.
+
+Cleanup Swipe is an in-memory review state machine over existing `StorageEntry` sources. Decisions are reversible during review; final deletion is a separate confirmation and delegates to `FileOperationCoordinator`, so missing files, failures and verified Cleanup Receipt semantics stay centralized.
+
+## 24. Analytics/privacy
 
 Allow-list aggregate events only.
 
@@ -442,7 +446,7 @@ Never include:
 - notification text;
 - Vault contents.
 
-## 24. Performance discipline
+## 25. Performance discipline
 
 Measure:
 
@@ -455,7 +459,7 @@ Measure:
 
 Only optimize after a real bottleneck is measured.
 
-## 25. Testing boundary
+## 26. Testing boundary
 
 Automated testing verifies deterministic technical behavior.
 

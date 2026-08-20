@@ -1,6 +1,6 @@
 # Tooliva — Context Recovery Guide
 
-Revision: 2026-08-18
+Revision: 2026-08-19
 
 Use this file when a new chat/agent starts, context is lost, or project direction feels ambiguous.
 
@@ -26,7 +26,7 @@ In this order:
 10. `docs/MARKET_RESEARCH_2026.md`
 11. `docs/design/README.md` + both design WebP files for UI work
 
-Do not infer product direction from code alone because the current branch contains a known rejected Storage Index experiment that has not yet been recovered.
+Do not infer product direction from code alone; the known Storage Index experiment is rejected and the direct Cleaner architecture is authoritative.
 
 ## 3. Known-good product point
 
@@ -93,29 +93,27 @@ Limited Mode:
 
 MediaStore / granular media permission / SAF only when Full Mode is absent and the specific feature needs it.
 
-## 7. Current branch state warning
+## 7. Current branch state
 
-The branch `agent/android-bootstrap` currently contains the rejected index implementation in code.
+The direct Cleaner architecture is restored. Room is now present only because Notification History is an active persistent feature; it is not a gateway for Large Files, Storage Map or ordinary Cleaner discovery.
 
-The authoritative documents have already been rewritten to describe the recovery direction.
+The current development batch adds Notification History v1, Storage Map v1 and Cleanup Swipe v1. All three require human Xiaomi validation before their device-dependent TODO items become `[x]`.
 
-**Do not treat current index code as desired architecture just because it is the newest code.**
+**Do not treat rejected index code as desired architecture just because it is newer.**
 
 ## 8. Current immediate task
 
-`RECOVERY v1`
+`NOTIFICATION HISTORY v1 + STORAGE MAP v1 + CLEANUP SWIPE v1`
 
-1. revert/remove mandatory index changes from `7836ea` and `71f35ca` while preserving unrelated good documentation/work;
-2. restore direct progressive Large Files scanner based on `b767aa8` behavior;
-3. remove Storage Index UI from Clean;
-4. remove automatic heavy scan on navigation;
-5. preserve FullStorageProvider, StorageProvider abstraction, cleanup coordinator, Cleanup Receipt, filters/search/sort/select/open/delete;
-6. remove dead Room/KSP/index code/dependencies if nothing active requires them after recovery;
-7. unify storage permission UX so Full Mode does not redundantly request broad media permission;
-8. automated tests/build;
-9. install fresh debug APK on Xiaomi;
-10. stop and give human manual checklist;
-11. proceed only after human PASS.
+Implementation, tests and documentation are complete for the current batch. The remaining gate is the combined human Xiaomi checklist in `docs/QA_PLAN.md`; do not mark device-dependent items complete until the user reports PASS.
+
+## 8.1. Current three-feature batch
+
+- Notification History: explicit disclosure/Notification Access, local Room rows, dedupe by active notification key, retention, filters, exclusion and backup exclusion.
+- Storage Map: explicit direct aggregation, progress/cancel, map/list, drill-down and file-operation integration; no auto-scan.
+- Cleanup Swipe: explicit category loading, Keep/Delete/Skip, undo, final review and central Cleanup Receipt; no immediate card deletion.
+
+Required next step is one combined Xiaomi manual checklist covering permissions, notifications, Storage Map navigation and Cleanup Swipe review/deletion. Do not start Vault, App Lock, similar photos, permission manager, network tools, ads or billing before that validation.
 
 ## 9. Manual testing ownership
 
@@ -133,25 +131,9 @@ Human user:
 - reports PASS/FAIL;
 - device-dependent TODO `[x]` only after human PASS.
 
-## 10. What comes after recovery
+## 10. What comes after this batch
 
-After Recovery + Permission UX manual PASS:
-
-1. Downloads
-2. APK installers
-3. Archives
-4. Documents
-5. Old Files
-6. Explainable Junk rules
-7. Cache Cleaner v2 manual App Info flow + Phone Optimizer
-8. File Manager
-9. Exact Duplicates
-10. Cleanup Swipe
-11. App Manager
-12. Storage Map
-13. Phone Doctor / Check My Phone
-14. Notification History
-15. later Vault/App Lock/content tools/monetization
+Do not start another module until the three-feature human validation is complete. After that gate, the next priority is determined by the authoritative TODO and a new explicit task; Vault, App Lock, Similar Photos, Permission Manager, network tools, ads and Billing remain out of scope.
 
 The current approved work slice includes App Manager v1, Cache Cleaner v2 + Phone Optimizer, File Manager v1, Exact Duplicates v1 with its measured fingerprint cache, and the Phone Doctor + Hardware Tests + Check My Phone v1 vertical slice. App Manager uses narrow package visibility and optional Usage Access; Xiaomi package-gap measurement and physical App Manager validation remain human-owned gates. Human Xiaomi validation has passed for the duplicate flow and the repeat-analysis fingerprint cache. Phone Doctor and physical hardware behavior remain human-owned manual gates. Do not restore the rejected Storage Index or Accessibility automation. The duplicate cache is not a Room index or background crawler; Check My Phone is not a background analyzer.
 

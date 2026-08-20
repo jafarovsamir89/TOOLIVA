@@ -1,6 +1,6 @@
 # Tooliva — QA Plan
 
-Revision: 2026-08-18
+Revision: 2026-08-19
 
 Authoritative product source: `docs/PRODUCT_CONSTITUTION.md`
 
@@ -505,3 +505,105 @@ Additionally:
 - privacy/Data Safety/restricted-permission review;
 - monetization regression;
 - closed test with no P0 file-loss or major UX regression.
+
+## 21. Combined human Xiaomi checklist — Notification History + Storage Map + Cleanup Swipe
+
+The coding agent installs the APK and performs crash smoke only. The connected-device behavior below remains human-owned; mark a feature TODO item `[x]` only after the user reports PASS. Use disposable notification sources and synthetic storage fixtures. Do not delete personal files.
+
+1. Install the fresh debug APK.
+2. Launch Tooliva from the launcher.
+3. Confirm Home renders without a crash.
+4. Open Clean and return Home.
+5. Open Notification History from Home.
+6. Confirm the prominent disclosure is understandable.
+7. Cancel the disclosure.
+8. Confirm no Notification Access settings opened after cancel.
+9. Reopen the disclosure.
+10. Continue to Android Notification Access settings.
+11. Confirm Tooliva is listed as a notification listener.
+12. Return without granting access.
+13. Confirm the denied state is truthful and usable.
+14. Grant Notification Access.
+15. Return to Tooliva.
+16. Confirm the access state refreshes.
+17. Generate a disposable test notification from a safe app.
+18. Confirm a new history row appears.
+19. Confirm app label, title/text and time are readable.
+20. Confirm the row does not expose raw Android objects or a crash.
+21. Generate an update to the same notification.
+22. Confirm it updates rather than duplicating the active row.
+23. Dismiss the notification.
+24. Confirm removed state/details are handled.
+25. Generate a second app notification.
+26. Search by app label.
+27. Search by title/text.
+28. Clear search.
+29. Select All range.
+30. Select Today range.
+31. Select 7 days range.
+32. Select 30 days range.
+33. Select Pinned range.
+34. Select an app filter.
+35. Clear the app filter.
+36. Open notification details.
+37. Pin the notification.
+38. Confirm it appears in Pinned.
+39. Unpin it.
+40. Delete one history row.
+41. Open Notification History settings.
+42. Pause history.
+43. Generate a disposable notification.
+44. Confirm it is not saved while paused.
+45. Resume history.
+46. Toggle Include ongoing and verify the setting is explicit.
+47. Set retention to 1 day.
+48. Confirm old unpinned rows are pruned.
+49. Confirm pinned rows survive pruning.
+50. Set retention back to 30 days.
+51. Open Exclude an app.
+52. Choose Keep existing history.
+53. Confirm future notifications from that app are excluded.
+54. Include the app again.
+55. Exclude an app with Delete existing history.
+56. Confirm only that app's existing rows are removed.
+57. Revoke Notification Access in Android settings.
+58. Return to Tooliva.
+59. Confirm existing history remains visible.
+60. Confirm the app does not claim new history is being captured.
+61. Clear all history and confirm the dialog.
+62. Confirm the history is empty.
+63. Open Storage Map from Home.
+64. Confirm no storage scan starts automatically.
+65. Confirm the Full Storage Access explanation is actionable.
+66. Cancel/deny the storage settings flow.
+67. Confirm Analyze remains disabled or refuses safely.
+68. Grant Full Storage Access.
+69. Return to Storage Map.
+70. Tap Analyze storage explicitly.
+71. Confirm loading progress appears.
+72. Confirm files checked and bytes counted progress.
+73. Cancel the analysis.
+74. Confirm the screen returns safely without a crash.
+75. Analyze again.
+76. Confirm map totals are real for the synthetic fixture.
+77. Confirm list view is available.
+78. Confirm map view is available.
+79. Drill into a folder.
+80. Confirm the path/location changes.
+81. Use Parent folder.
+82. Use the system Back gesture inside nested folders.
+83. Confirm Back goes to the parent before leaving Storage Map.
+84. Open folder details.
+85. Open the folder in the system Files app.
+86. Cancel the folder delete confirmation.
+87. Delete only a disposable fixture folder after explicit confirmation.
+88. Confirm Cleanup Result is truthful.
+89. Confirm the map is marked stale and does not auto-rescan.
+90. Open Cleanup Swipe.
+91. Confirm category picker appears without auto-scan.
+92. Load Screenshots, Images, Videos, Downloads and Large files one at a time.
+93. Confirm loading can be canceled.
+94. Confirm real entries, sorting, Keep/Delete/Skip, swipe gestures, undo, final review, unselect, explicit delete confirmation and Cleanup Result all work using disposable fixtures only.
+95. Revoke Full Storage Access during/between operations and confirm no crash, no automatic deletion and a truthful access/receipt state.
+
+After this checklist, report each feature as PASS/FAIL and include any OEM dialog or navigation issue. Do not begin Vault, App Lock, Similar Photos, Permission Manager, network tools, ads or Billing until all three feature gates are resolved.

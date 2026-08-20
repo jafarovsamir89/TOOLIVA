@@ -246,13 +246,14 @@ The selected-app Accessibility experiment was removed after unreliable Xiaomi be
 
 # 12. Notification History
 
-- opt-in Notification Access only;
-- prominent disclosure;
-- local persistence;
-- retention controls;
-- exclude-app controls;
-- clear-all;
-- no notification content in analytics/logging/ads.
+- opt-in Notification Access only, preceded by a prominent disclosure;
+- local Room persistence limited to normalized notification-history fields;
+- no raw extras/Parcelable values, images, PendingIntents or notification secrets;
+- Tooliva's own package excluded; ongoing notifications excluded by default;
+- retention, pin-survival, pause, include-ongoing, excluded-app and clear-all controls;
+- access revoke stops new capture while preserving existing local history;
+- notification database and preferences excluded from Android cloud/device backup;
+- no notification content in analytics, logging, ads, backend or crash metadata.
 
 Consider database encryption based on performance/threat-model review before release.
 

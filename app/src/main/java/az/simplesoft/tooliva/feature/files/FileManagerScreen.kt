@@ -94,12 +94,18 @@ import java.io.File
 @Composable
 fun FileManagerRoute(
     onOpenLargeFiles: () -> Unit,
+    initialDirectory: String? = null,
     viewModel: FileManagerViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var accessError by remember { mutableStateOf<String?>(null) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshAccess() }
+    LaunchedEffect(initialDirectory, state.accessState.allFilesAccessGranted, state.volumes) {
+        if (initialDirectory != null && state.accessState.allFilesAccessGranted && state.volumes.isNotEmpty() && state.currentDirectory?.absolutePath != initialDirectory) {
+            viewModel.openDirectory(File(initialDirectory))
+        }
+    }
 
     BackHandler(
         enabled = state.currentDirectory != null &&

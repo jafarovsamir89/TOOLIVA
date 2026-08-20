@@ -113,9 +113,15 @@ Limited Mode never pretends to cover the whole phone.
 - App Manager v1 with a fast visible-app inventory, search/filter/sort, honest Android storage/usage enrichment, app details, Open/App info and system-mediated uninstall
 - Exact Duplicates
 - Cleanup Swipe
+- Notification History with explicit Notification Access, local retention and app exclusions
+- Storage Map with explicit folder aggregation and map/list views
 - verified Cleanup Receipt
 
 Exact Duplicates v1 is an explicit, local-only analysis: direct metadata traversal groups non-empty regular files by exact size, SHA-256 is calculated only for candidate groups, and hash matches receive streaming byte verification. A bounded private fingerprint cache reuses a hash only when the same path, size and modified time are unchanged; it stores no file contents and is not a whole-device index. Review starts with an empty selection and offers Keep this copy, filters, search, sort, open/details/show-in-Files, and the existing verified cleanup receipt flow. Xiaomi end-to-end validation remains a human-owned TODO item.
+
+Notification History is opt-in. A prominent disclosure precedes Android Notification Access; captured fields are normalized to local Room rows, raw notification bundles/images/PendingIntents are not stored, Tooliva's own notifications are excluded, and ongoing notifications are excluded by default. Users can search/filter, pin, delete, pause, set retention, exclude apps and clear history. The notification database and preferences are excluded from backup.
+
+Storage Map and Cleanup Swipe are explicit user-started tools. Storage Map aggregates folder totals directly from `FullStorageProvider` without a whole-device Room index, content reads, hashes or thumbnails. Cleanup Swipe keeps its review session in memory, supports Keep/Delete/Skip, undo and final review, and uses the existing central file operation and Cleanup Receipt only after explicit confirmation. Neither tool auto-deletes or auto-scans on navigation.
 
 ## File Manager V1 target
 

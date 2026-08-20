@@ -65,7 +65,13 @@ class ScreenshotMediaRepository(context: Context) {
         scanMediaStore(maxAgeDays)
     }
 
-    private fun scanFullStorage(maxAgeDays: Int): Flow<ScreenshotMediaFile> = flow {
+    fun scanAll(fullStorageAccess: Boolean = false): Flow<ScreenshotMediaFile> = if (fullStorageAccess) {
+        scanFullStorage(null)
+    } else {
+        scanMediaStore(null)
+    }
+
+    private fun scanFullStorage(maxAgeDays: Int?): Flow<ScreenshotMediaFile> = flow {
         val now = System.currentTimeMillis()
         FullStorageProvider(appContext).scan(minBytes = 0L).collect { event ->
             if (event is StorageScanEvent.EntryFound && !event.entry.isDirectory && event.entry.category == StorageCategory.IMAGE) {
@@ -81,7 +87,7 @@ class ScreenshotMediaRepository(context: Context) {
                     relativePath = path,
                     bucketDisplayName = bucket,
                 )
-                if (ScreenshotAgeFilter.isOlderThan(item.ageTimestampMillis, now, maxAgeDays) &&
+                if ((maxAgeDays == null || ScreenshotAgeFilter.isOlderThan(item.ageTimestampMillis, now, maxAgeDays)) &&
                     ScreenshotClassifier.isScreenshotCandidate(item.displayName, item.relativePath, item.bucketDisplayName)
                 ) {
                     emit(item)
@@ -90,9 +96,9 @@ class ScreenshotMediaRepository(context: Context) {
         }
     }.flowOn(Dispatchers.IO)
 
-    private fun scanMediaStore(maxAgeDays: Int): Flow<ScreenshotMediaFile> = flow {
+    private fun scanMediaStore(maxAgeDays: Int?): Flow<ScreenshotMediaFile> = flow {
         val now = System.currentTimeMillis()
-        val cutoffTimestamp = now - maxAgeDays.coerceAtLeast(1).toLong() * 86_400_000L
+        val cutoffTimestamp = maxAgeDays?.let { now - it.coerceAtLeast(1).toLong() * 86_400_000L }
         val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.MediaColumns.RELATIVE_PATH
         } else {
@@ -108,11 +114,8 @@ class ScreenshotMediaRepository(context: Context) {
             MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME,
             pathColumn,
         )
-        val selection = "${MediaStore.MediaColumns.DATE_MODIFIED} <= ? OR ${MediaStore.Images.ImageColumns.DATE_TAKEN} <= ? OR ${MediaStore.Images.ImageColumns.DATE_TAKEN} IS NULL"
-        val selectionArgs = arrayOf(
-            (cutoffTimestamp / 1_000L).toString(),
-            cutoffTimestamp.toString(),
-        )
+        val selection = cutoffTimestamp?.let { "${MediaStore.MediaColumns.DATE_MODIFIED} <= ? OR ${MediaStore.Images.ImageColumns.DATE_TAKEN} <= ? OR ${MediaStore.Images.ImageColumns.DATE_TAKEN} IS NULL" }
+        val selectionArgs = cutoffTimestamp?.let { arrayOf((it / 1_000L).toString(), it.toString()) }
 
         resolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -146,7 +149,7 @@ class ScreenshotMediaRepository(context: Context) {
                     relativePath = relativePath,
                     bucketDisplayName = bucket,
                 )
-                if (ScreenshotAgeFilter.isOlderThan(item.ageTimestampMillis, now, maxAgeDays) &&
+                if ((maxAgeDays == null || ScreenshotAgeFilter.isOlderThan(item.ageTimestampMillis, now, maxAgeDays)) &&
                     ScreenshotClassifier.isScreenshotCandidate(displayName, relativePath, bucket)
                 ) {
                     emit(item)

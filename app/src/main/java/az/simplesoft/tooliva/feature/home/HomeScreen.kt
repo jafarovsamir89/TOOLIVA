@@ -62,6 +62,7 @@ private val primaryTools = listOf(
     HomeTool("clean", "Clean storage", "Large files, screenshots & duplicates", Icons.Outlined.CleaningServices),
     HomeTool("protect", "Protect", "App Lock, Vault & privacy tools", Icons.Outlined.Security),
     HomeTool("notifications", "Notification history", "Find notifications you dismissed", Icons.Outlined.Notifications),
+    HomeTool("storage-map", "Storage Map", "See which folders use the most storage", Icons.Outlined.Storage),
     HomeTool("doctor", "Phone Doctor", "Battery, thermal, memory & sensors", Icons.Outlined.HealthAndSafety),
     HomeTool("hardware", "Hardware Tests", "Display, touch, sound, vibration & sensors", Icons.Outlined.Build),
     HomeTool("optimizer", "Phone Optimizer", "Real memory metrics & temporary cache", Icons.Outlined.Memory),

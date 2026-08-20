@@ -505,17 +505,19 @@ Check My Phone is a lightweight aggregator. `Run checkup` collects quick public 
 
 # 20. Notification History
 
-After cleaner core:
+Notification History v1 is an explicit opt-in local feature. The UI shows a prominent disclosure before opening API-aware Notification Access settings. On Android 11+ it prefers the component detail settings intent and falls back to the listener settings list when needed.
 
-- prominent Notification Access disclosure;
-- local Room persistence;
-- group/search/filter;
-- retention controls;
-- excluded apps;
-- clear all;
-- noisy-app insights later.
+The manifest listener uses `BIND_NOTIFICATION_LISTENER_SERVICE` and the platform service interface. Android callbacks are normalized immediately and persisted on a single IO coroutine lane. The Room database is limited to notification history; it stores safe text fields and metadata only, never raw `Parcelable` extras, images, `PendingIntent` objects or secrets. Tooliva's own package is excluded, ongoing notifications are excluded by default, and the same active `StatusBarNotification.key` updates one active row until removal instead of creating duplicates.
 
-Notification content never enters ads/analytics.
+The screen supports local search, All/Today/7 days/30 days/Pinned and app filters, details, pin/delete, pause, include-ongoing, retention (1/7/30/90 days or until deleted), excluded apps with keep/delete-existing choice, per-app/all clear and truthful access-revoked behavior. Pinned rows survive retention pruning. Notification content never enters logs, analytics, ads, backend or backup; the database and preferences are excluded from Android backup.
+
+# 21. Storage Map v1
+
+Storage Map starts only from an explicit Analyze action and uses the existing `FullStorageProvider` scan. It aggregates folder totals, direct bytes, file counts and warnings in memory; it does not create a whole-device Room index, read file contents, hash files or generate thumbnails. Progress reports files checked, folders found, bytes counted and skipped warnings. The UI provides real map/list views, drill-down, breadcrumbs/parent/system Back, folder details, Open in Files and explicit delete through the existing file operation/Cleanup Receipt path. A deletion marks the visible map stale and never launches an automatic rescan.
+
+# 22. Cleanup Swipe v1
+
+Cleanup Swipe has an explicit picker for screenshots, images, videos, Downloads and files at least 100 MiB. Each category loads only after the user taps it and reuses existing direct scanners; no new storage permission is introduced. The in-memory session is ordered newest/oldest/largest/smallest and offers Keep, Delete and Skip buttons, horizontal Keep/Delete gestures, undo, selected count/bytes, final review, unselect, details and Open in Files. No card action deletes immediately. After an explicit final confirmation, selected files go through the central file operation coordinator and the same verified Cleanup Receipt, including missing-file, partial-failure and permission-revoked outcomes.
 
 # 21. Vault / App Lock / Tools
 

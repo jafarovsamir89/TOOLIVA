@@ -1,5 +1,6 @@
 package az.simplesoft.tooliva.ui
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +28,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import az.simplesoft.tooliva.feature.clean.CleanRoute
 import az.simplesoft.tooliva.feature.clean.largefiles.LargeFilesRoute
 import az.simplesoft.tooliva.feature.clean.downloads.DownloadsAnalyzerRoute
@@ -41,6 +44,9 @@ import az.simplesoft.tooliva.feature.doctor.CheckupRoute
 import az.simplesoft.tooliva.feature.doctor.HardwareTestsRoute
 import az.simplesoft.tooliva.feature.doctor.PhoneDoctorRoute
 import az.simplesoft.tooliva.feature.appmanager.AppManagerRoute
+import az.simplesoft.tooliva.feature.notifications.NotificationHistoryRoute
+import az.simplesoft.tooliva.feature.storage.StorageMapRoute
+import az.simplesoft.tooliva.feature.clean.swipe.CleanupSwipeRoute
 
 private data class TopDestination(
     val route: String,
@@ -95,7 +101,8 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
                         val route = when (id) {
                             "clean" -> "clean"
                             "protect" -> "protect"
-                            "notifications" -> "notifications"
+                            "notifications" -> "notification-history"
+                            "storage-map" -> "storage-map"
                             "doctor" -> "doctor"
                             "hardware" -> "hardware"
                             "files" -> "files"
@@ -122,13 +129,17 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("clean/old-videos") {
                 ModulePlaceholder("Old videos", "Review large and old videos without fake junk claims.")
             }
-            composable("clean/cleanup-swipe") {
-                ModulePlaceholder("Cleanup Swipe", "Fast keep/delete review with a final confirmation step.")
-            }
             composable("protect") { ModulePlaceholder("Protect", "App Lock, Vault and privacy tools.") }
             composable("tools") { ModulePlaceholder("Tools", "QR, network, compass and quick tools.") }
             composable("more") { ModulePlaceholder("More", "Settings, Pro and additional utilities.") }
-            composable("notifications") { ModulePlaceholder("Notification History", "Local notification history module.") }
+            composable("notification-history") { NotificationHistoryRoute(onBack = { navController.popBackStack() }) }
+            composable("storage-map") {
+                StorageMapRoute(
+                    onBack = { navController.popBackStack() },
+                    onOpenInFiles = { directory -> navController.navigate("files?path=${Uri.encode(directory.absolutePath)}") },
+                )
+            }
+            composable("notifications") { NotificationHistoryRoute(onBack = { navController.popBackStack() }) }
             composable("doctor") {
                 PhoneDoctorRoute(
                     onBack = { navController.popBackStack() },
@@ -140,7 +151,13 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
                 )
             }
             composable("hardware") { HardwareTestsRoute(onBack = { navController.popBackStack() }) }
-            composable("files") { FileManagerRoute(onOpenLargeFiles = { navController.navigate("clean/large-files") }) }
+            composable("files") {
+                FileManagerRoute(onOpenLargeFiles = { navController.navigate("clean/large-files") })
+            }
+            composable("files?path={path}", arguments = listOf(navArgument("path") { type = NavType.StringType; nullable = true; defaultValue = null })) { entry ->
+                FileManagerRoute(onOpenLargeFiles = { navController.navigate("clean/large-files") }, initialDirectory = entry.arguments?.getString("path")?.let(Uri::decode))
+            }
+            composable("clean/cleanup-swipe") { CleanupSwipeRoute(onBack = { navController.popBackStack() }, onOpenInFiles = { file -> navController.navigate("files?path=${Uri.encode(file.parentFile?.absolutePath)}") }) }
             composable("checkup") {
                 CheckupRoute(
                     onBack = { navController.popBackStack() },
