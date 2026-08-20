@@ -18,19 +18,18 @@ class StorageMapAnalyzer(context: Context) {
         emit(StorageMapEvent.Started)
         val volumes = storage.volumeInfos().associate { it.root.absolutePath to it.name }
         val aggregator = StorageMapAggregator(volumes)
-        storage.scan(0L, StorageScanScope.ALL_STORAGE).collect { event ->
+        storage.scanStorageMap().collect { event ->
             when (event) {
-                StorageScanEvent.Started -> Unit
-                is StorageScanEvent.EntryFound -> {
-                    val root = event.entry.volumeId ?: return@collect
-                    aggregator.addFile(root, event.entry.path, event.entry.sizeBytes)
+                StorageMapScanEvent.Started -> Unit
+                is StorageMapScanEvent.FileFound -> {
+                    aggregator.addFile(event.rootPath, event.path, event.sizeBytes)
                 }
-                is StorageScanEvent.Progress -> emit(StorageMapEvent.Progress(aggregator.filesChecked, 0L, aggregator.bytesCounted))
-                is StorageScanEvent.Warning -> {
+                is StorageMapScanEvent.Progress -> emit(StorageMapEvent.Progress(aggregator.filesChecked, 0L, aggregator.bytesCounted))
+                is StorageMapScanEvent.Warning -> {
                     aggregator.addWarning()
                     emit(StorageMapEvent.Warning(event.path))
                 }
-                StorageScanEvent.Completed -> Unit
+                StorageMapScanEvent.Completed -> Unit
             }
         }
         val result = aggregator.build()

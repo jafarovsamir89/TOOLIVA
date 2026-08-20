@@ -2,6 +2,7 @@
 
 package az.simplesoft.tooliva.feature.clean.swipe
 
+import android.content.ActivityNotFoundException
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -44,6 +45,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -69,6 +71,8 @@ fun CleanupSwipeRoute(
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val accessCoordinator = remember(context) { az.simplesoft.tooliva.core.storage.StorageAccessCoordinator(context) }
+    var accessError by remember { mutableStateOf<String?>(null) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshAccess() }
 
     BackHandler {
@@ -104,6 +108,15 @@ fun CleanupSwipeRoute(
         onConfirmDelete = viewModel::confirmDelete,
         onOpenInFiles = onOpenInFiles,
         context = context,
+        onOpenStorageSettings = {
+            try {
+                accessCoordinator.allFilesSettingsIntent()?.let(context::startActivity)
+                    ?: run { accessError = "Full Storage Access is not available on this Android version." }
+            } catch (_: ActivityNotFoundException) {
+                accessError = "Android did not provide the storage settings screen."
+            }
+        },
+        accessError = accessError,
     )
 }
 
@@ -126,6 +139,8 @@ private fun CleanupSwipeScreen(
     onConfirmDelete: () -> Unit,
     onOpenInFiles: (File) -> Unit,
     context: android.content.Context,
+    onOpenStorageSettings: () -> Unit,
+    accessError: String?,
 ) {
     Scaffold(
         topBar = {
@@ -153,6 +168,8 @@ private fun CleanupSwipeScreen(
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Full Storage Access is required", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text("Cleanup Swipe reviews local shared-storage files. Android access must be enabled before a category is loaded.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Button(onClick = onOpenStorageSettings) { Text("Allow access") }
+                            accessError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                         }
                     }
                 }

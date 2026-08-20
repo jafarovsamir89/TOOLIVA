@@ -24,7 +24,10 @@ class NotificationHistoryRepository(context: Context) {
 
     fun accessIntent(): Intent {
         val component = ComponentName(appContext, ToolivaNotificationListenerService::class.java)
-        val detail = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        val brand = Build.BRAND.lowercase()
+        val isXiaomiFamily = manufacturer.contains("xiaomi") || brand.contains("xiaomi") || brand.contains("redmi")
+        val detail = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !isXiaomiFamily) {
             Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS).putExtra(
                 Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
                 component,

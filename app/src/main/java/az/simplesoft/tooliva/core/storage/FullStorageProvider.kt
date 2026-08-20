@@ -139,6 +139,42 @@ class FullStorageProvider(context: Context) : StorageProvider {
         emit(StorageScanEvent.Completed)
     }.flowOn(Dispatchers.IO)
 
+    /** Lightweight traversal for folder totals: no MIME lookup, classifier or file attributes. */
+    internal fun scanStorageMap(): Flow<StorageMapScanEvent> = flow {
+        emit(StorageMapScanEvent.Started)
+        var filesChecked = 0L
+        volumeRoots().forEach { root ->
+            if (!root.exists() || !root.isDirectory) return@forEach
+            val seenDirectories = HashSet<String>()
+            val stack = ArrayDeque<File>()
+            stack.add(root)
+            while (stack.isNotEmpty()) {
+                coroutineContext.ensureActive()
+                val directory = stack.removeLast()
+                val canonicalDirectory = runCatching { directory.canonicalPath }.getOrNull() ?: continue
+                if (!seenDirectories.add(canonicalDirectory) || isProtectedPath(canonicalDirectory)) continue
+                val children = runCatching { directory.listFiles() }.getOrNull()
+                if (children == null) {
+                    emit(StorageMapScanEvent.Warning(canonicalDirectory))
+                    continue
+                }
+                children.forEach { child ->
+                    coroutineContext.ensureActive()
+                    if (isProtectedPath(child.absolutePath) || Files.isSymbolicLink(child.toPath())) return@forEach
+                    if (child.isDirectory) {
+                        stack.add(child)
+                    } else if (child.isFile) {
+                        filesChecked++
+                        emit(StorageMapScanEvent.FileFound(root.absolutePath, child.absolutePath, child.length().coerceAtLeast(0L)))
+                        if (filesChecked % PROGRESS_INTERVAL == 0L) emit(StorageMapScanEvent.Progress(filesChecked))
+                    }
+                }
+            }
+        }
+        emit(StorageMapScanEvent.Progress(filesChecked))
+        emit(StorageMapScanEvent.Completed)
+    }.flowOn(Dispatchers.IO)
+
     private fun roots(scope: StorageScanScope): List<File> {
         val volumes = storageRoots()
         if (scope == StorageScanScope.ALL_STORAGE) return volumes

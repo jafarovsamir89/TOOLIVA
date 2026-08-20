@@ -30,6 +30,14 @@ data class StorageMapResult(
     }
 }
 
+internal sealed interface StorageMapScanEvent {
+    data object Started : StorageMapScanEvent
+    data class FileFound(val rootPath: String, val path: String, val sizeBytes: Long) : StorageMapScanEvent
+    data class Progress(val filesChecked: Long) : StorageMapScanEvent
+    data class Warning(val path: String) : StorageMapScanEvent
+    data object Completed : StorageMapScanEvent
+}
+
 /** Memory-bounded aggregation helper; it retains folders, never individual file entries. */
 class StorageMapAggregator(private val rootNames: Map<String, String>) {
     private data class MutableNode(
@@ -53,8 +61,8 @@ class StorageMapAggregator(private val rootNames: Map<String, String>) {
 
     fun addFile(rootPath: String, filePath: String, bytes: Long) {
         val root = roots.getOrPut(rootPath) { MutableNode(rootPath, rootNames[rootPath] ?: File(rootPath).name.ifBlank { "Storage" }) }
-        val rootFile = File(rootPath).canonicalFile
-        var directory: File? = File(filePath).parentFile?.canonicalFile
+        val rootFile = File(rootPath).absoluteFile
+        var directory: File? = File(filePath).parentFile?.absoluteFile
         val chain = mutableListOf<MutableNode>()
         while (directory != null && directory.toPath().startsWith(rootFile.toPath())) {
             val currentDirectory = directory
@@ -87,7 +95,7 @@ class StorageMapAggregator(private val rootNames: Map<String, String>) {
 
     private fun rootsNode(directory: File, root: MutableNode): MutableNode {
         if (directory.path == root.path) return root
-        val parent = directory.parentFile?.canonicalFile ?: File(root.path)
+        val parent = directory.parentFile?.absoluteFile ?: File(root.path)
         val parentNode = rootsNode(parent, root)
         return parentNode.children.getOrPut(directory.path) { MutableNode(directory.path, directory.name.ifBlank { "Storage" }) }
     }
