@@ -9,7 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Workspaces
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,7 +59,7 @@ private data class TopDestination(
 private val topDestinations = listOf(
     TopDestination("home", "Home", Icons.Outlined.Home),
     TopDestination("clean", "Clean", Icons.Outlined.CleaningServices),
-    TopDestination("protect", "Protect", Icons.Outlined.Security),
+    TopDestination("files", "Files", Icons.Outlined.Folder),
     TopDestination("tools", "Tools", Icons.Outlined.Workspaces),
     TopDestination("more", "More", Icons.Outlined.MoreHoriz),
 )
@@ -99,16 +99,16 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("home") {
                 HomeRoute(
                     onCheckup = { navController.navigate("checkup") },
+                    onSettings = { navController.navigate("settings") },
                     onOpenTool = { id ->
                         val route = when (id) {
                             "clean" -> "clean"
-                            "protect" -> "protect"
                             "notifications" -> "notification-history"
                             "storage-map" -> "storage-map"
                             "doctor" -> "doctor"
                             "hardware" -> "hardware"
                             "files" -> "files"
-                            "qr" -> "tools"
+                            "duplicates" -> "clean/duplicates"
                             "optimizer" -> "optimizer"
                             "app-manager" -> "app-manager"
                             else -> "tools"
@@ -130,9 +130,9 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("clean/duplicates") { ExactDuplicatesRoute() }
             composable("clean/old-files") { OldFilesRoute() }
             composable("clean/empty-folders") { EmptyFoldersRoute() }
-            composable("protect") { ModulePlaceholder("Protect", "App Lock, Vault and privacy tools.") }
-            composable("tools") { ModulePlaceholder("Tools", "QR, network, compass and quick tools.") }
-            composable("more") { ModulePlaceholder("More", "Settings, Pro and additional utilities.") }
+            composable("tools") { ToolsRoute(onOpenTool = { id -> navController.navigate(if (id.startsWith("clean/")) id else when (id) { "notification-history" -> "notification-history"; "storage-map" -> "storage-map"; "app-manager" -> "app-manager"; "optimizer" -> "optimizer"; "doctor" -> "doctor"; "hardware" -> "hardware"; else -> "tools" }) }) }
+            composable("more") { MoreRoute(onSettings = { navController.navigate("settings") }) }
+            composable("settings") { SettingsRoute(onBack = { navController.popBackStack() }) }
             composable("notification-history") { NotificationHistoryRoute(onBack = { navController.popBackStack() }) }
             composable("storage-map") {
                 StorageMapRoute(
@@ -172,7 +172,11 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
     }
 }
 
-internal fun topLevelRoute(route: String?): String? = route?.substringBefore('/')
+internal fun topLevelRoute(route: String?): String? = when {
+    route == null -> null
+    route == "settings" -> "more"
+    else -> route.substringBefore('/').substringBefore('?')
+}
 
 @Composable
 private fun ModulePlaceholder(title: String, subtitle: String) {

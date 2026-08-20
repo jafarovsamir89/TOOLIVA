@@ -1,6 +1,6 @@
 # Tooliva — Architecture
 
-Revision: 2026-08-18
+Revision: 2026-08-20
 
 Authoritative product context:
 - `docs/PRODUCT_CONSTITUTION.md`
@@ -80,6 +80,8 @@ Do not create many Gradle modules before build/test/ownership boundaries justify
 - explicit user actions
 - no hidden heavy scan triggered by navigation unless explicitly approved
 - progressive UI updates when scan results arrive
+- shared Tooliva design tokens/components for spacing, surfaces, typography and motion
+- appearance preference is persisted with DataStore Preferences; Notification History keeps its existing Room persistence
 
 ## 4. Storage access state
 
@@ -433,7 +435,11 @@ Storage Map is a direct explicit `FullStorageProvider` aggregation that retains 
 
 Cleanup Swipe is an in-memory review state machine over existing `StorageEntry` sources. Decisions are reversible during review; final deletion is a separate confirmation and delegates to `FileOperationCoordinator`, so missing files, failures and verified Cleanup Receipt semantics stay centralized.
 
-## 24. Analytics/privacy
+## 24. Product shell and preferences
+
+The product shell owns Home/Clean/Files/Tools/More navigation. Tools and More expose only implemented modules and real settings; future Vault, App Lock, QR, PDF, Pro and ads are not represented as working destinations. `ToolivaPreferences` uses DataStore Preferences for the non-sensitive System/Dark/Light appearance mode. Storage, Usage and Notification Access status continue to come from their existing coordinators/repositories.
+
+## 25. Analytics/privacy
 
 Allow-list aggregate events only.
 
@@ -446,7 +452,7 @@ Never include:
 - notification text;
 - Vault contents.
 
-## 25. Performance discipline
+## 26. Performance discipline
 
 Measure:
 
@@ -459,7 +465,7 @@ Measure:
 
 Only optimize after a real bottleneck is measured.
 
-## 26. Testing boundary
+## 27. Testing boundary
 
 Automated testing verifies deterministic technical behavior.
 

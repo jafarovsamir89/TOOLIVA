@@ -168,11 +168,9 @@ Do not add more layers to rescue that architecture. Recover the direct progressi
 
 ## Current milestone
 
-**Cleaner 2.0 — one explicit scan, explainable Action Plan, Old Files, Empty Folders and Large Files v2**
+**Tooliva UI/UX 2.0 — Product Shell and Design System**
 
-Clean starts only when the user taps Analyze storage. One direct progressive traversal feeds review-only category cards with real counts and bytes. It does not create a whole-device index, read file contents, hash files, generate all thumbnails or delete anything automatically. Old Files uses conservative age/location scopes; residual candidates are limited to old temporary fragments in Downloads; Empty Folders revalidates emptiness immediately before non-recursive deletion. Large Files adds single/multiple sharing, details and parent-folder navigation through safe URIs.
-
-The physical Xiaomi PASS for these new flows remains a human-owned TODO gate. Samsung, Pixel, SD-card and USB behavior is not claimed from Xiaomi testing.
+Cleaner 2.0 is human-confirmed responsive on Xiaomi after `6d5fccc`. This slice adds a dark-first Tooliva design system, responsive Home dashboard, real Home/Clean/Files/Tools/More navigation, a real Tools hub, appearance persistence and Settings access-status surfaces. Stable Cleaner/File Manager/device logic remains behind the presentation layer; Vault, App Lock, QR, PDF tools, ads, billing and fake Pro features are not exposed.
 
 See `TODO.md` for exact tasks.
 

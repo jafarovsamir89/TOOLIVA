@@ -222,9 +222,26 @@ Candidate rules to research/implement one by one:
 
 ## Cleaner 2.0 manual gates
 
+- [x] [P0] Human Xiaomi Cleaner One Scan / Action Plan PASS — confirmed after `6d5fccc`
 - [ ] [P0] Human Xiaomi Large Files v2 PASS (share/details/show in Files/scan regression)
 - [ ] [P0] Human Xiaomi Screenshot Cleaner regression PASS after shared Action Plan integration
 - [ ] [P0] Samsung/Pixel/SD/USB validation — not claimed by Xiaomi testing
+
+---
+
+# Phase UI/UX 2.0 — PRODUCT SHELL
+
+- [~] [P0] Design System 2.0 tokens, dark/light palette and typography
+- [ ] [P0] Motion and tactile interaction system
+- [ ] [P0] Home 2.0 dashboard and responsive 2-column tool grid
+- [ ] [P0] meaningful bottom navigation: Home/Clean/Files/Tools/More
+- [ ] [P0] real Tools hub using implemented modules only
+- [ ] [P0] real More/Settings screen
+- [ ] [P0] persisted System/Dark/Light appearance preference
+- [ ] [P1] language preference infrastructure and shell resources (EN/RU/AZ/TR)
+- [ ] [P0] core screen visual migration: Clean, Large Files, Files, Duplicates, Cleanup Swipe, Storage Map, App Manager, Phone Doctor, Checkup, Notification History
+- [ ] [P1] launcher icon/splash and system-bar audit
+- [ ] [P0] Human Xiaomi UI/UX 2.0 PASS
 
 ---
 

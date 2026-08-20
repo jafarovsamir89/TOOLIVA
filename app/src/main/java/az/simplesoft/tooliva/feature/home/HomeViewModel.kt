@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.PowerManager
 import androidx.lifecycle.AndroidViewModel
 import az.simplesoft.tooliva.core.device.DeviceSnapshotProvider
+import az.simplesoft.tooliva.core.device.MemorySnapshotProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -14,10 +15,12 @@ data class HomeUiState(
     val storageUsedFraction: Float = 0f,
     val batteryPercent: Int? = null,
     val thermalLabel: String = "Unavailable",
+    val memoryPressure: String = "Unavailable",
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val provider = DeviceSnapshotProvider(application)
+    private val memoryProvider = MemorySnapshotProvider(application)
 
     private val _uiState = MutableStateFlow(readState())
     val uiState = _uiState.asStateFlow()
@@ -28,6 +31,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun readState(): HomeUiState {
         val snapshot = provider.read()
+        val memory = memoryProvider.read()
         return HomeUiState(
             storageTotalBytes = snapshot.storageTotalBytes,
             storageUsedBytes = snapshot.storageUsedBytes,
@@ -35,6 +39,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             storageUsedFraction = snapshot.storageUsedFraction,
             batteryPercent = snapshot.batteryPercent,
             thermalLabel = thermalLabel(snapshot.thermalStatus),
+            memoryPressure = memory?.pressureLabel ?: "Unavailable",
         )
     }
 

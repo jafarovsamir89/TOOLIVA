@@ -8,8 +8,16 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import az.simplesoft.tooliva.core.settings.AppearanceMode
+import az.simplesoft.tooliva.core.settings.ToolivaPreferences
 
 private val DarkColors = darkColorScheme(
     primary = Color(0xFF65E6C4),
@@ -39,25 +47,43 @@ private val LightColors = lightColorScheme(
     outline = Color(0xFF737B87),
 )
 
+private val ToolivaTypography = androidx.compose.material3.Typography().run {
+    copy(
+        displayLarge = displayLarge.copy(fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp),
+        headlineLarge = headlineLarge.copy(fontWeight = FontWeight.Black),
+        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.Bold),
+        titleLarge = titleLarge.copy(fontWeight = FontWeight.Bold),
+        titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold),
+        labelLarge = labelLarge.copy(fontWeight = FontWeight.SemiBold),
+    )
+}
+
 @Composable
 fun ToolivaTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean? = null,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
+    val preferences = remember(context) { ToolivaPreferences(context) }
+    val appearance by preferences.appearance.collectAsState(initial = AppearanceMode.SYSTEM)
+    val resolvedDarkTheme = darkTheme ?: when (appearance) {
+        AppearanceMode.SYSTEM -> isSystemInDarkTheme()
+        AppearanceMode.DARK -> true
+        AppearanceMode.LIGHT -> false
+    }
     val scheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && darkTheme ->
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && resolvedDarkTheme ->
             dynamicDarkColorScheme(context)
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
             dynamicLightColorScheme(context)
-        darkTheme -> DarkColors
+        resolvedDarkTheme -> DarkColors
         else -> LightColors
     }
 
     MaterialTheme(
         colorScheme = scheme,
-        typography = MaterialTheme.typography,
+        typography = ToolivaTypography,
         content = content,
     )
 }

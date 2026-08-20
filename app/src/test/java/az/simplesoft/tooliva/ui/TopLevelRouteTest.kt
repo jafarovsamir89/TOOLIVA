@@ -19,4 +19,10 @@ class TopLevelRouteTest {
     fun missingRouteHasNoSelectedTab() {
         assertNull(topLevelRoute(null))
     }
+
+    @Test
+    fun fileManagerQueryBelongsToFilesAndSettingsBelongsToMore() {
+        assertEquals("files", topLevelRoute("files?path=%2Fstorage%2Femulated%2F0"))
+        assertEquals("more", topLevelRoute("settings"))
+    }
 }

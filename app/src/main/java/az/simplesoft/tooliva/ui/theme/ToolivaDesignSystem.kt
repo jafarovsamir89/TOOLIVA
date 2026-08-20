@@ -1,0 +1,91 @@
+package az.simplesoft.tooliva.ui.theme
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+
+object ToolivaSpacing {
+    val xs = 4.dp
+    val sm = 8.dp
+    val md = 12.dp
+    val lg = 16.dp
+    val xl = 20.dp
+    val xxl = 24.dp
+    val hero = 32.dp
+}
+
+object ToolivaShapes {
+    val small = RoundedCornerShape(12.dp)
+    val medium = RoundedCornerShape(16.dp)
+    val large = RoundedCornerShape(20.dp)
+    val hero = RoundedCornerShape(28.dp)
+}
+
+object ToolivaMotion {
+    const val fastMillis = 140
+    const val normalMillis = 240
+    const val emphasizedMillis = 380
+}
+
+@Composable
+fun ToolivaSectionHeader(title: String, modifier: Modifier = Modifier, subtitle: String? = null) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(ToolivaSpacing.xs)) {
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        subtitle?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
+}
+
+@Composable
+fun ToolivaToolTile(
+    title: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    onClick: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        shape = ToolivaShapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(ToolivaSpacing.lg),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(ToolivaSpacing.md),
+        ) {
+            ToolivaIconTile(icon)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(ToolivaSpacing.xs)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2) }
+            }
+            Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+fun ToolivaIconTile(icon: ImageVector, modifier: Modifier = Modifier) {
+    Card(shape = ToolivaShapes.medium, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer), modifier = modifier) {
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier.padding(ToolivaSpacing.md),
+            contentAlignment = Alignment.Center,
+        ) { Icon(icon, contentDescription = null) }
+    }
+}

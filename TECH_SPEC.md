@@ -588,7 +588,11 @@ After device-dependent implementation the agent must stop and provide `MANUAL TE
 
 The recovery decisions above are implemented. Cleaner 2.0 now uses one explicit direct progressive scan from Clean to a review-only Action Plan. It reuses existing Large Files, Downloads, Screenshot and Cleanup Receipt flows, and adds conservative Old Files, Empty Folders and residual candidate rules. No Room index, WorkManager crawler, content reads or automatic destructive operation is introduced. The remaining gate is human Xiaomi validation of the new connected flow; no Samsung/Pixel/SD/USB claim is made.
 
-# 25. Release principles
+# 25. Product Shell / UI-UX 2.0
+
+The shell uses shared Tooliva spacing, shape, typography and motion tokens. Top-level navigation is Home, Clean, Files, Tools and More; Tools and More contain only implemented functionality. Appearance is a non-sensitive System/Dark/Light preference stored in DataStore Preferences. Existing storage, cleanup, notification, app and device business logic remains in its current ViewModel/provider/coordinator boundaries.
+
+# 26. Release principles
 
 Do not ship until:
 

@@ -53,6 +53,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import az.simplesoft.tooliva.core.storage.StorageAccessCoordinator
 import az.simplesoft.tooliva.core.storage.StorageAccessMode
 import az.simplesoft.tooliva.feature.home.HomeViewModel
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
+import az.simplesoft.tooliva.ui.theme.ToolivaSpacing
 
 private data class CleanTool(val id: String, val title: String, val subtitle: String, val icon: ImageVector)
 
@@ -83,7 +85,7 @@ fun CleanRoute(onOpenTool: (String) -> Unit, viewModel: HomeViewModel = viewMode
     val used = Formatter.formatFileSize(context, homeState.storageUsedBytes)
     val total = Formatter.formatFileSize(context, homeState.storageTotalBytes)
     val free = Formatter.formatFileSize(context, homeState.storageAvailableBytes)
-    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(ToolivaSpacing.lg), verticalArrangement = Arrangement.spacedBy(ToolivaSpacing.md)) {
         item {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text("Clean", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
@@ -91,9 +93,9 @@ fun CleanRoute(onOpenTool: (String) -> Unit, viewModel: HomeViewModel = viewMode
             }
         }
         item {
-            Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
-                Row(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(progress = { homeState.storageUsedFraction }, modifier = Modifier.padding(4.dp), strokeWidth = 9.dp, trackColor = MaterialTheme.colorScheme.surfaceVariant)
+            Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                Row(modifier = Modifier.fillMaxWidth().padding(ToolivaSpacing.xl), horizontalArrangement = Arrangement.spacedBy(ToolivaSpacing.xl), verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(progress = { homeState.storageUsedFraction }, modifier = Modifier.padding(ToolivaSpacing.xs), strokeWidth = 9.dp, trackColor = MaterialTheme.colorScheme.surfaceVariant)
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Storage", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text("$used of $total used")
@@ -110,8 +112,8 @@ fun CleanRoute(onOpenTool: (String) -> Unit, viewModel: HomeViewModel = viewMode
             })
         }
         item {
-            Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
-                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                Column(modifier = Modifier.padding(ToolivaSpacing.xl), verticalArrangement = Arrangement.spacedBy(ToolivaSpacing.md)) {
                     Text("Cleaner analysis", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(when (analysisState.status) {
                         CleanerAnalysisStatus.ANALYZING -> "Checking accessible files and folders…"
@@ -136,8 +138,8 @@ fun CleanRoute(onOpenTool: (String) -> Unit, viewModel: HomeViewModel = viewMode
                 }
             }
             items(analysisState.snapshot.summaries, key = { it.bucket.name }) { summary ->
-                Card(onClick = { onOpenTool(summary.bucket.route) }, shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                    Row(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Card(onClick = { onOpenTool(summary.bucket.route) }, shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(ToolivaSpacing.xl), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ToolivaSpacing.md)) {
                         Icon(cleanerBucketIcon(summary.bucket), contentDescription = null)
                         Column(modifier = Modifier.weight(1f)) {
                             Text(summary.bucket.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -150,8 +152,8 @@ fun CleanRoute(onOpenTool: (String) -> Unit, viewModel: HomeViewModel = viewMode
         }
         item { Text("Cleanup tools", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
         items(cleanTools, key = { it.id }) { tool ->
-            Card(onClick = { onOpenTool(tool.id) }, shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                Row(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Card(onClick = { onOpenTool(tool.id) }, shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+                Row(modifier = Modifier.fillMaxWidth().padding(ToolivaSpacing.xl), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ToolivaSpacing.md)) {
                     Icon(tool.icon, contentDescription = null)
                     Column(modifier = Modifier.weight(1f)) {
                         Text(tool.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
