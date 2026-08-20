@@ -73,6 +73,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -258,7 +259,7 @@ private fun ExactDuplicatesScreen(
 
 @Composable
 private fun AnalyzeCard(state: ExactDuplicatesUiState, onAnalyze: () -> Unit, onCancel: () -> Unit) {
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (state.isAnalyzing) CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp) else Icon(Icons.Outlined.PhotoLibrary, null, Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
@@ -280,7 +281,7 @@ private fun AnalyzeCard(state: ExactDuplicatesUiState, onAnalyze: () -> Unit, on
 
 @Composable
 private fun SummaryCard(state: ExactDuplicatesUiState) {
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("${state.groups.size} duplicate groups", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
             Text("${state.identicalFileCount} identical files · ${Formatter.formatFileSize(LocalContext.current, state.potentialRecoverableBytes)} potentially recoverable")
@@ -305,7 +306,7 @@ private fun DuplicateGroupCard(
     onShowInFiles: (StorageEntry) -> Unit,
     onDetails: (StorageEntry) -> Unit,
 ) {
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("${group.copyCount} identical copies", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text("${Formatter.formatFileSize(LocalContext.current, group.fileSizeBytes)} each · ${Formatter.formatFileSize(LocalContext.current, group.potentialRecoverableBytes)} potentially recoverable", color = MaterialTheme.colorScheme.onSurfaceVariant)

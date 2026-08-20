@@ -69,6 +69,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -192,7 +193,7 @@ private fun AppManagerScreen(
             if (state.selectedPackages.isNotEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(12.dp),
-                    shape = RoundedCornerShape(22.dp),
+                    shape = ToolivaShapes.hero,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 ) {
                     Row(
@@ -222,7 +223,7 @@ private fun AppManagerScreen(
             }
             if (!state.usageAccessGranted) {
                 item {
-                    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Icon(Icons.Outlined.Info, null, tint = MaterialTheme.colorScheme.primary)
@@ -301,7 +302,7 @@ private fun AppManagerScreen(
 
 @Composable
 private fun SummaryCard(items: List<AppItem>, isLoading: Boolean, isEnriching: Boolean) {
-    Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Outlined.Apps, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
@@ -327,7 +328,7 @@ private fun AppRow(item: AppItem, selected: Boolean, onClick: () -> Unit, onTogg
     val context = LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(22.dp),
+        shape = ToolivaShapes.hero,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -418,7 +419,7 @@ private fun AppDetailsScreen(
 
 @Composable
 private fun InfoCard(title: String, content: @Composable () -> Unit) {
-    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             HorizontalDivider()
@@ -449,7 +450,7 @@ private fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun LoadingCard() {
-    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Row(Modifier.fillMaxWidth().padding(22.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
             Text("Loading visible apps…")
@@ -459,7 +460,7 @@ private fun LoadingCard() {
 
 @Composable
 private fun EmptyCard(filter: AppFilter, query: String) {
-    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(if (query.isBlank()) "No apps in this view" else "No matching apps", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(if (filter == AppFilter.RARELY_USED) "Apps without a real last-used timestamp are not classified as rarely used." else "Try another filter or search term.", color = MaterialTheme.colorScheme.onSurfaceVariant)

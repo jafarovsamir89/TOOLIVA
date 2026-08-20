@@ -76,6 +76,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
+import az.simplesoft.tooliva.ui.theme.ToolivaSpacing
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -307,7 +309,7 @@ private fun RootContent(
         item { Text("Open a folder to browse. Searches and category scans start only when you ask.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (!state.accessState.allFilesAccessGranted) {
             item {
-                Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Icon(Icons.Outlined.Storage, contentDescription = null)
                         Text("Full Storage Access is needed", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -336,7 +338,7 @@ private fun RootContent(
 
 @Composable
 private fun VolumeCard(volume: StorageVolumeInfo, onClick: () -> Unit) {
-    Card(onClick = onClick, shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(onClick = onClick, shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.Storage, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.padding(start = 14.dp).weight(1f)) {
@@ -394,7 +396,7 @@ private fun BrowserContent(
 
 @Composable
 private fun FileRow(entry: StorageEntry, itIsSelected: Boolean, onOpen: (StorageEntry) -> Unit, onToggleSelection: (StorageEntry) -> Unit, onDetails: (StorageEntry) -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().combinedClickable(onClick = { onOpen(entry) }, onLongClick = { onToggleSelection(entry) }), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(modifier = Modifier.fillMaxWidth().combinedClickable(onClick = { onOpen(entry) }, onLongClick = { onToggleSelection(entry) }), shape = ToolivaShapes.medium, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = itIsSelected, onCheckedChange = { onToggleSelection(entry) })
             Icon(fileIcon(entry), null, Modifier.size(28.dp), tint = if (entry.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary)
@@ -406,7 +408,7 @@ private fun FileRow(entry: StorageEntry, itIsSelected: Boolean, onOpen: (Storage
 
 @Composable
 private fun FileGridCell(entry: StorageEntry, selected: Boolean, onOpen: (StorageEntry) -> Unit, onToggleSelection: (StorageEntry) -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().combinedClickable(onClick = { onOpen(entry) }, onLongClick = { onToggleSelection(entry) }), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(modifier = Modifier.fillMaxWidth().combinedClickable(onClick = { onOpen(entry) }, onLongClick = { onToggleSelection(entry) }), shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) { Icon(fileIcon(entry), null, Modifier.size(42.dp)); Text(entry.name, maxLines = 2, style = MaterialTheme.typography.bodyMedium); Text(if (entry.isDirectory) "Folder" else Formatter.formatFileSize(LocalContext.current, entry.sizeBytes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }

@@ -125,7 +125,7 @@ Do not add these solely to satisfy architecture style.
 - [x] [P0] no index/database/generation terminology in production UI
 - [x] [P0] scan can be canceled
 - [x] [P0] no heavy auto-scan on navigation
-- [ ] [P0] Human Xiaomi Cleaner One Scan / Action Plan PASS
+- [x] [P0] Human Xiaomi Cleaner One Scan / Action Plan PASS — confirmed after `6d5fccc`
 
 ## Large Files
 
@@ -239,7 +239,7 @@ Candidate rules to research/implement one by one:
 - [x] [P0] real More/Settings screen
 - [x] [P0] persisted System/Dark/Light appearance preference
 - [ ] [P1] language preference infrastructure and shell resources (EN/RU/AZ/TR)
-- [ ] [P0] core screen visual migration: Clean, Large Files, Files, Duplicates, Cleanup Swipe, Storage Map, App Manager, Phone Doctor, Checkup, Notification History
+- [x] [P0] core screen visual migration: Clean, Large Files, Files, Duplicates, Cleanup Swipe, Storage Map, App Manager, Phone Doctor, Checkup, Notification History — shared tokens applied; functional logic unchanged
 - [x] [P1] launcher icon/splash and system-bar audit
 - [ ] [P0] Human Xiaomi UI/UX 2.0 PASS
 

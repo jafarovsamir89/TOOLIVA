@@ -72,6 +72,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
 import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -228,7 +229,7 @@ fun LargeFilesRoute(onOpenInFiles: (String) -> Unit = {}, viewModel: LargeFilesV
             if (!fullMode && !hasMediaAccess) {
                 item {
                     Card(
-                        shape = RoundedCornerShape(24.dp),
+                        shape = ToolivaShapes.hero,
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                     ) {
                         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -245,7 +246,7 @@ fun LargeFilesRoute(onOpenInFiles: (String) -> Unit = {}, viewModel: LargeFilesV
             } else {
                 item {
                     Card(
-                        shape = RoundedCornerShape(24.dp),
+                        shape = ToolivaShapes.hero,
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                     ) {
                         Row(
@@ -351,7 +352,7 @@ fun LargeFilesRoute(onOpenInFiles: (String) -> Unit = {}, viewModel: LargeFilesV
                 if (!state.isLoading && state.errorMessage == null && state.visibleFiles.isEmpty()) {
                     item {
                         Card(
-                            shape = RoundedCornerShape(24.dp),
+                            shape = ToolivaShapes.hero,
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                         ) {
                             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -399,7 +400,7 @@ private fun LargeFileCard(file: LargeMediaFile, selectedUris: Set<String>, viewM
     val selected = file.uri.toString() in selectedUris
     Card(
         onClick = { viewModel.toggleSelection(file.uri.toString()) },
-        shape = RoundedCornerShape(18.dp),
+        shape = ToolivaShapes.large,
         colors = CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Row(

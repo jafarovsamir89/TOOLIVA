@@ -58,6 +58,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import az.simplesoft.tooliva.core.device.BatterySnapshot
 import az.simplesoft.tooliva.core.device.DisplaySnapshot
 import az.simplesoft.tooliva.core.device.MemorySnapshot
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
 import az.simplesoft.tooliva.core.device.PhoneDoctorSnapshot
 import az.simplesoft.tooliva.core.device.SensorSnapshot
 import az.simplesoft.tooliva.core.device.StorageVolumeSnapshot
@@ -128,7 +129,7 @@ private fun PhoneDoctorScreen(
 
 @Composable
 private fun HeaderCard(snapshot: PhoneDoctorSnapshot) {
-    Card(shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Outlined.PhoneAndroid, null, Modifier.size(34.dp))
@@ -141,7 +142,7 @@ private fun HeaderCard(snapshot: PhoneDoctorSnapshot) {
 
 @Composable
 private fun ActionCard(onHardwareTests: () -> Unit, onCheckup: () -> Unit) {
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(onClick = onHardwareTests, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Sensors, null); Text("Run hardware tests", Modifier.padding(start = 8.dp)) }
             Button(onClick = onCheckup, Modifier.fillMaxWidth()) { Text("Check my phone") }
@@ -204,7 +205,7 @@ private fun DisplayCard(display: DisplaySnapshot) = SimpleCard("Display", Icons.
 
 @Composable
 private fun SimpleCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, content: @Composable () -> Unit) {
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(icon, null, tint = MaterialTheme.colorScheme.primary); Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
             content()
@@ -219,7 +220,7 @@ private fun DetailRow(label: String, value: String) {
 
 @Composable
 private fun SensorRow(sensor: SensorSnapshot, selected: Boolean, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick), shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) { Text(sensor.name, fontWeight = FontWeight.Bold); Text("${sensor.typeLabel} · ${sensor.group.label} · ${sensor.vendor}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Text("Range ${sensor.maxRange} · Resolution ${sensor.resolution} · Power ${sensor.powerMa} mA", style = MaterialTheme.typography.bodySmall) }
     }
 }

@@ -65,6 +65,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -178,7 +179,7 @@ private fun CleanupSwipeScreen(
 
             if (state.accessState.mode != StorageAccessMode.FULL) {
                 item {
-                    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Full Storage Access is required", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text("Cleanup Swipe reviews local shared-storage files. Android access must be enabled before a category is loaded.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -196,7 +197,7 @@ private fun CleanupSwipeScreen(
 
             if (state.phase == CleanupSwipePhase.LOADING) {
                 item {
-                    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator()
                             Text("Loading ${state.selectedCategory?.title ?: "files"}…", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -279,7 +280,7 @@ private fun CategoryPicker(state: CleanupSwipeSnapshot, onLoad: (CleanupSwipeCat
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Choose a category", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         CleanupSwipeCategory.entries.forEach { category ->
-            Card(onClick = { onLoad(category) }, enabled = state.accessState.mode == StorageAccessMode.FULL, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+            Card(onClick = { onLoad(category) }, enabled = state.accessState.mode == StorageAccessMode.FULL, shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                 Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Icon(Icons.Outlined.FolderOpen, null, tint = MaterialTheme.colorScheme.primary)
                     Column(Modifier.weight(1f)) { Text(category.title, fontWeight = FontWeight.Bold); Text(category.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
@@ -302,7 +303,7 @@ private fun SortBar(sort: CleanupSwipeSort, onSort: (CleanupSwipeSort) -> Unit) 
 @Composable
 private fun ReviewSummary(state: CleanupSwipeSnapshot, context: android.content.Context, onUndo: () -> Unit, onFinalReview: () -> Unit) {
     val session = state.session
-    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -333,7 +334,7 @@ private fun SwipeCard(entry: StorageEntry, category: CleanupSwipeCategory?, cont
                 onDragCancel = { dragAmount = 0f },
             )
         },
-        shape = RoundedCornerShape(26.dp),
+        shape = ToolivaShapes.hero,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -403,7 +404,7 @@ private fun SwipePreview(entry: StorageEntry, context: android.content.Context) 
 
 @Composable
 private fun ReviewEntryRow(entry: StorageEntry, decision: SwipeDecision, context: android.content.Context, onUnselect: (String) -> Unit, onShowDetails: (StorageEntry) -> Unit, onOpenInFiles: (File) -> Unit) {
-    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(Modifier.weight(1f)) { Text(entry.name, fontWeight = FontWeight.Bold); Text(Formatter.formatFileSize(context, entry.sizeBytes), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
             IconButton(onClick = { onShowDetails(entry) }) { Icon(Icons.Outlined.Info, "Details") }
@@ -415,7 +416,7 @@ private fun ReviewEntryRow(entry: StorageEntry, decision: SwipeDecision, context
 
 @Composable
 private fun EmptyReview(category: CleanupSwipeCategory?) {
-    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Outlined.Info, null, modifier = Modifier.size(36.dp))
             Text("No ${category?.title?.lowercase() ?: "files"} found", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -426,7 +427,7 @@ private fun EmptyReview(category: CleanupSwipeCategory?) {
 
 @Composable
 private fun EmptyDeleteSelection() {
-    Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.WarningAmber, null)
             Text("No files are selected for deletion. Go back and choose Delete for a file.")

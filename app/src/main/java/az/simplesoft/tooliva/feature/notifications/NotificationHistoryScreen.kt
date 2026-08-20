@@ -57,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -172,7 +173,7 @@ private fun NotificationHistoryScreen(
             if (!state.accessGranted) item { AccessCard(onEnable) }
             if (state.paused) item { Text("History paused — new notifications are not being saved.", color = MaterialTheme.colorScheme.tertiary) }
             item {
-                Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                     Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         Icon(Icons.Outlined.Notifications, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(38.dp))
                         Column(Modifier.weight(1f)) { Text("${state.entries.size} notifications", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black); Text("${state.appCounts.size} apps in this view", color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -200,7 +201,7 @@ private fun NotificationHistoryScreen(
 
 @Composable
 private fun AccessCard(onEnable: () -> Unit) {
-    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Notification Access is off", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text("Tooliva can only save notifications received after you explicitly enable access. Existing Android notifications cannot be recovered.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -219,7 +220,7 @@ private fun NotificationSettingsCard(
     onInclude: (String) -> Unit,
     onClearAll: () -> Unit,
 ) {
-    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("History settings", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             SettingSwitch("Pause history", state.paused, onPaused)
@@ -250,7 +251,7 @@ private fun SettingSwitch(label: String, checked: Boolean, onChange: (Boolean) -
 
 @Composable
 private fun NotificationRow(entry: NotificationHistoryEntity, onOpen: (Long) -> Unit, onPin: (NotificationHistoryEntity) -> Unit, onDelete: (NotificationHistoryEntity) -> Unit, context: Context) {
-    Card(Modifier.fillMaxWidth().clickable { onOpen(entry.id) }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(Modifier.fillMaxWidth().clickable { onOpen(entry.id) }, shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             AppIcon(entry.packageName, Modifier.size(42.dp), context)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -275,7 +276,7 @@ private fun NotificationDetailsScreen(entry: NotificationHistoryEntity, onBack: 
     }
 }
 
-@Composable private fun DetailCard(label: String, value: String) { Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) { Column(Modifier.padding(16.dp)) { Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(value, modifier = Modifier.padding(top = 4.dp)) } } }
+@Composable private fun DetailCard(label: String, value: String) { Card(Modifier.fillMaxWidth(), shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) { Column(Modifier.padding(16.dp)) { Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(value, modifier = Modifier.padding(top = 4.dp)) } } }
 
 @Composable
 private fun EmptyHistoryCard(accessGranted: Boolean) { Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Outlined.Info, null); Text(if (accessGranted) "No saved notifications yet" else "No saved history", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text(if (accessGranted) "New notifications will appear after Android delivers them to Tooliva." else "Grant Notification Access to save future notifications.", color = MaterialTheme.colorScheme.onSurfaceVariant) } }

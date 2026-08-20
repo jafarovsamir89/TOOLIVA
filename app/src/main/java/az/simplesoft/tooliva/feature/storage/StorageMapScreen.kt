@@ -59,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -159,7 +160,7 @@ private fun StorageMapScreen(
             }
             if (state.accessState.mode != StorageAccessMode.FULL) {
                 item {
-                    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Full Storage Access is needed", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text("Android limits direct folder aggregation until you allow access in system settings.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -171,7 +172,7 @@ private fun StorageMapScreen(
             }
             if (state.phase == StorageMapPhase.IDLE) {
                 item {
-                    Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                         Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Outlined.Map, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(42.dp))
                             Text("Ready to analyze", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -183,7 +184,7 @@ private fun StorageMapScreen(
             }
             if (state.phase == StorageMapPhase.LOADING) {
                 item {
-                    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp); Text("Analyzing storage…", fontWeight = FontWeight.Bold) }
                             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -243,7 +244,7 @@ private fun StorageMapScreen(
 
 @Composable
 private fun MapSummaryCard(state: StorageMapUiState, context: android.content.Context) {
-    Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Outlined.Storage, null, tint = MaterialTheme.colorScheme.primary); Text("Storage analyzed", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
             Text("${state.bytesCounted.formatBytes(context)} counted in ${state.foldersFound} folders")
@@ -259,7 +260,7 @@ private fun Treemap(nodes: List<StorageMapNode>, parent: StorageMapNode?, contex
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { node ->
                     val weight = (node.totalBytes.toDouble() / (row.sumOf { it.totalBytes }.coerceAtLeast(1L))).toFloat().coerceAtLeast(0.2f)
-                    Card(modifier = Modifier.weight(weight).height(92.dp).clickable { onOpenNode(node) }, shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f))) {
+                    Card(modifier = Modifier.weight(weight).height(92.dp).clickable { onOpenNode(node) }, shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f))) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.SpaceBetween) { Text(node.name, maxLines = 1, fontWeight = FontWeight.Bold); Text(node.totalBytes.formatBytes(context)); Text("${node.percentOf(parent)}%", style = MaterialTheme.typography.labelSmall) }
                     }
                 }
@@ -278,7 +279,7 @@ private fun FolderRow(
     onShowDetails: (StorageMapNode) -> Unit,
     onRequestDelete: (StorageMapNode) -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth().clickable { onOpenNode(node) }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    Card(modifier = Modifier.fillMaxWidth().clickable { onOpenNode(node) }, shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(Icons.Outlined.Folder, null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) { Text(node.name, fontWeight = FontWeight.Bold); Text("${node.fileCount} files · ${node.percentOf(parent)}% of parent", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }

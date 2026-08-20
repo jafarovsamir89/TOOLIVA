@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.simplesoft.tooliva.ui.theme.ToolivaShapes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -84,7 +85,7 @@ private fun CheckupResultScreen(result: CheckupResult, onOpenAction: (String) ->
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("Checkup complete", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black) }
         if (result.attentionItems.isNotEmpty()) item {
-            Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+            Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text("Needs attention", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); result.attentionItems.forEach { Text("• $it") } }
             }
         }
@@ -92,7 +93,7 @@ private fun CheckupResultScreen(result: CheckupResult, onOpenAction: (String) ->
         item { CheckupFacts(result) }
         item { Text("Cleanup tools", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         items(checkupActions, key = { it.id }) { action ->
-            Card(onClick = { onOpenAction(action.id) }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+            Card(onClick = { onOpenAction(action.id) }, shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) { Icon(actionIcon(action.id), null, tint = MaterialTheme.colorScheme.primary); Column { Text(action.title, fontWeight = FontWeight.Bold); Text(action.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
             }
         }
@@ -102,7 +103,7 @@ private fun CheckupResultScreen(result: CheckupResult, onOpenAction: (String) ->
 
 @Composable
 private fun SummaryCard(result: CheckupResult) {
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { Text("Hardware tests", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text("${result.hardware.completed} of ${result.hardware.supported} supported tests completed"); if (result.hardware.failed > 0) Text("${result.hardware.failed} problem reported", color = MaterialTheme.colorScheme.error) }
     }
 }
@@ -111,7 +112,7 @@ private fun SummaryCard(result: CheckupResult) {
 private fun CheckupFacts(result: CheckupResult) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val snapshot = result.snapshot
-    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Device and system", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Fact("Device", snapshot.device.model); Fact("Android", "${snapshot.system.androidVersion} · SDK ${snapshot.system.sdkLevel}"); Fact("Security patch", snapshot.system.securityPatch)
