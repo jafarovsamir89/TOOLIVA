@@ -21,6 +21,7 @@ data class CheckupResult(
     val hardware: CheckupHardwareSummary,
     val checkedAtMillis: Long,
     val cleanerSnapshot: CleanerAnalysisSnapshot?,
+    val findings: List<CheckupFinding> = emptyList(),
 )
 
 data class CheckupUiState(
@@ -44,13 +45,17 @@ class CheckupViewModel(application: Application) : AndroidViewModel(application)
                 val supported = HardwareTestId.values().count { id -> (results[id]?.status ?: hardwareCapabilityStatus(getApplication(), id)) != HardwareTestStatus.NOT_SUPPORTED }
                 val completed = results.values.count { it.status == HardwareTestStatus.PASSED || it.status == HardwareTestStatus.FAILED }
                 val failed = results.values.count { it.status == HardwareTestStatus.FAILED }
+                val checkedAt = System.currentTimeMillis()
+                val hardwareSummary = CheckupHardwareSummary(supported, completed, failed)
+                val cleanerSnapshot = CleanerSessionStore.latest
                 _uiState.value = CheckupUiState(
                     result = CheckupResult(
                         snapshot = snapshot,
                         attentionItems = checkupAttentionItems(snapshot, failed),
-                        hardware = CheckupHardwareSummary(supported, completed, failed),
-                        checkedAtMillis = System.currentTimeMillis(),
-                        cleanerSnapshot = CleanerSessionStore.latest,
+                        hardware = hardwareSummary,
+                        checkedAtMillis = checkedAt,
+                        cleanerSnapshot = cleanerSnapshot,
+                        findings = evaluateCheckup(snapshot, hardwareSummary, cleanerSnapshot, checkedAt),
                     ),
                 )
             } catch (cancelled: CancellationException) {

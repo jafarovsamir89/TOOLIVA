@@ -38,6 +38,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -130,6 +133,10 @@ private fun CheckupStartScreen(copy: CheckupStrings, contentPadding: PaddingValu
 private fun CheckupResultScreen(result: CheckupResult, copy: CheckupStrings, contentPadding: PaddingValues, onOpenAction: (String) -> Unit, onRunAgain: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val actions = checkupActions(copy)
+    var showDetails by remember { mutableStateOf(false) }
+    val findings = result.findings
+    val issues = findings.filter { it.severity != CheckupFindingSeverity.RECOMMENDED }
+    val recommendations = findings.filter { it.severity == CheckupFindingSeverity.RECOMMENDED }
     LazyColumn(
         Modifier.fillMaxSize().padding(contentPadding).padding(horizontal = 16.dp),
         contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp),
@@ -144,20 +151,22 @@ private fun CheckupResultScreen(result: CheckupResult, copy: CheckupStrings, con
                 OutlinedButton(onClick = onRunAgain) { Text(copy.retry) }
             }
         }
+        item { CheckupStatusCard(findings, copy) }
+        if (issues.isNotEmpty()) item { Text(copy.text("findings"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
+        items(issues, key = { it.id.name }) { finding -> FindingCard(finding, result, copy, context, onOpenAction) }
+        if (recommendations.isNotEmpty()) item { Text(copy.text("recommended"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
+        items(recommendations, key = { it.id.name }) { finding -> FindingCard(finding, result, copy, context, onOpenAction) }
         item {
-            Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(if (result.attentionItems.isNotEmpty()) copy.needsAttention else copy.noAttention, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    result.attentionItems.forEach { Text("• ${localizedAttention(it, copy)}") }
-                }
+            OutlinedButton(onClick = { showDetails = !showDetails }, modifier = Modifier.fillMaxWidth()) {
+                Text(copy.text(if (showDetails) "hide_details" else "show_details"))
             }
         }
-        item { SummaryCard(result, copy) { onOpenAction("hardware-tests") } }
-        item { DeviceAndSystemCard(result, copy) }
-        item { BatteryCard(result.snapshot.battery, copy) }
-        item { HardwareFactsCard(result, copy) }
-        item { Text(copy.storagePlan, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
-        item { StoragePlanCard(result.cleanerSnapshot, copy, context) }
+        if (showDetails) {
+            item { SummaryCard(result, copy) { onOpenAction("hardware-tests") } }
+            item { DeviceAndSystemCard(result, copy) }
+            item { BatteryCard(result.snapshot.battery, copy) }
+            item { HardwareFactsCard(result, copy) }
+        }
         item { Text(copy.cleanupTools, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
         items(actions, key = { it.id }) { action ->
             val summary = action.bucket?.let { bucket -> result.cleanerSnapshot?.summaries?.firstOrNull { it.bucket == bucket } }
@@ -172,6 +181,77 @@ private fun CheckupResultScreen(result: CheckupResult, copy: CheckupStrings, con
         }
         item { Text(copy.noAutomaticScan, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
+}
+
+@Composable
+private fun CheckupStatusCard(findings: List<CheckupFinding>, copy: CheckupStrings) {
+    val severity = checkupOverallSeverity(findings)
+    val title = when (severity) {
+        CheckupFindingSeverity.CRITICAL -> copy.text("status_critical")
+        CheckupFindingSeverity.ATTENTION -> copy.text("status_attention")
+        CheckupFindingSeverity.RECOMMENDED -> copy.text("status_recommended")
+        null -> copy.text("status_good")
+    }
+    val color = when (severity) {
+        CheckupFindingSeverity.CRITICAL -> MaterialTheme.colorScheme.errorContainer
+        CheckupFindingSeverity.ATTENTION -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.primaryContainer
+    }
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = color)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
+            Text(copy.text("findings_count").format(findings.count { it.severity != CheckupFindingSeverity.RECOMMENDED }, findings.size), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun FindingCard(
+    finding: CheckupFinding,
+    result: CheckupResult,
+    copy: CheckupStrings,
+    context: android.content.Context,
+    onOpenAction: (String) -> Unit,
+) {
+    val title = findingTitle(finding.id, copy)
+    val detail = findingDetail(finding, result, copy, context)
+    Card(shape = ToolivaShapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = { onOpenAction(finding.actionId) }, modifier = Modifier.fillMaxWidth()) { Text(copy.review) }
+        }
+    }
+}
+
+private fun findingTitle(id: CheckupFindingId, copy: CheckupStrings): String = copy.text(
+    when (id) {
+        CheckupFindingId.LOW_STORAGE -> "storage_low_title"
+        CheckupFindingId.LOW_MEMORY -> "low_memory_title"
+        CheckupFindingId.THERMAL -> "thermal_title"
+        CheckupFindingId.LOW_BATTERY -> "low_battery_title"
+        CheckupFindingId.BATTERY_HEALTH -> "battery_health_title"
+        CheckupFindingId.OLD_SECURITY_PATCH -> "old_patch_title"
+        CheckupFindingId.HARDWARE_FAILED -> "hardware_failed_title"
+        CheckupFindingId.HARDWARE_PENDING -> "hardware_pending_title"
+        CheckupFindingId.LARGE_FILES -> "large_files_title"
+        CheckupFindingId.DOWNLOADS -> "downloads_title"
+        CheckupFindingId.SCREENSHOTS -> "screenshots_title"
+        CheckupFindingId.STORAGE_SCAN -> "storage_scan_title"
+    },
+)
+
+private fun findingDetail(finding: CheckupFinding, result: CheckupResult, copy: CheckupStrings, context: android.content.Context): String = when (finding.id) {
+    CheckupFindingId.LOW_STORAGE -> copy.text("storage_low_detail").format(Formatter.formatFileSize(context, finding.availableBytes), Formatter.formatFileSize(context, finding.totalBytes))
+    CheckupFindingId.LOW_MEMORY -> copy.text("low_memory_detail")
+    CheckupFindingId.THERMAL -> copy.text("thermal_detail").format(localizedValue(result.snapshot.thermal.label, copy))
+    CheckupFindingId.LOW_BATTERY -> copy.text("low_battery_detail").format(finding.count)
+    CheckupFindingId.BATTERY_HEALTH -> copy.text("battery_health_detail").format(localizedValue(result.snapshot.battery.health.orEmpty(), copy))
+    CheckupFindingId.OLD_SECURITY_PATCH -> copy.text("old_patch_detail").format(finding.ageDays)
+    CheckupFindingId.HARDWARE_FAILED -> copy.text("hardware_failed_detail").format(finding.count)
+    CheckupFindingId.HARDWARE_PENDING -> copy.text("hardware_pending_detail").format(finding.count)
+    CheckupFindingId.LARGE_FILES, CheckupFindingId.DOWNLOADS, CheckupFindingId.SCREENSHOTS -> copy.text("reviewable_detail").format(finding.count, Formatter.formatFileSize(context, finding.bytes))
+    CheckupFindingId.STORAGE_SCAN -> copy.text("storage_scan_detail")
 }
 
 @Composable

@@ -200,6 +200,9 @@ private fun ToolivaNavigation(navController: NavHostController) {
                         when (id) {
                             "optimizer" -> navController.navigate("optimizer")
                             "hardware-tests" -> navController.navigate("hardware")
+                            "hardware" -> navController.navigate("hardware")
+                            "doctor" -> navController.navigate("doctor")
+                            "cleaner" -> navController.navigate("clean")
                             "photo-analyzer" -> navController.navigate("clean/photo-analyzer")
                             else -> navController.navigate("clean/$id")
                         }

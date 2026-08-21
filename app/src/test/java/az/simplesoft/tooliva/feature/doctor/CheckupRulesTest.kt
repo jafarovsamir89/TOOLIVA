@@ -9,6 +9,9 @@ import az.simplesoft.tooliva.core.device.PhoneDoctorSnapshot
 import az.simplesoft.tooliva.core.device.SystemInfo
 import az.simplesoft.tooliva.core.device.ThermalSnapshot
 import az.simplesoft.tooliva.core.settings.ToolivaLanguage
+import az.simplesoft.tooliva.feature.clean.CleanerAnalysisSnapshot
+import az.simplesoft.tooliva.feature.clean.CleanerBucket
+import az.simplesoft.tooliva.feature.clean.CleanerBucketSummary
 import az.simplesoft.tooliva.ui.ToolivaStrings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -39,6 +42,23 @@ class CheckupRulesTest {
     fun checkupCopyChangesWithSelectedLanguage() {
         assertEquals("Проверка телефона", ToolivaStrings.forLanguage(ToolivaLanguage.RUSSIAN).checkup.checkMyPhone)
         assertEquals("Telefonumu kontrol et", ToolivaStrings.forLanguage(ToolivaLanguage.TURKISH).checkup.checkMyPhone)
+    }
+
+    @Test
+    fun findingsTurnRealDeviceSignalsIntoReviewActions() {
+        val device = snapshot(lowMemory = true).copy(
+            storage = listOf(az.simplesoft.tooliva.core.device.StorageVolumeSnapshot("Internal", null, 1_000L, 100L, false)),
+        )
+        val findings = evaluateCheckup(
+            snapshot = device,
+            hardware = CheckupHardwareSummary(supported = 10, completed = 2, failed = 1),
+            cleanerSnapshot = CleanerAnalysisSnapshot(summaries = listOf(CleanerBucketSummary(CleanerBucket.LARGE_FILES, 3, 300L))),
+            nowMillis = 1_800_000_000_000L,
+        )
+
+        assertTrue(findings.any { it.id == CheckupFindingId.LOW_STORAGE && it.actionId == "large-files" })
+        assertTrue(findings.any { it.id == CheckupFindingId.HARDWARE_FAILED && it.actionId == "hardware" })
+        assertTrue(findings.any { it.id == CheckupFindingId.LARGE_FILES && it.count == 3 && it.bytes == 300L })
     }
 
     private fun snapshot(lowMemory: Boolean): PhoneDoctorSnapshot = PhoneDoctorSnapshot(
