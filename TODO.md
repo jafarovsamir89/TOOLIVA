@@ -406,6 +406,7 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 - [x] [P0] deep-links to exact review screens
 - [x] [P0] no fake health score
 - [x] [P0] Xiaomi Check My Phone flow and Back navigation PASS
+- [x] [P0] Check My Phone stabilization: result inset, retry/error state, full factual cards, measured scan summary, hardware-test deep-link, responsive fact rows and localized copy
 
 ---
 

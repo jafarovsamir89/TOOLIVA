@@ -91,22 +91,24 @@ private fun ToolivaNavigation(navController: NavHostController) {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                topDestinations.forEach { destination ->
-                    NavigationBarItem(
-                        selected = topLevelRoute(currentRoute) == destination.route,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                // Nested Cleaner screens must not be restored when the user
-                                // explicitly chooses a top-level destination such as Home.
-                                popUpTo("home") { saveState = false }
-                                launchSingleTop = true
-                                restoreState = false
-                            }
-                        },
-                        icon = { Icon(destination.icon, contentDescription = destination.label) },
-                        label = { Text(destination.label) },
-                    )
+            if (currentRoute != "checkup") {
+                NavigationBar {
+                    topDestinations.forEach { destination ->
+                        NavigationBarItem(
+                            selected = topLevelRoute(currentRoute) == destination.route,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    // Nested Cleaner screens must not be restored when the user
+                                    // explicitly chooses a top-level destination such as Home.
+                                    popUpTo("home") { saveState = false }
+                                    launchSingleTop = true
+                                    restoreState = false
+                                }
+                            },
+                            icon = { Icon(destination.icon, contentDescription = destination.label) },
+                            label = { Text(destination.label) },
+                        )
+                    }
                 }
             }
         },
@@ -195,8 +197,12 @@ private fun ToolivaNavigation(navController: NavHostController) {
                 CheckupRoute(
                     onBack = { navController.popBackStack() },
                     onOpenAction = { id ->
-                        if (id == "optimizer") navController.navigate("optimizer")
-                        else navController.navigate("clean/$id")
+                        when (id) {
+                            "optimizer" -> navController.navigate("optimizer")
+                            "hardware-tests" -> navController.navigate("hardware")
+                            "photo-analyzer" -> navController.navigate("clean/photo-analyzer")
+                            else -> navController.navigate("clean/$id")
+                        }
                     },
                 )
             }

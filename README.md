@@ -109,7 +109,7 @@ Limited Mode never pretends to cover the whole phone.
 - Phone Optimizer with real memory metrics and the system-mediated temporary-cache action
 - Phone Doctor v1 with factual device, memory, storage, battery, thermal, display and sensor data
 - Hardware Tests v1 with user-confirmed display, touch, vibration, flashlight, speaker, microphone and sensor checks
-- Check My Phone v1 as a lightweight factual dashboard with explicit review links and no health score
+- Check My Phone v1 as a lightweight factual dashboard with real device facts, measured storage-plan links, retry/error states and no health score
 - App Manager v1 with a fast visible-app inventory, search/filter/sort, honest Android storage/usage enrichment, app details, Open/App info and system-mediated uninstall
 - Exact Duplicates
 - Cleanup Swipe

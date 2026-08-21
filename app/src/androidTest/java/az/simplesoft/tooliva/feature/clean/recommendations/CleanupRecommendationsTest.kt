@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 class CleanupRecommendationsTest {
     @Test
     fun rulesRejectRecentOutsideUnknownAndDirectories() {
-        val now = 10_000_000_000L
+        val now = 2_000_000_000_000L
         assertEquals(null, CleanupRecommendationRules.candidateFor(entry("recent.apk", StorageCategory.APK, now - 179 * CleanupRecommendationRules.DAY_MILLIS, "/Download"), 180, now))
         assertEquals(null, CleanupRecommendationRules.candidateFor(entry("outside.pdf", StorageCategory.DOCUMENT, now - 200 * CleanupRecommendationRules.DAY_MILLIS, "/Documents"), 180, now))
         assertEquals(null, CleanupRecommendationRules.candidateFor(entry("unknown.pdf", StorageCategory.DOCUMENT, 0L, "/Download"), 180, now))
@@ -25,7 +25,7 @@ class CleanupRecommendationsTest {
 
     @Test
     fun oldApkGetsSpecificReasonAndIsNeverSelectedByDefault() {
-        val now = 10_000_000_000L
+        val now = 2_000_000_000_000L
         val candidate = CleanupRecommendationRules.candidateFor(
             entry("installer.apk", StorageCategory.APK, now - 180 * CleanupRecommendationRules.DAY_MILLIS, "/Download"),
             180,
@@ -38,7 +38,7 @@ class CleanupRecommendationsTest {
 
     @Test
     fun apkIsNotDuplicatedAsGenericOldDownloadAndTotalsMatchCandidates() {
-        val now = 10_000_000_000L
+        val now = 2_000_000_000_000L
         val apk = entry("installer.apk", StorageCategory.APK, now - 365 * CleanupRecommendationRules.DAY_MILLIS, "/Downloads")
         val pdf = entry("report.pdf", StorageCategory.DOCUMENT, now - 365 * CleanupRecommendationRules.DAY_MILLIS, "/Downloads")
         val accumulator = CleanupCandidateAccumulator()
