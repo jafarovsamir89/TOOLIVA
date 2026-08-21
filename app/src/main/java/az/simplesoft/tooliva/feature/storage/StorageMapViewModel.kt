@@ -28,7 +28,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 enum class StorageMapPhase { IDLE, LOADING, COMPLETE }
-enum class StorageMapView { MAP, LIST }
+enum class StorageMapView { MAP, SUNBURST, LIST }
 
 data class StorageMapUiState(
     val accessState: StorageAccessState = StorageAccessState(false, false),

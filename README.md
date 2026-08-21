@@ -139,6 +139,21 @@ Current implementation status: the first direct-browser vertical slice is wired 
 - collision handling
 - progress/cancel
 
+## Product expansion slice
+
+The current expansion keeps the direct progressive storage architecture and adds:
+
+- a Home Action Plan backed by the latest real Cleaner scan, plus local scan history;
+- persistent Recently opened files and Favorite folders in File Manager;
+- an interactive Sunburst view alongside the real-data Storage Map treemap/list;
+- local Photo Analyzer heuristics for potentially similar, possibly blurry, old screenshot and large-video candidates, with thumbnail preview and explicit review;
+- ZIP/text in-app preview, ZIP extraction/creation, and honest external-open handling for PDF/7Z/RAR;
+- an Android MediaStore Recycle Bin view for actual Trash items with Restore and separately confirmed permanent deletion;
+- user-selected SD/USB/cloud folders through the Android Storage Access Framework, without adding network access;
+- English, Russian, Azerbaijani and Turkish language preference infrastructure for the product shell.
+
+The Photo Analyzer uses conservative heuristic labels (`potentially similar`, `possibly blurry`) and never preselects personal media. Android controls the retention period of MediaStore Trash; Tooliva does not claim to control a universal 7/30-day bin. RAR/7Z listing/extraction remains delegated to an installed compatible provider because the Android platform has no built-in archive decoder for those formats.
+
 File Manager is real core functionality, not a placeholder for permissions.
 
 ## Known-good baseline

@@ -12,6 +12,9 @@ import az.simplesoft.tooliva.core.storage.StorageAccessMode
 import az.simplesoft.tooliva.core.storage.StorageAccessState
 import az.simplesoft.tooliva.core.storage.StorageScanEvent
 import az.simplesoft.tooliva.core.storage.StorageProvider
+import az.simplesoft.tooliva.core.device.DeviceSnapshotProvider
+import az.simplesoft.tooliva.core.settings.ScanHistoryRecord
+import az.simplesoft.tooliva.core.settings.ToolivaUserDataStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +39,8 @@ data class CleanerAnalysisUiState(
 
 class CleanerAnalysisViewModel(application: Application) : AndroidViewModel(application) {
     private val accessCoordinator = StorageAccessCoordinator(application)
+    private val deviceSnapshotProvider = DeviceSnapshotProvider(application)
+    private val userData = ToolivaUserDataStore(application)
     private val _uiState = MutableStateFlow(CleanerAnalysisUiState(accessState = accessCoordinator.currentState()))
     val uiState = _uiState.asStateFlow()
     private var scanJob: Job? = null
@@ -83,6 +88,18 @@ class CleanerAnalysisViewModel(application: Application) : AndroidViewModel(appl
                 }
                 val complete = accumulator.snapshot()
                 CleanerSessionStore.latest = complete
+                val device = deviceSnapshotProvider.read()
+                val largest = complete.summaries.maxByOrNull { it.bytes }
+                userData.recordScan(
+                    ScanHistoryRecord(
+                        finishedAtMillis = System.currentTimeMillis(),
+                        usedBytes = device.storageUsedBytes,
+                        totalBytes = device.storageTotalBytes,
+                        largestCategory = largest?.bucket?.title,
+                        largestCategoryBytes = largest?.bytes ?: 0L,
+                        filesChecked = complete.filesChecked,
+                    ),
+                )
                 _uiState.update { it.copy(status = CleanerAnalysisStatus.COMPLETE, snapshot = complete) }
             } catch (_: CancellationException) {
                 _uiState.update { it.copy(status = CleanerAnalysisStatus.CANCELLED, snapshot = accumulator.snapshot(cancelled = true)) }

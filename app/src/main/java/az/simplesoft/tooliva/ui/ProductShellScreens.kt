@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Recycling
 import androidx.compose.material.icons.outlined.Thermostat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -61,6 +62,8 @@ import az.simplesoft.tooliva.ui.theme.ToolivaSpacing
 import az.simplesoft.tooliva.ui.theme.ToolivaToolTile
 import kotlinx.coroutines.launch
 import az.simplesoft.tooliva.BuildConfig
+import az.simplesoft.tooliva.core.settings.ToolivaLanguage
+import az.simplesoft.tooliva.core.settings.ToolivaUserDataStore
 
 data class ToolHubItem(val id: String, val title: String, val subtitle: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
@@ -72,6 +75,9 @@ private val toolHubItems = listOf(
     ToolHubItem("notification-history", "Notification History", "Local notification timeline", Icons.Outlined.Notifications),
     ToolHubItem("storage-map", "Storage Map", "Understand folder space usage", Icons.Outlined.Storage),
     ToolHubItem("clean/duplicates", "Exact Duplicates", "Compare identical files safely", Icons.Outlined.CleaningServices),
+    ToolHubItem("recycle-bin", "Recycle Bin", "Restore or permanently remove Android Trash items", Icons.Outlined.Recycling),
+    ToolHubItem("external-sources", "External Sources", "SD, USB and cloud folders via Android", Icons.Outlined.Storage),
+    ToolHubItem("scan-history", "Scan History", "See local storage changes over time", Icons.Outlined.Storage),
 )
 
 @Composable
@@ -101,15 +107,18 @@ fun SettingsRoute(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val preferences = remember(context) { ToolivaPreferences(context) }
+    val userData = remember(context) { ToolivaUserDataStore(context) }
     val storageAccess = remember(context) { StorageAccessCoordinator(context) }
     val usageAccess = remember(context) { UsageAccessChecker(context) }
     val notificationAccess = remember(context) { NotificationHistoryRepository(context) }
     var appearance by remember { mutableStateOf(AppearanceMode.SYSTEM) }
+    var language by remember { mutableStateOf(ToolivaLanguage.ENGLISH) }
     var storageState by remember { mutableStateOf(storageAccess.currentState()) }
     var usageGranted by remember { mutableStateOf(usageAccess.isGranted()) }
     var notificationGranted by remember { mutableStateOf(notificationAccess.isAccessGranted()) }
     var showPrivacy by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { preferences.appearance.collect { appearance = it } }
+    LaunchedEffect(Unit) { userData.language.collect { language = it } }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         storageState = storageAccess.currentState()
         usageGranted = usageAccess.isGranted()
@@ -131,6 +140,15 @@ fun SettingsRoute(onBack: () -> Unit) {
                     Row(horizontalArrangement = Arrangement.spacedBy(ToolivaSpacing.sm)) {
                         AppearanceMode.entries.forEach { mode ->
                             FilterChip(selected = appearance == mode, onClick = { appearance = mode; scope.launch { preferences.setAppearance(mode) } }, label = { Text(mode.label()) })
+                        }
+                    }
+                }
+            }
+            item {
+                SettingsCard("Language", "Choose the app language") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(ToolivaSpacing.sm)) {
+                        ToolivaLanguage.entries.forEach { option ->
+                            FilterChip(selected = language == option, onClick = { language = option; scope.launch { userData.setLanguage(option) } }, label = { Text(option.label) })
                         }
                     }
                 }

@@ -31,6 +31,8 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Thermostat
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -39,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -55,6 +58,9 @@ import az.simplesoft.tooliva.ui.theme.ToolivaSectionHeader
 import az.simplesoft.tooliva.ui.theme.ToolivaShapes
 import az.simplesoft.tooliva.ui.theme.ToolivaSpacing
 import az.simplesoft.tooliva.ui.theme.ToolivaToolTile
+import az.simplesoft.tooliva.ui.LocalToolivaStrings
+import java.text.DateFormat
+import java.util.Date
 
 data class HomeTool(val id: String, val title: String, val subtitle: String, val icon: ImageVector)
 
@@ -62,6 +68,7 @@ private val primaryTools = listOf(
     HomeTool("clean", "Clean", "Review storage", Icons.Outlined.CleaningServices),
     HomeTool("files", "Files", "Browse storage", Icons.Outlined.Folder),
     HomeTool("duplicates", "Duplicates", "Keep one copy", Icons.Outlined.CleaningServices),
+    HomeTool("photo-analyzer", "Photo Analyzer", "Review media safely", Icons.Outlined.PhotoLibrary),
     HomeTool("storage-map", "Storage Map", "Folder usage", Icons.Outlined.Storage),
     HomeTool("doctor", "Phone Doctor", "Device facts", Icons.Outlined.HealthAndSafety),
     HomeTool("hardware", "Hardware Tests", "Check components", Icons.Outlined.Build),
@@ -75,14 +82,16 @@ fun HomeRoute(
     onCheckup: () -> Unit,
     onOpenTool: (String) -> Unit,
     onSettings: () -> Unit = {},
+    onOpenHistory: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    HomeScreen(state, onCheckup, onOpenTool, onSettings)
+    HomeScreen(state, onCheckup, onOpenTool, onSettings, onOpenHistory)
 }
 
 @Composable
-private fun HomeScreen(state: HomeUiState, onCheckup: () -> Unit, onOpenTool: (String) -> Unit, onSettings: () -> Unit) {
+private fun HomeScreen(state: HomeUiState, onCheckup: () -> Unit, onOpenTool: (String) -> Unit, onSettings: () -> Unit, onOpenHistory: () -> Unit) {
+    val strings = LocalToolivaStrings.current
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize(),
@@ -94,16 +103,56 @@ private fun HomeScreen(state: HomeUiState, onCheckup: () -> Unit, onOpenTool: (S
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(ToolivaSpacing.xs)) {
                     Text("TOOLIVA", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
-                    Text("Your Android toolbox", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(strings.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 IconButton(onClick = onSettings) { Icon(Icons.Outlined.Settings, contentDescription = "Settings") }
             }
         }
         item(span = { GridItemSpan(maxLineSpan) }) { StorageHero(state) }
         item(span = { GridItemSpan(maxLineSpan) }) { CheckupCard(onCheckup) }
+        item(span = { GridItemSpan(maxLineSpan) }) { ActionPlanCard(state, onOpenTool, onOpenHistory) }
         item(span = { GridItemSpan(maxLineSpan) }) { ToolivaSectionHeader("Storage & cleanup") }
         items(primaryTools, key = { it.id }) { tool ->
             ToolivaToolTile(tool.title, tool.icon, subtitle = tool.subtitle) { onOpenTool(tool.id) }
+        }
+    }
+}
+
+@Composable
+private fun ActionPlanCard(state: HomeUiState, onOpenTool: (String) -> Unit, onOpenHistory: () -> Unit) {
+    val strings = LocalToolivaStrings.current
+    val context = LocalContext.current
+    Card(shape = ToolivaShapes.hero, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+        Column(Modifier.padding(ToolivaSpacing.xl), verticalArrangement = Arrangement.spacedBy(ToolivaSpacing.md)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ToolivaSpacing.sm)) {
+                Icon(Icons.Outlined.CleaningServices, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f)) {
+                    Text(strings.actionPlan, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(strings.reviewRealFindings, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                TextButton(onClick = onOpenHistory) { Icon(Icons.Outlined.History, contentDescription = strings.history); Text(strings.history) }
+            }
+            val plan = state.actionPlan
+            if (plan == null || plan.summaries.isEmpty()) {
+                Text(strings.runFirstPlan, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                plan.summaries.take(4).forEach { summary ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ToolivaSpacing.sm)) {
+                        Column(Modifier.weight(1f)) {
+                            Text(summary.bucket.title, fontWeight = FontWeight.SemiBold)
+                            Text("${summary.count} items · ${Formatter.formatFileSize(context, summary.bytes)} to review", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { onOpenTool(summary.bucket.route) }) { Text(strings.review) }
+                    }
+                }
+            }
+            state.scanHistory.firstOrNull()?.let { history ->
+                Text(
+                    "Last scan ${DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(history.finishedAtMillis))} · ${Formatter.formatFileSize(context, history.usedBytes)} used",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

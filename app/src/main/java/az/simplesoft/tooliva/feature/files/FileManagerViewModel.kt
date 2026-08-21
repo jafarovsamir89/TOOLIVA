@@ -13,6 +13,11 @@ import az.simplesoft.tooliva.core.storage.StorageEntry
 import az.simplesoft.tooliva.core.storage.StorageScanEvent
 import az.simplesoft.tooliva.core.storage.StorageSortOrder
 import az.simplesoft.tooliva.core.storage.StorageVolumeInfo
+import az.simplesoft.tooliva.core.settings.FavoriteFolder
+import az.simplesoft.tooliva.core.settings.RecentFile
+import az.simplesoft.tooliva.core.settings.ToolivaUserDataStore
+import az.simplesoft.tooliva.core.files.ArchiveDocumentService
+import az.simplesoft.tooliva.core.files.FilePreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,19 +50,31 @@ data class FileManagerUiState(
     val detailsEntry: StorageEntry? = null,
     val destinationDirectory: File? = null,
     val destinationEntries: List<StorageEntry> = emptyList(),
+    val recentFiles: List<RecentFile> = emptyList(),
+    val favoriteFolders: List<FavoriteFolder> = emptyList(),
+    val preview: FilePreview? = null,
+    val operationMessage: String? = null,
 )
 
 class FileManagerViewModel(application: Application) : AndroidViewModel(application) {
     private val accessCoordinator = StorageAccessCoordinator(application)
     private val storage = FullStorageProvider(application)
     private val operations = FileOperationCoordinator(application)
+    private val userData = ToolivaUserDataStore(application)
+    private val archiveService = ArchiveDocumentService()
     private val _uiState = MutableStateFlow(FileManagerUiState())
     val uiState: StateFlow<FileManagerUiState> = _uiState.asStateFlow()
     private var browseJob: Job? = null
     private var searchJob: Job? = null
     private var operationJob: Job? = null
 
-    init { refreshAccess() }
+    init {
+        refreshAccess()
+        viewModelScope.launch {
+            launch { userData.recentFiles.collectLatest { recent -> _uiState.value = _uiState.value.copy(recentFiles = recent) } }
+            launch { userData.favoriteFolders.collectLatest { favorites -> _uiState.value = _uiState.value.copy(favoriteFolders = favorites) } }
+        }
+    }
 
     fun refreshAccess() {
         val access = accessCoordinator.currentState()
@@ -88,6 +105,33 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
             ?: return
         _uiState.value = _uiState.value.copy(currentVolume = volume, currentDirectory = directory, selectedPaths = emptySet(), searchQuery = "", recursiveSearch = false)
         loadDirectory(directory)
+    }
+
+    fun recordOpened(entry: StorageEntry) {
+        if (entry.isDirectory) return
+        viewModelScope.launch {
+            userData.recordOpenedFile(
+                RecentFile(
+                    path = entry.path,
+                    name = entry.name,
+                    openedAtMillis = System.currentTimeMillis(),
+                    sizeBytes = entry.sizeBytes,
+                ),
+            )
+        }
+    }
+
+    fun toggleFavorite(directory: File) {
+        if (!directory.isDirectory || !storage.isAllowedPath(directory)) return
+        viewModelScope.launch {
+            userData.toggleFavorite(
+                FavoriteFolder(
+                    path = directory.absolutePath,
+                    name = directory.name.ifBlank { directory.absolutePath },
+                    addedAtMillis = System.currentTimeMillis(),
+                ),
+            )
+        }
     }
 
     fun goHome() {
@@ -230,6 +274,41 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
 
     fun showDetails(entry: StorageEntry) { _uiState.value = _uiState.value.copy(detailsEntry = entry) }
     fun dismissDetails() { _uiState.value = _uiState.value.copy(detailsEntry = null) }
+
+    fun preview(entry: StorageEntry) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val preview = runCatching { archiveService.preview(File(entry.path)) }.getOrElse { FilePreview.Unsupported(entry.name, it.message ?: "Preview is unavailable.") }
+            withContext(Dispatchers.Main) { _uiState.value = _uiState.value.copy(preview = preview) }
+        }
+    }
+
+    fun dismissPreview() { _uiState.value = _uiState.value.copy(preview = null) }
+
+    fun extractArchive(entry: StorageEntry) {
+        val destination = _uiState.value.currentDirectory ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = runCatching { archiveService.extractZip(File(entry.path), destination) }
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(operationMessage = result.fold({ "Extracted $it file(s) to ${destination.name}." }, { it.message ?: "Archive extraction failed." }))
+                loadDirectory(destination)
+            }
+        }
+    }
+
+    fun createZipFromSelection() {
+        val destination = _uiState.value.currentDirectory ?: return
+        val files = selectedEntries().map { File(it.path) }
+        if (files.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = runCatching { archiveService.createZip(files, destination) }
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(operationMessage = result.fold({ "Created ${it.name}." }, { it.message ?: "Archive creation failed." }), selectedPaths = emptySet())
+                loadDirectory(destination)
+            }
+        }
+    }
+
+    fun dismissOperationMessage() { _uiState.value = _uiState.value.copy(operationMessage = null) }
 
     fun rename(entry: StorageEntry, newName: String): String? {
         FileManagerRules.validateName(newName)?.let { return it }

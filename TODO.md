@@ -430,6 +430,18 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 
 # Phase 10 — LATER MODULES
 
+## Product expansion v1 — current implementation slice
+
+- [~] [P1] Smart Home Dashboard Action Plan now reuses the latest real Cleaner scan and exposes Review links; duplicates/cache/unused-app figures still require their own explicit analyses or Usage Access and are never invented in the Home card
+- [x] [P1] persistent Recently opened files and Favorite folders in File Manager
+- [x] [P1] interactive Sunburst view added beside the real-data Storage Map treemap/list
+- [~] [P1] on-device Photo Analyzer: potential similarity, conservative blur heuristic, old screenshots, large videos, real thumbnails, preview, selection and central cleanup; heuristic output remains explicitly non-definitive
+- [x] [P1] ZIP/text preview, ZIP extract/create and external-open fallback for PDF/7Z/RAR
+- [~] [P1] Android MediaStore Recycle Bin with Restore, system expiry display and confirmed permanent delete; only Android-controlled MediaStore Trash is visible
+- [x] [P1] SAF external sources for user-selected SD/USB/cloud provider folders without network permission
+- [~] [P1] language preference infrastructure for EN/RU/AZ/TR and translated product-shell/Action Plan strings; legacy feature screens still need string-resource migration before claiming full-surface localization
+- [ ] [P0] manual Xiaomi regression for this expansion slice and Android 14/15/16 provider differences
+
 ## Vault [P1]
 
 - threat model

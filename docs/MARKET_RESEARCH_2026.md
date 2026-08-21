@@ -614,6 +614,12 @@ Required differentiators, not optional marketing copy:
 
 # 9. Product priority after research
 
+## 9.1 Expansion validation notes
+
+The latest review compared the planned slice against current public descriptions and documentation for Files by Google, SD Maid 2/SE, Cx File Explorer and Solid Explorer. The common expectations are: real large/duplicate/old-photo suggestions, favorites and recent access, app/usage visibility, storage visualization, Trash/restore, archives, and local/cloud/removable storage.
+
+Tooliva's implementation deliberately keeps the safer differentiators from that comparison: explicit review before deletion, verified Cleanup Receipts, no fake optimization claims, local-only photo heuristics, and SAF-based user-selected external/cloud roots. This avoids broad package visibility, hidden Accessibility automation and a new network backend merely to imitate a competitor.
+
 The old roadmap was too broad too early.
 
 New order:

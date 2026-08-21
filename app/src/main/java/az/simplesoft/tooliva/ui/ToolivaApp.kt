@@ -49,6 +49,15 @@ import az.simplesoft.tooliva.feature.storage.StorageMapRoute
 import az.simplesoft.tooliva.feature.clean.swipe.CleanupSwipeRoute
 import az.simplesoft.tooliva.feature.clean.oldfiles.OldFilesRoute
 import az.simplesoft.tooliva.feature.clean.emptyfolders.EmptyFoldersRoute
+import az.simplesoft.tooliva.feature.history.ScanHistoryRoute
+import az.simplesoft.tooliva.feature.clean.photos.PhotoAnalyzerRoute
+import az.simplesoft.tooliva.feature.files.SafSourcesRoute
+import az.simplesoft.tooliva.feature.files.RecycleBinRoute
+import az.simplesoft.tooliva.core.settings.ToolivaLanguage
+import az.simplesoft.tooliva.core.settings.ToolivaUserDataStore
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 
 private data class TopDestination(
     val route: String,
@@ -66,6 +75,17 @@ private val topDestinations = listOf(
 
 @Composable
 fun ToolivaApp(navController: NavHostController = rememberNavController()) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val userData = remember(context) { ToolivaUserDataStore(context) }
+    val language = userData.language.collectAsState(initial = ToolivaLanguage.ENGLISH).value
+    val strings = remember(language) { ToolivaStrings.forLanguage(language) }
+    CompositionLocalProvider(LocalToolivaStrings provides strings) {
+        ToolivaNavigation(navController)
+    }
+}
+
+@Composable
+private fun ToolivaNavigation(navController: NavHostController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
@@ -100,6 +120,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
                 HomeRoute(
                     onCheckup = { navController.navigate("checkup") },
                     onSettings = { navController.navigate("settings") },
+                    onOpenHistory = { navController.navigate("scan-history") },
                     onOpenTool = { id ->
                         val route = when (id) {
                             "clean" -> "clean"
@@ -111,6 +132,7 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
                             "duplicates" -> "clean/duplicates"
                             "optimizer" -> "optimizer"
                             "app-manager" -> "app-manager"
+                            "photo-analyzer" -> "clean/photo-analyzer"
                             else -> "tools"
                         }
                         navController.navigate(route)
@@ -136,9 +158,13 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             composable("clean/duplicates") { ExactDuplicatesRoute() }
             composable("clean/old-files") { OldFilesRoute() }
             composable("clean/empty-folders") { EmptyFoldersRoute() }
-            composable("tools") { ToolsRoute(onOpenTool = { id -> navController.navigate(if (id.startsWith("clean/")) id else when (id) { "notification-history" -> "notification-history"; "storage-map" -> "storage-map"; "app-manager" -> "app-manager"; "optimizer" -> "optimizer"; "doctor" -> "doctor"; "hardware" -> "hardware"; else -> "tools" }) }) }
+            composable("clean/photo-analyzer") { PhotoAnalyzerRoute() }
+            composable("external-sources") { SafSourcesRoute(onBack = { navController.popBackStack() }) }
+            composable("recycle-bin") { RecycleBinRoute(onBack = { navController.popBackStack() }) }
+            composable("tools") { ToolsRoute(onOpenTool = { id -> navController.navigate(if (id.startsWith("clean/")) id else when (id) { "notification-history" -> "notification-history"; "storage-map" -> "storage-map"; "app-manager" -> "app-manager"; "optimizer" -> "optimizer"; "doctor" -> "doctor"; "hardware" -> "hardware"; "recycle-bin" -> "recycle-bin"; "external-sources" -> "external-sources"; "scan-history" -> "scan-history"; else -> "tools" }) }) }
             composable("more") { MoreRoute(onSettings = { navController.navigate("settings") }) }
             composable("settings") { SettingsRoute(onBack = { navController.popBackStack() }) }
+            composable("scan-history") { ScanHistoryRoute(onBack = { navController.popBackStack() }) }
             composable("notification-history") { NotificationHistoryRoute(onBack = { navController.popBackStack() }) }
             composable("storage-map") {
                 StorageMapRoute(
@@ -159,10 +185,10 @@ fun ToolivaApp(navController: NavHostController = rememberNavController()) {
             }
             composable("hardware") { HardwareTestsRoute(onBack = { navController.popBackStack() }) }
             composable("files") {
-                FileManagerRoute(onOpenLargeFiles = { navController.navigate("clean/large-files") })
+                FileManagerRoute(onOpenLargeFiles = { navController.navigate("clean/large-files") }, onOpenExternalSources = { navController.navigate("external-sources") })
             }
             composable("files?path={path}", arguments = listOf(navArgument("path") { type = NavType.StringType; nullable = true; defaultValue = null })) { entry ->
-                FileManagerRoute(onOpenLargeFiles = { navController.navigate("clean/large-files") }, initialDirectory = entry.arguments?.getString("path")?.let(Uri::decode))
+                FileManagerRoute(onOpenLargeFiles = { navController.navigate("clean/large-files") }, onOpenExternalSources = { navController.navigate("external-sources") }, initialDirectory = entry.arguments?.getString("path")?.let(Uri::decode))
             }
             composable("clean/cleanup-swipe") { CleanupSwipeRoute(onBack = { navController.popBackStack() }, onOpenInFiles = { file -> navController.navigate("files?path=${Uri.encode(file.parentFile?.absolutePath)}") }) }
             composable("checkup") {

@@ -64,6 +64,7 @@ private val cleanTools = listOf(
     CleanTool("recommendations", "Files to review", "Old installers, downloads and conservative residual candidates", Icons.Outlined.FindInPage),
     CleanTool("cache", "Cache Cleaner", "Review browser and YouTube app caches", Icons.Outlined.Storage),
     CleanTool("screenshots", "Screenshots", "Review old screenshots by age", Icons.Outlined.Screenshot),
+    CleanTool("photo-analyzer", "Photo Analyzer", "Review similar, blurry and large media on-device", Icons.Outlined.Image),
     CleanTool("duplicates", "Exact duplicates", "Find identical files and safely keep one copy", Icons.Outlined.PhotoLibrary),
     CleanTool("old-files", "Old files", "Review conservative age-based candidates", Icons.Outlined.VideoLibrary),
     CleanTool("empty-folders", "Empty folders", "Review safe empty folders", Icons.Outlined.FolderDelete),

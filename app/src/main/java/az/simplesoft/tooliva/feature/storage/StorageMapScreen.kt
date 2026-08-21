@@ -6,6 +6,14 @@ import android.content.ActivityNotFoundException
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import kotlin.math.atan2
+import kotlin.math.PI
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -199,6 +207,7 @@ private fun StorageMapScreen(
                 item {
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(selected = state.view == StorageMapView.MAP, onClick = { onSetView(StorageMapView.MAP) }, label = { Text("Map") }, leadingIcon = { Icon(Icons.Outlined.Map, null) })
+                        FilterChip(selected = state.view == StorageMapView.SUNBURST, onClick = { onSetView(StorageMapView.SUNBURST) }, label = { Text("Sunburst") }, leadingIcon = { Icon(Icons.Outlined.Map, null) })
                         FilterChip(selected = state.view == StorageMapView.LIST, onClick = { onSetView(StorageMapView.LIST) }, label = { Text("List") }, leadingIcon = { Icon(Icons.Outlined.List, null) })
                     }
                 }
@@ -211,6 +220,7 @@ private fun StorageMapScreen(
                 if (currentNode != null) item { TextButton(onClick = onGoUp) { Icon(Icons.Outlined.ArrowBack, null); Text("Parent folder", Modifier.padding(start = 6.dp)) } }
                 if (nodes.isEmpty()) item { Text("No accessible child folders were found.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 else if (state.view == StorageMapView.MAP) item { Treemap(nodes, currentNode, context, onOpenNode) }
+                else if (state.view == StorageMapView.SUNBURST) item { Sunburst(nodes, context, onOpenNode) }
                 else items(nodes, key = { it.path }) { node -> FolderRow(node, currentNode, context, onOpenNode, onShowDetails, onRequestDelete) }
                 if (state.warningCount > 0) item { Text("${state.warningCount} protected or unreadable locations were skipped.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
                 if (state.isStale) item { Text("This map may be stale after a file operation. Analyze again manually to refresh it.", color = MaterialTheme.colorScheme.tertiary) }
@@ -239,6 +249,62 @@ private fun StorageMapScreen(
             confirmButton = { TextButton(onClick = { onConfirmDelete(node) }) { Text("Delete") } },
             dismissButton = { TextButton(onClick = onDismissDelete) { Text("Cancel") } },
         )
+    }
+}
+
+@Composable
+private fun Sunburst(nodes: List<StorageMapNode>, context: android.content.Context, onOpenNode: (StorageMapNode) -> Unit) {
+    val total = nodes.sumOf { it.totalBytes }.coerceAtLeast(1L)
+    val colors = listOf(
+        MaterialTheme.colorScheme.primary,
+        MaterialTheme.colorScheme.secondary,
+        MaterialTheme.colorScheme.tertiary,
+        MaterialTheme.colorScheme.primaryContainer,
+        MaterialTheme.colorScheme.secondaryContainer,
+    )
+    val centerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(280.dp)
+                .pointerInput(nodes) {
+                    detectTapGestures { offset ->
+                        val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                        val angle = ((atan2(offset.y - center.y, offset.x - center.x) * 180.0 / PI) + 90.0 + 360.0) % 360.0
+                        var start = 0f
+                        nodes.forEach { node ->
+                            val sweep = node.totalBytes.toFloat() / total * 360f
+                            if (angle >= start && angle < start + sweep) {
+                                onOpenNode(node)
+                                return@detectTapGestures
+                            }
+                            start += sweep
+                        }
+                    }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Canvas(Modifier.fillMaxSize()) {
+                val diameter = size.minDimension * 0.86f
+                val topLeft = androidx.compose.ui.geometry.Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+                var start = -90f
+                nodes.forEachIndexed { index, node ->
+                    val sweep = node.totalBytes.toFloat() / total * 360f
+                    drawArc(colors[index % colors.size], start, sweep, true, topLeft, androidx.compose.ui.geometry.Size(diameter, diameter))
+                    start += sweep
+                }
+                drawCircle(centerColor, radius = diameter * 0.28f, center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f))
+            }
+            Text("Tap a segment", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        nodes.take(6).forEachIndexed { index, node ->
+            Row(Modifier.fillMaxWidth().clickable { onOpenNode(node) }.padding(horizontal = 8.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.size(12.dp).background(colors[index % colors.size], RoundedCornerShape(3.dp)))
+                Text(node.name, Modifier.weight(1f), maxLines = 1)
+                Text(node.totalBytes.formatBytes(context), fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }
 

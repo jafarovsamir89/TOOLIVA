@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.AudioFile
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Description
@@ -90,12 +91,14 @@ import az.simplesoft.tooliva.core.storage.StorageSortOrder
 import az.simplesoft.tooliva.core.storage.StorageVolumeInfo
 import az.simplesoft.tooliva.core.storage.tryOpen
 import az.simplesoft.tooliva.core.storage.tryShare
+import az.simplesoft.tooliva.core.files.FilePreview
 import az.simplesoft.tooliva.feature.clean.result.CleanupResultScreen
 import java.io.File
 
 @Composable
 fun FileManagerRoute(
     onOpenLargeFiles: () -> Unit,
+    onOpenExternalSources: () -> Unit = {},
     initialDirectory: String? = null,
     viewModel: FileManagerViewModel = viewModel(),
 ) {
@@ -148,10 +151,21 @@ fun FileManagerRoute(
         onToggleSelection = viewModel::toggleSelection,
         onSelectAll = viewModel::selectAllVisible,
         onClearSelection = viewModel::clearSelection,
-        onOpen = { entry -> if (entry.isDirectory) viewModel.openDirectory(File(entry.path)) else context.tryOpen(entry)?.let { accessError = it } },
+        onOpen = { entry ->
+            if (entry.isDirectory) viewModel.openDirectory(File(entry.path))
+            else {
+                viewModel.recordOpened(entry)
+                context.tryOpen(entry)?.let { accessError = it }
+            }
+        },
         onShare = { entry -> context.tryShare(entry)?.let { accessError = it } },
         onDetails = viewModel::showDetails,
         onDismissDetails = viewModel::dismissDetails,
+        onPreview = viewModel::preview,
+        onExtractArchive = viewModel::extractArchive,
+        onCreateZip = viewModel::createZipFromSelection,
+        onDismissPreview = viewModel::dismissPreview,
+        onDismissOperationMessage = viewModel::dismissOperationMessage,
         onRename = viewModel::rename,
         onCreateFolder = viewModel::createFolder,
         onStartOperation = viewModel::startOperation,
@@ -159,6 +173,8 @@ fun FileManagerRoute(
         onDismissOperation = viewModel::dismissOperationResult,
         onOpenDestination = viewModel::openDestination,
         onClearDestination = viewModel::clearDestination,
+        onToggleFavorite = viewModel::toggleFavorite,
+        onOpenExternalSources = onOpenExternalSources,
     )
 }
 
@@ -188,6 +204,11 @@ private fun FileManagerScreen(
     onShare: (StorageEntry) -> Unit,
     onDetails: (StorageEntry) -> Unit,
     onDismissDetails: () -> Unit,
+    onPreview: (StorageEntry) -> Unit,
+    onExtractArchive: (StorageEntry) -> Unit,
+    onCreateZip: () -> Unit,
+    onDismissPreview: () -> Unit,
+    onDismissOperationMessage: () -> Unit,
     onRename: (StorageEntry, String) -> String?,
     onCreateFolder: (String) -> String?,
     onStartOperation: (FileOperationKind, File?, CollisionPolicy) -> Unit,
@@ -195,6 +216,8 @@ private fun FileManagerScreen(
     onDismissOperation: () -> Unit,
     onOpenDestination: (File) -> Unit,
     onClearDestination: () -> Unit,
+    onToggleFavorite: (File) -> Unit,
+    onOpenExternalSources: () -> Unit,
 ) {
     var showSort by remember { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
@@ -227,7 +250,7 @@ private fun FileManagerScreen(
 
             Box(Modifier.weight(1f)) {
             if (state.currentDirectory == null) {
-                RootContent(state, accessError, onOpenSettings, onOpenVolume, onShortcut)
+                RootContent(state, accessError, onOpenSettings, onOpenVolume, onShortcut, onOpenDirectory, onToggleFavorite, onOpenExternalSources)
             } else {
                 BrowserContent(
                     state, visibleEntries, onSearch, onRecursiveSearch, onCancelSearch, onToggleSelection, onSelectAll,
@@ -265,7 +288,11 @@ private fun FileManagerScreen(
     }
     showRename?.let { entry -> RenameDialog(entry, onDismiss = { showRename = null }, onRename = { newName -> message = onRename(entry, newName); if (message == null) showRename = null }) }
     if (showCreateFolder) CreateFolderDialog(onDismiss = { showCreateFolder = false }, onCreate = { name -> message = onCreateFolder(name); if (message == null) showCreateFolder = false })
-    state.detailsEntry?.let { DetailsDialog(it, onDismissDetails) }
+    state.detailsEntry?.let { DetailsDialog(it, onDismissDetails, onPreview, onExtractArchive) }
+    state.preview?.let { PreviewDialog(it, onDismissPreview) }
+    state.operationMessage?.let { previewMessage ->
+        AlertDialog(onDismissRequest = onDismissOperationMessage, title = { Text("File tools") }, text = { Text(previewMessage) }, confirmButton = { TextButton(onClick = onDismissOperationMessage) { Text("OK") } })
+    }
     state.operationProgress?.let { OperationProgressDialog(it, onCancelOperation) }
     state.operationResult?.let { result -> OperationResultDialog(result, onDismissOperation) }
     if (showDestination != null) {
@@ -283,6 +310,7 @@ private fun FileManagerScreen(
             Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("${selectedEntries.size} · ${Formatter.formatFileSize(LocalContext.current, selectedBytes)}", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
                 IconButton(onClick = { selectedEntries.firstOrNull()?.let(onShare) }) { Icon(Icons.Outlined.Share, contentDescription = "Share") }
+                IconButton(onClick = onCreateZip) { Icon(Icons.Outlined.Archive, contentDescription = "Create ZIP") }
                 IconButton(onClick = { showDestination = FileOperationKind.COPY; state.currentDirectory?.let(onOpenDestination) }) { Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy") }
                 IconButton(onClick = { showDestination = FileOperationKind.MOVE; state.currentDirectory?.let(onOpenDestination) }) { Icon(Icons.Outlined.UploadFile, contentDescription = "Move") }
                 IconButton(onClick = { showDelete = true }) { Icon(Icons.Outlined.Delete, contentDescription = "Delete") }
@@ -303,6 +331,9 @@ private fun RootContent(
     onOpenSettings: () -> Unit,
     onOpenVolume: (StorageVolumeInfo) -> Unit,
     onShortcut: (FileManagerShortcut) -> Unit,
+    onOpenDirectory: (File) -> Unit,
+    onToggleFavorite: (File) -> Unit,
+    onOpenExternalSources: () -> Unit,
 ) {
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("Browse shared storage", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black) }
@@ -319,8 +350,47 @@ private fun RootContent(
                     }
                 }
             }
+            item { OutlinedButton(onClick = onOpenExternalSources, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Cloud, null); Text("Use SD / USB / cloud sources", Modifier.padding(start = 8.dp)) } }
         } else {
             items(state.volumes, key = { it.id }) { volume -> VolumeCard(volume, onClick = { onOpenVolume(volume) }) }
+            item { OutlinedButton(onClick = onOpenExternalSources, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Cloud, null); Text("SD / USB / cloud sources", Modifier.padding(start = 8.dp)) } }
+            if (state.favoriteFolders.isNotEmpty()) {
+                item { Text("Favorites", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
+                items(state.favoriteFolders, key = { it.path }) { favorite ->
+                    Card(
+                        onClick = { onOpenDirectory(File(favorite.path)) },
+                        shape = ToolivaShapes.medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                                Text(favorite.name, fontWeight = FontWeight.SemiBold)
+                                Text(favorite.path, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            }
+                            TextButton(onClick = { onToggleFavorite(File(favorite.path)) }) { Text("Remove") }
+                        }
+                    }
+                }
+            }
+            if (state.recentFiles.isNotEmpty()) {
+                item { Text("Recently opened", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
+                items(state.recentFiles, key = { it.path }) { recent ->
+                    Card(
+                        onClick = { File(recent.path).takeIf { it.exists() }?.parentFile?.let(onOpenDirectory) },
+                        shape = ToolivaShapes.medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.InsertDriveFile, contentDescription = null)
+                            Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                                Text(recent.name, fontWeight = FontWeight.SemiBold)
+                                Text(recent.path, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            }
             item { Text("Categories", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -437,8 +507,26 @@ private fun CreateFolderDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit
 }
 
 @Composable
-private fun DetailsDialog(entry: StorageEntry, onDismiss: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(entry.name) }, text = { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { DetailLine("Type", if (entry.isDirectory) "Folder" else entry.extension?.uppercase() ?: "File"); DetailLine("MIME", entry.mimeType ?: "—"); DetailLine("Size", if (entry.isDirectory) "Folder size is not calculated recursively" else Formatter.formatFileSize(LocalContext.current, entry.sizeBytes)); DetailLine("Path", entry.path); DetailLine("Readable", File(entry.path).canRead().toString()); DetailLine("Writable", File(entry.path).canWrite().toString()) } }, confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } })
+private fun DetailsDialog(entry: StorageEntry, onDismiss: () -> Unit, onPreview: (StorageEntry) -> Unit, onExtractArchive: (StorageEntry) -> Unit) {
+    val canPreview = !entry.isDirectory && (entry.category != StorageCategory.OTHER || entry.extension?.lowercase() in setOf("txt", "md", "csv", "json", "xml", "log", "html", "htm"))
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(entry.name) }, text = { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { DetailLine("Type", if (entry.isDirectory) "Folder" else entry.extension?.uppercase() ?: "File"); DetailLine("MIME", entry.mimeType ?: "—"); DetailLine("Size", if (entry.isDirectory) "Folder size is not calculated recursively" else Formatter.formatFileSize(LocalContext.current, entry.sizeBytes)); DetailLine("Path", entry.path); DetailLine("Readable", File(entry.path).canRead().toString()); DetailLine("Writable", File(entry.path).canWrite().toString()) } }, confirmButton = { TextButton(onClick = { onDismiss(); if (canPreview) onPreview(entry) }) { Text(if (canPreview) "Preview" else "Close") } }, dismissButton = { if (entry.extension.equals("zip", true)) TextButton(onClick = { onDismiss(); onExtractArchive(entry) }) { Text("Extract here") } else TextButton(onClick = onDismiss) { Text("Close") } })
+}
+
+@Composable
+private fun PreviewDialog(preview: FilePreview, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(when (preview) { is FilePreview.Text -> preview.title; is FilePreview.Archive -> preview.title; is FilePreview.External -> preview.title; is FilePreview.Unsupported -> preview.title }) },
+        text = {
+            when (preview) {
+                is FilePreview.Text -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Text(preview.content, style = MaterialTheme.typography.bodySmall); if (preview.truncated) Text("Preview truncated at 64 KB.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                is FilePreview.Archive -> Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { Text("${preview.format} contents", fontWeight = FontWeight.Bold); preview.entries.forEach { Text(it, style = MaterialTheme.typography.bodySmall) } }
+                is FilePreview.External -> Text("${preview.format} files are opened with an installed compatible app. Tooliva does not upload or execute this file.")
+                is FilePreview.Unsupported -> Text(preview.reason)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
 }
 
 @Composable private fun DetailLine(label: String, value: String) { Text("$label: $value", style = MaterialTheme.typography.bodyMedium) }

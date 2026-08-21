@@ -5,6 +5,8 @@ import az.simplesoft.tooliva.core.media.ScreenshotClassifier
 import az.simplesoft.tooliva.core.storage.StorageCategory
 import az.simplesoft.tooliva.core.storage.StorageEntry
 import java.io.File
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 enum class CleanerBucket(
     val title: String,
@@ -46,7 +48,12 @@ data class CleanerAnalysisSnapshot(
 
 /** Short-lived reuse only: avoids immediately repeating the same traversal after Action Plan navigation. */
 object CleanerSessionStore {
-    var latest: CleanerAnalysisSnapshot? = null
+    private val _latest = MutableStateFlow<CleanerAnalysisSnapshot?>(null)
+    val latestFlow = _latest.asStateFlow()
+
+    var latest: CleanerAnalysisSnapshot?
+        get() = _latest.value
+        set(value) { _latest.value = value }
 }
 
 internal class CleanerAnalysisAccumulator(
