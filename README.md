@@ -150,7 +150,7 @@ The current expansion keeps the direct progressive storage architecture and adds
 - ZIP/text in-app preview, ZIP extraction/creation, and honest external-open handling for PDF/7Z/RAR;
 - an Android MediaStore Recycle Bin view for actual Trash items with Restore and separately confirmed permanent deletion;
 - user-selected SD/USB/cloud folders through the Android Storage Access Framework, without adding network access;
-- English, Russian, Azerbaijani and Turkish language preference infrastructure for the product shell.
+- English, Russian, Azerbaijani and Turkish language preference with app-wide Compose copy and accessibility-label localization; user filenames, paths and notification content stay unchanged.
 
 The Photo Analyzer uses conservative heuristic labels (`potentially similar`, `possibly blurry`) and never preselects personal media. Android controls the retention period of MediaStore Trash; Tooliva does not claim to control a universal 7/30-day bin. RAR/7Z listing/extraction remains delegated to an installed compatible provider because the Android platform has no built-in archive decoder for those formats.
 

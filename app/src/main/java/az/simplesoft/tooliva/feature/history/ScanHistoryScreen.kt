@@ -14,9 +14,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
+import az.simplesoft.tooliva.ui.LocalizedIcon as Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import az.simplesoft.tooliva.ui.LocalizedText as Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment

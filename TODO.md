@@ -239,7 +239,7 @@ Candidate rules to research/implement one by one:
 - [x] [P0] real Tools hub using implemented modules only
 - [x] [P0] real More/Settings screen
 - [x] [P0] persisted System/Dark/Light appearance preference
-- [ ] [P1] language preference infrastructure and shell resources (EN/RU/AZ/TR)
+- [x] [P1] language preference infrastructure and app-wide Compose Text/Icon localization (EN/RU/AZ/TR); user filenames, paths and notification content remain unchanged
 - [x] [P0] core screen visual migration: Clean, Large Files, Files, Duplicates, Cleanup Swipe, Storage Map, App Manager, Phone Doctor, Checkup, Notification History — shared tokens applied; functional logic unchanged
 - [x] [P1] launcher icon/splash and system-bar audit
 - [ ] [P0] Human Xiaomi UI/UX 2.0 PASS
@@ -443,7 +443,7 @@ Storage Map is not allowed to become a prerequisite for basic Cleaner/File Manag
 - [x] [P1] ZIP/text preview, ZIP extract/create and external-open fallback for PDF/7Z/RAR
 - [~] [P1] Android MediaStore Recycle Bin with Restore, system expiry display and confirmed permanent delete; only Android-controlled MediaStore Trash is visible
 - [x] [P1] SAF external sources for user-selected SD/USB/cloud provider folders without network permission
-- [~] [P1] language preference infrastructure for EN/RU/AZ/TR and translated product-shell/Action Plan strings; legacy feature screens still need string-resource migration before claiming full-surface localization
+- [x] [P1] app-wide visible Compose copy localization for EN/RU/AZ/TR, including legacy feature screens, dynamic counts and accessibility labels; Android system/provider UI and user-generated data remain platform-controlled or intentionally unchanged
 - [ ] [P0] manual Xiaomi regression for this expansion slice and Android 14/15/16 provider differences
 
 ## Vault [P1]
