@@ -77,15 +77,7 @@ data class CleanupRecommendationsUiState(
                     it.entry.name.contains(searchQuery, ignoreCase = true) ||
                     it.entry.path.contains(searchQuery, ignoreCase = true)
             }
-            .sortedWith(
-                when (sortOrder) {
-                    RecommendationSortOrder.OLDEST -> compareBy { it.entry.modifiedAtMillis }
-                    RecommendationSortOrder.NEWEST -> compareByDescending { it.entry.modifiedAtMillis }
-                    RecommendationSortOrder.LARGEST -> compareByDescending { it.entry.sizeBytes }
-                    RecommendationSortOrder.SMALLEST -> compareBy { it.entry.sizeBytes }
-                    RecommendationSortOrder.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.entry.name }
-                },
-            )
+            .sortedWith(recommendationComparator(sortOrder))
             .toList()
 
     val selectedCandidates: List<CleanupCandidate>
@@ -105,6 +97,19 @@ private fun CleanupReasonId.title(): String = when (this) {
     CleanupReasonId.OLD_APK_INSTALLER -> "Old APK installers"
     CleanupReasonId.OLD_DOWNLOAD -> "Old Downloads"
     CleanupReasonId.RESIDUAL_TEMP -> "Temporary download fragments"
+}
+
+private fun recommendationComparator(order: RecommendationSortOrder): Comparator<CleanupCandidate> = Comparator { left, right ->
+    val primary = when (order) {
+        RecommendationSortOrder.OLDEST -> left.entry.modifiedAtMillis.compareTo(right.entry.modifiedAtMillis)
+        RecommendationSortOrder.NEWEST -> right.entry.modifiedAtMillis.compareTo(left.entry.modifiedAtMillis)
+        RecommendationSortOrder.LARGEST -> right.entry.sizeBytes.compareTo(left.entry.sizeBytes)
+        RecommendationSortOrder.SMALLEST -> left.entry.sizeBytes.compareTo(right.entry.sizeBytes)
+        RecommendationSortOrder.NAME -> left.entry.name.compareTo(right.entry.name, ignoreCase = true)
+    }
+    primary.takeIf { it != 0 }
+        ?: left.entry.name.compareTo(right.entry.name, ignoreCase = true).takeIf { it != 0 }
+        ?: left.entry.path.compareTo(right.entry.path, ignoreCase = true)
 }
 
 internal class CleanupCandidateAccumulator {

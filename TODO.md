@@ -133,6 +133,7 @@ Do not add these solely to satisfy architecture style.
 - [~] [P0] categories All/Video/Image/Audio/APK/Archive/Document/Download/Other
 - [~] [P0] thresholds 100 MB / 500 MB / 1 GB
 - [~] [P0] sort size/newest/oldest/name
+- [x] [P0] deterministic tie-breakers for Cleaner sorting; responsive file cards keep name/path readable on phone widths
 - [~] [P0] search name/path
 - [x] [P0] multi-select / Select all
 - [x] [P0] open

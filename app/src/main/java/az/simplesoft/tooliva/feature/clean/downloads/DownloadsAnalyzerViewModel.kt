@@ -20,6 +20,7 @@ import az.simplesoft.tooliva.core.storage.StorageProvider
 import az.simplesoft.tooliva.core.storage.StorageScanEvent
 import az.simplesoft.tooliva.core.storage.StorageScanScope
 import az.simplesoft.tooliva.core.storage.StorageSortOrder
+import az.simplesoft.tooliva.core.storage.storageEntryComparator
 import az.simplesoft.tooliva.feature.clean.CleanerBucket
 import az.simplesoft.tooliva.feature.clean.CleanerSessionStore
 import kotlinx.coroutines.CancellationException
@@ -83,14 +84,7 @@ data class DownloadsAnalyzerUiState(
                     it.name.contains(searchQuery, ignoreCase = true) ||
                     it.path.contains(searchQuery, ignoreCase = true)
             }
-            .sortedWith(
-                when (sortOrder) {
-                    StorageSortOrder.SIZE -> compareByDescending(StorageEntry::sizeBytes)
-                    StorageSortOrder.NEWEST -> compareByDescending(StorageEntry::modifiedAtMillis)
-                    StorageSortOrder.OLDEST -> compareBy(StorageEntry::modifiedAtMillis)
-                    StorageSortOrder.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER, StorageEntry::name)
-                },
-            )
+            .sortedWith(storageEntryComparator(sortOrder))
             .toList()
 
     val selectedFiles: List<StorageEntry> = files.filter { it.ref.toString() in selectedRefs }

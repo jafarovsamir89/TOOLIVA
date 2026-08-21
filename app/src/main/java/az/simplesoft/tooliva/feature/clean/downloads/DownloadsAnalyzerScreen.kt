@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -418,22 +419,22 @@ private fun DownloadFileCard(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer),
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Checkbox(checked = selected, onCheckedChange = { onToggle() })
-            Icon(downloadCategoryIcon(entry), contentDescription = null)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(entry.name, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                Text(downloadsCategoryLabel(DownloadsAnalyzerRules.analyzerCategory(entry)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                Text(entry.path, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                Text("${Formatter.formatFileSize(LocalContext.current, entry.sizeBytes)} · ${DateFormat.getDateFormat(LocalContext.current).format(Date(entry.modifiedAtMillis))}", style = MaterialTheme.typography.bodySmall)
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Checkbox(checked = selected, onCheckedChange = { onToggle() })
+                Icon(downloadCategoryIcon(entry), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(entry.name.ifBlank { "Unnamed file" }, fontWeight = FontWeight.Bold, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Text(downloadsCategoryLabel(DownloadsAnalyzerRules.analyzerCategory(entry)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(entry.path, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                }
             }
-            IconButton(onClick = onOpen) { Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Open ${entry.name}") }
-            var menuExpanded by remember { mutableStateOf(false) }
-            Box {
-                IconButton(onClick = { menuExpanded = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Actions") }
-                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                    DropdownMenuItem(text = { Text("Share") }, leadingIcon = { Icon(Icons.Outlined.Share, null) }, onClick = { menuExpanded = false; onShare() })
-                    DropdownMenuItem(text = { Text("Details") }, leadingIcon = { Icon(Icons.Outlined.Info, null) }, onClick = { menuExpanded = false; onDetails() })
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("${Formatter.formatFileSize(LocalContext.current, entry.sizeBytes)} · ${DateFormat.getDateFormat(LocalContext.current).format(Date(entry.modifiedAtMillis))}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    TextButton(onClick = onOpen) { Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null); Text("Open", Modifier.padding(start = 4.dp)) }
+                    IconButton(onClick = onShare) { Icon(Icons.Outlined.Share, contentDescription = "Share ${entry.name}") }
+                    IconButton(onClick = onDetails) { Icon(Icons.Outlined.Info, contentDescription = "Details for ${entry.name}") }
                 }
             }
         }

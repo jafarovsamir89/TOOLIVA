@@ -62,11 +62,12 @@ data class LargeFilesUiState(
             }
             .sortedWith(
                 when (sortOrder) {
-                    StorageSortOrder.SIZE -> compareByDescending(LargeMediaFile::sizeBytes)
-                    StorageSortOrder.NEWEST -> compareByDescending(LargeMediaFile::modifiedEpochSeconds)
-                    StorageSortOrder.OLDEST -> compareBy(LargeMediaFile::modifiedEpochSeconds)
-                    StorageSortOrder.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER, LargeMediaFile::displayName)
-                },
+                    StorageSortOrder.SIZE -> compareByDescending<LargeMediaFile> { it.sizeBytes }
+                    StorageSortOrder.NEWEST -> compareByDescending { it.modifiedEpochSeconds }
+                    StorageSortOrder.OLDEST -> compareBy { it.modifiedEpochSeconds }
+                    StorageSortOrder.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.displayName }
+                }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.displayName }
+                    .thenBy { it.path.orEmpty().lowercase() }
             )
             .toList()
 

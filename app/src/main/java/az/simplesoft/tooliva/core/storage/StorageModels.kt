@@ -2,6 +2,7 @@ package az.simplesoft.tooliva.core.storage
 
 import android.net.Uri
 import java.io.File
+import java.util.Locale
 
 enum class StorageAccessMode {
     FULL,
@@ -59,3 +60,12 @@ data class StorageAccessState(
             StorageAccessMode.LIMITED
         }
 }
+
+/** Stable ordering shared by Cleaner lists so ties never jump around between scans. */
+fun storageEntryComparator(order: StorageSortOrder): Comparator<StorageEntry> = when (order) {
+    StorageSortOrder.SIZE -> compareByDescending<StorageEntry> { it.sizeBytes }
+    StorageSortOrder.NEWEST -> compareByDescending { it.modifiedAtMillis }
+    StorageSortOrder.OLDEST -> compareBy { it.modifiedAtMillis }
+    StorageSortOrder.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+}.thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+    .thenBy { it.path.lowercase(Locale.ROOT) }

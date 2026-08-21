@@ -14,6 +14,7 @@ import az.simplesoft.tooliva.core.storage.StorageAccessState
 import az.simplesoft.tooliva.core.storage.StorageCategory
 import az.simplesoft.tooliva.core.storage.StorageEntry
 import az.simplesoft.tooliva.core.storage.StorageScanEvent
+import az.simplesoft.tooliva.core.storage.storageEntryComparator
 import az.simplesoft.tooliva.core.media.ScreenshotClassifier
 import az.simplesoft.tooliva.feature.clean.CleanerBucket
 import az.simplesoft.tooliva.feature.clean.CleanerSessionStore
@@ -48,15 +49,17 @@ data class OldFilesUiState(
         .filter { OldFilesRules.inScope(it, scope) }
         .filter { CleanupRecommendationRules.isKnownOld(it.modifiedAtMillis, age.days, System.currentTimeMillis()) }
         .filter { search.isBlank() || it.name.contains(search, true) || it.path.contains(search, true) }
-        .sortedWith(when (sort) {
-            OldFilesSort.OLDEST -> compareBy(StorageEntry::modifiedAtMillis)
-            OldFilesSort.LARGEST -> compareByDescending(StorageEntry::sizeBytes)
-            OldFilesSort.NEWEST -> compareByDescending(StorageEntry::modifiedAtMillis)
-            OldFilesSort.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER, StorageEntry::name)
-        }).toList()
+        .sortedWith(storageEntryComparator(sort.toStorageSortOrder())).toList()
     val selectedEntries: List<StorageEntry> get() = entries.filter { it.ref.toString() in selectedRefs }
     val selectedBytes: Long get() = selectedEntries.sumOf { it.sizeBytes }
     val allVisibleSelected: Boolean get() = visibleEntries.isNotEmpty() && visibleEntries.all { it.ref.toString() in selectedRefs }
+}
+
+private fun OldFilesSort.toStorageSortOrder(): az.simplesoft.tooliva.core.storage.StorageSortOrder = when (this) {
+    OldFilesSort.OLDEST -> az.simplesoft.tooliva.core.storage.StorageSortOrder.OLDEST
+    OldFilesSort.LARGEST -> az.simplesoft.tooliva.core.storage.StorageSortOrder.SIZE
+    OldFilesSort.NEWEST -> az.simplesoft.tooliva.core.storage.StorageSortOrder.NEWEST
+    OldFilesSort.NAME -> az.simplesoft.tooliva.core.storage.StorageSortOrder.NAME
 }
 
 object OldFilesRules {

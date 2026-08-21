@@ -1,6 +1,7 @@
 package az.simplesoft.tooliva.feature.clean.oldfiles
 
 import android.content.ActivityNotFoundException
+import android.text.format.DateFormat
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -56,6 +58,7 @@ import az.simplesoft.tooliva.core.storage.StorageAccessMode
 import az.simplesoft.tooliva.core.storage.tryOpen
 import az.simplesoft.tooliva.feature.clean.StorageAccessCard
 import az.simplesoft.tooliva.feature.clean.result.CleanupResultScreen
+import java.util.Date
 
 private val oldAgeOptions = listOf(OldFilesAge(30, "30+ days"), OldFilesAge(90, "90+ days"), OldFilesAge(180, "180+ days"), OldFilesAge(365, "365+ days"))
 
@@ -101,11 +104,23 @@ fun OldFilesRoute(viewModel: OldFilesViewModel = viewModel()) {
                 items(state.visibleEntries, key = { it.ref.toString() }) { entry ->
                     val selected = entry.ref.toString() in state.selectedRefs
                     Card(colors = CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer)) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Checkbox(checked = selected, onCheckedChange = { viewModel.toggle(entry.ref.toString()) })
-                            Icon(Icons.Outlined.InsertDriveFile, contentDescription = null)
-                            Column(modifier = Modifier.weight(1f)) { Text(entry.name, fontWeight = FontWeight.SemiBold, maxLines = 1); Text("Reason: old file in ${state.scope.label}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary); Text(entry.path, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1); Text(Formatter.formatFileSize(context, entry.sizeBytes), style = MaterialTheme.typography.bodySmall) }
-                            IconButton(onClick = { runCatching { context.tryOpen(entry) }.onFailure { viewModel.setSearch(state.search) } }) { Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Open ${entry.name}") }
+                        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Checkbox(checked = selected, onCheckedChange = { viewModel.toggle(entry.ref.toString()) })
+                                Icon(Icons.Outlined.InsertDriveFile, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Text(entry.name.ifBlank { "Unnamed file" }, fontWeight = FontWeight.Bold, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                    Text("Old file · ${state.scope.label}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                    Text(entry.path, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                }
+                            }
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("${Formatter.formatFileSize(context, entry.sizeBytes)} · ${DateFormat.getDateFormat(context).format(Date(entry.modifiedAtMillis))}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                TextButton(onClick = { runCatching { context.tryOpen(entry) }.onFailure { viewModel.setSearch(state.search) } }) {
+                                    Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null)
+                                    Text("Open", Modifier.padding(start = 4.dp))
+                                }
+                            }
                         }
                     }
                 }

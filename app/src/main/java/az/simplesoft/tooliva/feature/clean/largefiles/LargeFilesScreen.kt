@@ -4,8 +4,10 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Build
+import android.text.format.DateFormat
 import android.text.format.Formatter
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -68,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -79,6 +82,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
+import java.util.Date
 import az.simplesoft.tooliva.core.media.LargeMediaFile
 import az.simplesoft.tooliva.core.media.MediaThumbnailLoader
 import az.simplesoft.tooliva.core.media.MediaStoreDeleteCoordinator
@@ -402,50 +406,56 @@ fun LargeFilesRoute(onOpenInFiles: (String) -> Unit = {}, initialCategory: Strin
 private fun LargeFileCard(file: LargeMediaFile, selectedUris: Set<String>, viewModel: LargeFilesViewModel, onOpenInFiles: (String) -> Unit, onDetails: () -> Unit) {
     val context = LocalContext.current
     val selected = file.uri.toString() in selectedUris
+    val displayName = file.displayName.ifBlank { file.path?.substringAfterLast('/')?.ifBlank { null } ?: "Unnamed file" }
+    val location = file.path?.substringBeforeLast('/', "Shared storage") ?: file.mimeType ?: "Accessible file"
     Card(
         onClick = { viewModel.toggleSelection(file.uri.toString()) },
         shape = ToolivaShapes.large,
         colors = CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(checked = selected, onCheckedChange = { viewModel.toggleSelection(file.uri.toString()) })
-            LargeFileVisual(file)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(file.displayName, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                Text(categoryLabel(file.category), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                Text(file.path ?: file.mimeType ?: "Accessible file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-            }
-            Text(Formatter.formatFileSize(context, file.sizeBytes), fontWeight = FontWeight.Bold)
-            IconButton(onClick = { context.tryShare(file.asStorageEntry())?.let(viewModel::showError) }) {
-                Icon(Icons.Outlined.Share, contentDescription = "Share ${file.displayName}")
-            }
-            IconButton(onClick = onDetails) { Icon(Icons.Outlined.Info, contentDescription = "Details for ${file.displayName}") }
-            IconButton(onClick = {
-                val openUri = if (file.uri.scheme == "file") {
-                    FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(file.uri.path.orEmpty()))
-                } else file.uri
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(openUri, file.mimeType ?: "*/*")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = selected, onCheckedChange = { viewModel.toggleSelection(file.uri.toString()) })
+                LargeFileVisual(file)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(displayName, fontWeight = FontWeight.Bold, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Text(categoryLabel(file.category), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(location, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
-                try {
-                    context.startActivity(intent)
-                } catch (_: ActivityNotFoundException) {
-                    viewModel.showError("No app can open this file.")
-                } catch (_: IllegalArgumentException) {
-                    viewModel.showError("This file cannot be opened from its current location.")
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text(Formatter.formatFileSize(context, file.sizeBytes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(DateFormat.getDateFormat(context).format(Date(file.modifiedEpochSeconds * 1_000L)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }) { Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Open ${file.displayName}") }
-            IconButton(onClick = { file.path?.let { onOpenInFiles(File(it).parent ?: it) } }) {
-                Icon(Icons.Outlined.FolderOpen, contentDescription = "Show ${file.displayName} in Files")
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {
+                        val openUri = if (file.uri.scheme == "file") {
+                            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(file.uri.path.orEmpty()))
+                        } else file.uri
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(openUri, file.mimeType ?: "*/*")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        try {
+                            context.startActivity(intent)
+                        } catch (_: ActivityNotFoundException) {
+                            viewModel.showError("No app can open this file.")
+                        } catch (_: IllegalArgumentException) {
+                            viewModel.showError("This file cannot be opened from its current location.")
+                        }
+                    }) { Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Open $displayName") }
+                    IconButton(onClick = { file.path?.let { onOpenInFiles(File(it).parent ?: it) } }) {
+                        Icon(Icons.Outlined.FolderOpen, contentDescription = "Show $displayName in Files")
+                    }
+                    IconButton(onClick = { context.tryShare(file.asStorageEntry())?.let(viewModel::showError) }) {
+                        Icon(Icons.Outlined.Share, contentDescription = "Share $displayName")
+                    }
+                    IconButton(onClick = onDetails) { Icon(Icons.Outlined.Info, contentDescription = "Details for $displayName") }
+                }
             }
         }
     }
-    HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
 }
 
 @Composable
@@ -456,10 +466,13 @@ private fun LargeFileVisual(file: LargeMediaFile) {
             value = withContext(Dispatchers.IO) { MediaThumbnailLoader.load(context, file.uri) }
         }
     }
+    val shape = RoundedCornerShape(16.dp)
     if (bitmap != null) {
-        Image(bitmap = bitmap!!.asImageBitmap(), contentDescription = file.displayName, modifier = Modifier.size(52.dp), contentScale = ContentScale.Crop)
+        Image(bitmap = bitmap!!.asImageBitmap(), contentDescription = file.displayName, modifier = Modifier.size(64.dp).clip(shape), contentScale = ContentScale.Crop)
     } else {
-        Icon(categoryIcon(file.category), contentDescription = null, modifier = Modifier.padding(4.dp))
+        Box(Modifier.size(64.dp).clip(shape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+            Icon(categoryIcon(file.category), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
+        }
     }
 }
 

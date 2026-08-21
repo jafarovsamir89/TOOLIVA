@@ -341,24 +341,22 @@ private fun DuplicateEntryRow(
     onShowInFiles: (StorageEntry) -> Unit,
     onDetails: (StorageEntry) -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.material3.Checkbox(checked = selected, onCheckedChange = { onToggle() })
-        DuplicateThumbnail(entry, Modifier.size(52.dp).aspectRatio(1f))
-        Column(Modifier.weight(1f).padding(start = 8.dp)) {
-            Text(entry.name, maxLines = 1, fontWeight = FontWeight.SemiBold)
-            Text(entry.path.substringBeforeLast(File.separator, entry.path), maxLines = 1, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(Formatter.formatFileSize(LocalContext.current, entry.sizeBytes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.Checkbox(checked = selected, onCheckedChange = { onToggle() })
+            DuplicateThumbnail(entry, Modifier.size(56.dp).aspectRatio(1f))
+            Column(Modifier.weight(1f).padding(start = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(entry.name.ifBlank { "Unnamed file" }, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, fontWeight = FontWeight.Bold)
+                Text(entry.path.substringBeforeLast(File.separator, entry.path), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(Formatter.formatFileSize(LocalContext.current, entry.sizeBytes), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            }
         }
-        Column(horizontalAlignment = Alignment.End) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
             TextButton(onClick = onKeep) { Text(if (isFirst) "Keep this copy" else "Keep") }
-            Row {
-                IconButton(onClick = { onOpen(entry) }) { Icon(Icons.Outlined.OpenInNew, "Open") }
-                IconButton(onClick = { onDetails(entry) }) { Icon(Icons.Outlined.Info, "Details") }
-            }
-            Row {
-                IconButton(onClick = { onShowInFiles(entry) }) { Icon(Icons.Outlined.FolderOpen, "Show in Files") }
-                IconButton(onClick = { onShare(entry) }) { Icon(Icons.Outlined.Storage, "Share") }
-            }
+            TextButton(onClick = { onOpen(entry) }) { Icon(Icons.Outlined.OpenInNew, contentDescription = null); Text("Open", Modifier.padding(start = 4.dp)) }
+            IconButton(onClick = { onShowInFiles(entry) }) { Icon(Icons.Outlined.FolderOpen, contentDescription = "Show in Files") }
+            IconButton(onClick = { onShare(entry) }) { Icon(Icons.Outlined.Storage, contentDescription = "Share") }
+            IconButton(onClick = { onDetails(entry) }) { Icon(Icons.Outlined.Info, contentDescription = "Details") }
         }
     }
 }

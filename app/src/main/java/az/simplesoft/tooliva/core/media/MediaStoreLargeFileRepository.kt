@@ -58,15 +58,16 @@ class MediaStoreLargeFileRepository(context: Context) {
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idIndex)
                     val size = cursor.getLong(sizeIndex)
+                    val displayName = cursor.getString(nameIndex).orEmpty().ifBlank { "File $id" }
                     add(
                         LargeMediaFile(
                             uri = ContentUris.withAppendedId(collection, id),
-                            displayName = cursor.getString(nameIndex) ?: "Unnamed file",
+                            displayName = displayName,
                             sizeBytes = size,
                             mimeType = cursor.getString(mimeIndex),
                             modifiedEpochSeconds = cursor.getLong(modifiedIndex),
                             category = classify(
-                                cursor.getString(nameIndex).orEmpty(),
+                                displayName,
                                 cursor.getString(mimeIndex),
                             ),
                         ),
